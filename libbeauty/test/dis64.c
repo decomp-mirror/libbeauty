@@ -96,6 +96,7 @@ int debug_exe = 0;
 int debug_analyse = 0;
 int debug_analyse_paths = 0;
 int debug_analyse_phi = 0;
+int debug_analyse_tip = 0;
 int debug_output = 0;
 int debug_output_llvm = 0;
 
@@ -115,6 +116,8 @@ void setLogLevel()
 		debug_analyse_paths = 1;
 	if (getenv("ENABLE_DEBUG_ANALYSE_PHI"))
 		debug_analyse_phi = 1;
+	if (getenv("ENABLE_DEBUG_ANALYSE_TIP"))
+		debug_analyse_tip = 1;
 	if (getenv("ENABLE_DEBUG_OUTPUT"))
 		debug_output = 1;
 	if (getenv("ENABLE_DEBUG_OUTPUT_LLVM"))
@@ -165,6 +168,12 @@ void dbg_print(const char* file, int line, const char* func, int module, int lev
 	case DEBUG_ANALYSE_PHI:
 		if (level <= debug_analyse_phi) {
 			dprintf(STDERR_FILENO, "DEBUG_ANALYSE_PHI,0x%x %s:%d %s(): ", level, file, line, func);
+			vdprintf(STDERR_FILENO, format, ap);
+		}
+		break;
+	case DEBUG_ANALYSE_TIP:
+		if (level <= debug_analyse_tip) {
+			dprintf(STDERR_FILENO, "DEBUG_ANALYSE_TIP,0x%x %s:%d %s(): ", level, file, line, func);
 			vdprintf(STDERR_FILENO, format, ap);
 		}
 		break;
@@ -2591,7 +2600,7 @@ int tip_add(struct self_s *self, int entry_point, int node, int inst, int phi, i
 		label->tip[index].lab_pointed_to_size = pointer_size;
 		label->tip[index].lab_integer_first = integer;
 		label->tip[index].lab_size_first = bit_size;
-		printf("tip_add:0x%x:0x%lx node = 0x%x, inst = 0x%x, phi = 0x%x, operand = 0x%x, pointer_first = 0x%x, pointed_to_size = 0x%x, integer_first = 0x%x, size_first = 0x%x\n",
+		debug_print(DEBUG_ANALYSE_TIP, 1, "0x%x:0x%lx node = 0x%x, inst = 0x%x, phi = 0x%x, operand = 0x%x, pointer_first = 0x%x, pointed_to_size = 0x%x, integer_first = 0x%x, size_first = 0x%x\n",
 			label_index,
 			label_redirect[label_index].redirect,
 			label->tip[index].node,
@@ -2603,7 +2612,7 @@ int tip_add(struct self_s *self, int entry_point, int node, int inst, int phi, i
 			label->tip[index].lab_integer_first,
 			label->tip[index].lab_size_first);
 		if (label_index == 0) {
-			debug_print(DEBUG_MAIN, 1, "tip_add: ERROR: label_index should not be zero\n");
+			debug_print(DEBUG_ANALYSE_TIP, 1, "ERROR: label_index should not be zero\n");
 			exit(1);
 		}
 	} else if (phi) {
@@ -2649,6 +2658,7 @@ int build_tip_table(struct self_s *self, int entry_point, int node)
 	int is_pointer2 = 0;
 	int is_pointer3 = 0;
 
+	debug_print(DEBUG_ANALYSE_TIP, 1, "entered\n");
 	inst = nodes[node].inst_start;
 	do {
 		inst_log1 =  &inst_log_entry[inst];
@@ -2752,7 +2762,7 @@ int build_tip_table(struct self_s *self, int entry_point, int node)
 			break;
 
 		default:
-			debug_print(DEBUG_MAIN, 1, "build_tip_table failed for Inst:0x%x:0x%04x, OP 0x%x\n",
+			debug_print(DEBUG_ANALYSE_TIP, 1, "build_tip_table failed for Inst:0x%x:0x%04x, OP 0x%x\n",
 				entry_point, inst, instruction->opcode);
 			goto exit1;
 		}
@@ -2881,15 +2891,15 @@ int tip_add_zext(struct self_s *self, int entry_point, int label_index)
 				tmp = insert_nop_before(self, inst_modified, &inst_new);
 				/* FIXME: Not support LOAD, STORE or MOV inst yet. */
 				if (inst_log_entry[inst_modified].instruction.opcode == LOAD) {
-					debug_print(DEBUG_MAIN, 1, "ZEXT/TRUNC before unhandled LOAD instruction\n");
+					debug_print(DEBUG_ANALYSE_TIP, 1, "ZEXT/TRUNC before unhandled LOAD instruction\n");
 					exit(1);
 				}
 				if (inst_log_entry[inst_modified].instruction.opcode == STORE) {
-					debug_print(DEBUG_MAIN, 1, "ZEXT/TRUNC before unhandled STORE instruction\n");
+					debug_print(DEBUG_ANALYSE_TIP, 1, "ZEXT/TRUNC before unhandled STORE instruction\n");
 					exit(1);
 				}
 				if (inst_log_entry[inst_modified].instruction.opcode == MOV) {
-					debug_print(DEBUG_MAIN, 1, "ZEXT/TRUNC before unhandled MOV instruction\n");
+					debug_print(DEBUG_ANALYSE_TIP, 1, "ZEXT/TRUNC before unhandled MOV instruction\n");
 					/* Need to first separate the label merge that the MOV instruction did,
 					   Add the ZEXT/TRUNC.
 					   Re-implement the new label merge that rhe MOV instruction should do.
@@ -2904,7 +2914,7 @@ int tip_add_zext(struct self_s *self, int entry_point, int label_index)
 				}
 				inst_log_entry[inst_new].instruction.flags = 0;
 
-				printf("label needed zext/trunc: size=0x%x, inst_new=0x%x. tip:0x%x node = 0x%x, inst = 0x%x, phi = 0x%x, operand = 0x%x, lap_pointer_first = 0x%x, lab_integer_first = 0x%x, lab_size_first = 0x%x\n",
+				debug_print(DEBUG_ANALYSE_TIP, 1, "label needed zext/trunc: size=0x%x, inst_new=0x%x. tip:0x%x node = 0x%x, inst = 0x%x, phi = 0x%x, operand = 0x%x, lap_pointer_first = 0x%x, lab_integer_first = 0x%x, lab_size_first = 0x%x\n",
 				size,
 				inst_new,
 				label_index,
@@ -2936,9 +2946,9 @@ int tip_add_zext(struct self_s *self, int entry_point, int label_index)
 				variable_id = external_entry_point->variable_id;
 				variable_id_add_tip = variable_id;
 				if (!tmp) {
-					debug_print(DEBUG_MAIN, 1, "variable_id = %x\n", variable_id);
+					debug_print(DEBUG_ANALYSE_TIP, 1, "variable_id = %x\n", variable_id);
 					if (variable_id >= 10000) {
-						debug_print(DEBUG_MAIN, 1, "ERROR: variable_id overrun 10000 limit. Trying to write to %d\n", variable_id);
+						printf("ERROR: variable_id overrun 10000 limit. Trying to write to %d\n", variable_id);
 						exit(1);
 					}
 					label_redirect[variable_id].redirect = variable_id;
@@ -2949,9 +2959,9 @@ int tip_add_zext(struct self_s *self, int entry_point, int label_index)
 					labels[variable_id].lab_pointer += label_local.lab_pointer;
 					variable_id++;
 					external_entry_point->variable_id = variable_id;
-					debug_print(DEBUG_MAIN, 1, "variable_id increased to = %x\n", variable_id);
+					debug_print(DEBUG_ANALYSE_TIP, 1, "variable_id increased to = %x\n", variable_id);
 				} else {
-					debug_print(DEBUG_MAIN, 1, "ERROR: assign_id_label_dst() failed. entry_point = 0x%x, inst = 0x%x\n",
+					printf("ERROR: assign_id_label_dst() failed. entry_point = 0x%x, inst = 0x%x\n",
 						entry_point, inst_new);
 					exit(1);
 				}
@@ -3002,7 +3012,7 @@ int tip_print_label(struct self_s *self, int entry_point, int label_index)
 	if ((label->scope != 0) && (label->tip_size > 0) &&
 		(label_redirect[label_index].redirect == label_index)) {
 		for (n = 0; n < label->tip_size; n++) {
-			printf("label tip:0x%x node = 0x%x, inst = 0x%x, phi = 0x%x, operand = 0x%x, pointer_first = 0x%x, pointed_to_size = 0x%x, integer_first = 0x%x, size_first = 0x%x\n",
+			debug_print(DEBUG_ANALYSE_TIP, 1, "label tip:0x%x node = 0x%x, inst = 0x%x, phi = 0x%x, operand = 0x%x, pointer_first = 0x%x, pointed_to_size = 0x%x, integer_first = 0x%x, size_first = 0x%x\n",
 			label_index,
 			label->tip[n].node,
 			label->tip[n].inst_number,
