@@ -858,6 +858,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 	case JMP:
 	case CALL:
 	case IF:
+	case SEX:
 		break;
 	default:
 		debug_print(DEBUG_EXE, 1, "ERROR: Unchecked value_size\n");
