@@ -169,7 +169,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	if (argv[1]) {
-		if ((fin = fopen(argv[1], "r")) < 0) {
+		if ((fin = fopen(argv[1], "r")) == nullptr) {
 			outs() << "File not found: " << argv[1] << "\n";
 			exit(1);
 		}
