@@ -149,7 +149,8 @@ FuncTy_0_args.push_back(IntegerType::get(module->getContext(), 32)); // Second a
  Function::arg_iterator AI = test0_func->arg_begin();
  AI->setName("Pointer_1");
 // AllocaInst *Alloca = CreateEntryBlockAlloca(F, Args[Idx]);
-// AllocaInst *Alloca = builder->CreateAlloca(PointerTy_1, 0, "Pointer_1");
+ AllocaInst *Alloca1 = builder->CreateAlloca(PointerTy_1, 0, "Pointer_2");
+ AllocaInst *Alloca2 = builder->CreateAlloca(IntegerType::get(module->getContext(), 32), 0, "Int_2");
  // Store the initial value into the alloca.
  Value* ptr_1 = &*AI;
 //builder->CreateStore(AI, Alloca);
