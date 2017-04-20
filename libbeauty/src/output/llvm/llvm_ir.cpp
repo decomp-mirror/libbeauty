@@ -133,8 +133,10 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 	Value *srcB;
 	Value *dstA;
 	Value *value_tmp;
+	uint64_t size_bits;
 	uint64_t srcA_size;
 	uint64_t srcB_size;
+	uint64_t lab_pointer;
 	int value_id;
 	int value_id_dst;
 	struct label_s *label;
@@ -237,16 +239,18 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			}
 		}
 		srcA = value[value_id];
-		srcA_size = external_entry_point->labels[value_id].size_bits;
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "srcA: scope=0x%lx, type=0x%lx value=0x%lx size_bits=0x%lx pointer_type_size_bits=0x%lx lab_pointer=0x%lx lab_signed=0x%lx lab_unsigned=0x%lx name=%s\n",
+		if (external_entry_point->labels[value_id].tip2) {
+			size_bits = external_entry_point->tip2[external_entry_point->labels[value_id].tip2].integer_size;
+		} else {
+			size_bits = 8;
+		}
+		srcA_size = size_bits;
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "srcA: scope=0x%lx, type=0x%lx value=0x%lx size_bits=0x%lx lab_pointer=0x%lx name=%s\n",
 			external_entry_point->labels[value_id].scope,
 			external_entry_point->labels[value_id].type,
 			external_entry_point->labels[value_id].value,
-			external_entry_point->labels[value_id].size_bits,
-			external_entry_point->labels[value_id].pointer_type_size_bits,
-			external_entry_point->labels[value_id].lab_pointer,
-			external_entry_point->labels[value_id].lab_signed,
-			external_entry_point->labels[value_id].lab_unsigned,
+			external_entry_point->tip2[external_entry_point->labels[value_id].tip2].integer_size,
+			external_entry_point->tip2[external_entry_point->labels[value_id].tip2].pointer,
 			external_entry_point->labels[value_id].name);
 
 		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].redirect;
@@ -258,16 +262,18 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			}
 		}
 		srcB = value[value_id];
-		srcB_size = external_entry_point->labels[value_id].size_bits;
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "srcB: scope=0x%lx, type=0x%lx value=0x%lx size_bits=0x%lx pointer_type_size_bits=0x%lx lab_pointer=0x%lx lab_signed=0x%lx lab_unsigned=0x%lx name=%s\n",
+		if (external_entry_point->labels[value_id].tip2) {
+			size_bits = external_entry_point->tip2[external_entry_point->labels[value_id].tip2].integer_size;
+		} else {
+			size_bits = 8;
+		}
+		srcB_size = size_bits;
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "srcA: scope=0x%lx, type=0x%lx value=0x%lx size_bits=0x%lx lab_pointer=0x%lx name=%s\n",
 			external_entry_point->labels[value_id].scope,
 			external_entry_point->labels[value_id].type,
 			external_entry_point->labels[value_id].value,
-			external_entry_point->labels[value_id].size_bits,
-			external_entry_point->labels[value_id].pointer_type_size_bits,
-			external_entry_point->labels[value_id].lab_pointer,
-			external_entry_point->labels[value_id].lab_signed,
-			external_entry_point->labels[value_id].lab_unsigned,
+			external_entry_point->tip2[external_entry_point->labels[value_id].tip2].integer_size,
+			external_entry_point->tip2[external_entry_point->labels[value_id].tip2].pointer,
 			external_entry_point->labels[value_id].name);
 
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "srcA = %p, srcB = %p\n", srcA, srcB);
@@ -519,8 +525,13 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
 		label = &external_entry_point->labels[value_id_dst];
 		tmp = label_to_string(label, buffer, 1023);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "label->size_bits = 0x%lx\n", label->size_bits);
-		dstA = builder->CreateSExt(srcA, IntegerType::get(mod->getContext(), label->size_bits), buffer);
+		if (external_entry_point->labels[value_id_dst].tip2) {
+			size_bits = external_entry_point->tip2[external_entry_point->labels[value_id_dst].tip2].integer_size;
+		} else {
+			size_bits = 0;
+		}
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "label->tip2: size_bits = 0x%lx\n", size_bits);
+		dstA = builder->CreateSExt(srcA, IntegerType::get(mod->getContext(), size_bits), buffer);
 		value[value_id_dst] = dstA;
 		sprint_value(OS1, dstA);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
@@ -641,7 +652,12 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
 			label = &external_entry_point->labels[value_id_dst];
 			tmp = label_to_string(label, buffer, 1023);
-			dstA = builder->CreateAlignedLoad(srcA, label->size_bits >> 3, buffer);
+			if (external_entry_point->labels[value_id_dst].tip2) {
+				size_bits = external_entry_point->tip2[external_entry_point->labels[value_id_dst].tip2].integer_size;
+			} else {
+				size_bits = 8;
+			}
+			dstA = builder->CreateAlignedLoad(srcA, size_bits >> 3, buffer);
 			//dstA_load = new LoadInst(srcA, buffer, false, bb[node]);
 			//dstA_load->setAlignment(label->size_bits >> 3);
 			//dstA = dstA_load;
@@ -691,7 +707,12 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
 			label = &external_entry_point->labels[value_id_dst];
 			tmp = label_to_string(label, buffer, 1023);
-			dstA = builder->CreateAlignedLoad(srcA, label->size_bits >> 3, buffer);
+			if (external_entry_point->labels[value_id_dst].tip2) {
+				size_bits = external_entry_point->tip2[external_entry_point->labels[value_id_dst].tip2].integer_size;
+			} else {
+				size_bits = 8;
+			}
+			dstA = builder->CreateAlignedLoad(srcA, size_bits >> 3, buffer);
 
 			dstA->print(OS1);
 			OS1.flush();
@@ -827,6 +848,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			external_entry_point->label_redirect[inst_log1->value2.value_id].redirect,
 			inst_log1->value3.value_id,
 			external_entry_point->label_redirect[inst_log1->value3.value_id].redirect);
+
 		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
@@ -836,6 +858,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			}
 		}
 		srcA = value[value_id];
+
 		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].redirect;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
@@ -845,8 +868,14 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			}
 		}
 		srcB = value[value_id];
+
 		label = &external_entry_point->labels[value_id];
-		if (label->lab_pointer) {
+		if (external_entry_point->labels[value_id].tip2) {
+			lab_pointer = external_entry_point->tip2[external_entry_point->labels[value_id].tip2].pointer;
+		} else {
+			lab_pointer = 0;
+		}
+		if (lab_pointer) {
 			/* Swap srcA and srcB */
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "GEP swap srcA and srcB\n");
 			value_tmp = srcA;
@@ -905,8 +934,13 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
 		label = &external_entry_point->labels[value_id_dst];
 		tmp = label_to_string(label, buffer, 1023);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "label->size_bits = 0x%lx\n", label->size_bits);
-		dstA = builder->CreateTrunc(srcA, IntegerType::get(mod->getContext(), label->size_bits), buffer);
+		if (external_entry_point->labels[value_id_dst].tip2) {
+			size_bits = external_entry_point->tip2[external_entry_point->labels[value_id_dst].tip2].integer_size;
+		} else {
+			size_bits = 8;
+		}
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "label->tip2: size_bits = 0x%lx\n", size_bits);
+		dstA = builder->CreateTrunc(srcA, IntegerType::get(mod->getContext(), size_bits), buffer);
 		value[value_id_dst] = dstA;
 
 		dstA->print(OS1);
@@ -935,8 +969,13 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
 		label = &external_entry_point->labels[value_id_dst];
 		tmp = label_to_string(label, buffer, 1023);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "label->size_bits = 0x%lx\n", label->size_bits);
-		dstA = builder->CreateZExt(srcA, IntegerType::get(mod->getContext(), label->size_bits), buffer);
+		if (external_entry_point->labels[value_id_dst].tip2) {
+			size_bits = external_entry_point->tip2[external_entry_point->labels[value_id_dst].tip2].integer_size;
+		} else {
+			size_bits = 8;
+		}
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "label->tip2: size_bits = 0x%lx\n", size_bits);
+		dstA = builder->CreateZExt(srcA, IntegerType::get(mod->getContext(), size_bits), buffer);
 		value[value_id_dst] = dstA;
 		break;
 
@@ -998,15 +1037,22 @@ int LLVM_ir_export::fill_value(struct self_s *self, Value **value, int value_id,
 	struct external_entry_point_s *external_entry_point = &(self->external_entry_points[external_entry]);
 	struct label_s *label = &(external_entry_point->labels[value_id]);
 	int labels_size = external_entry_point->variable_id;
+	uint64_t size_bits;
+
+	if (external_entry_point->labels[value_id].tip2) {
+		size_bits = external_entry_point->tip2[external_entry_point->labels[value_id].tip2].integer_size;
+	} else {
+		size_bits = 8;
+	}
 
 	if ((label->scope == 3) &&
 		(label->type == 3)) {
-		if (label->size_bits == 32) {
+		if (size_bits == 32) {
 			value[value_id] = ConstantInt::get(Type::getInt32Ty(Context), label->value);
-		} else if (label->size_bits == 64) {
+		} else if (size_bits == 64) {
 			value[value_id] = ConstantInt::get(Type::getInt64Ty(Context), label->value);
 		} else {
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "ERROR: LLVM fill_value() failed with size_bits = 0x%lx\n", label->size_bits);
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "ERROR: LLVM fill_value() failed with size_bits = 0x%lx\n", size_bits);
 			return 1;
 		}
 		return 0;
@@ -1035,8 +1081,11 @@ int LLVM_ir_export::output(struct self_s *self)
 	int labels_size;
 	struct label_redirect_s *label_redirect;
 	struct label_s *label;
+	struct tip2_s *tip2;
 	char buffer[1024];
 	int index;
+	uint64_t lab_pointer;
+	uint64_t size_bits;
 	std::string Buf1;
 	raw_string_ostream OS1(Buf1);
 	StringRef PassPipeline;
@@ -1054,22 +1103,29 @@ int LLVM_ir_export::output(struct self_s *self)
 			labels = external_entry_points[n].labels;
 			labels_size = external_entry_points[n].variable_id;
 			label_redirect = external_entry_points[n].label_redirect;
+			tip2 = external_entry_points[n].tip2;
 			Module *mod = new Module("test_llvm_export", Context);
  			mod->setDataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64-S128");
 			mod->setTargetTriple("x86_64-pc-linux-gnu");
 
 			/* Add globals */
 			for (m = 0; m < labels_size; m++) {
-				label = &labels[label_redirect[m].redirect];
+				index = label_redirect[m].redirect;
+				label = &labels[index];
+				if (labels[index].tip2) {
+					size_bits = tip2[labels[index].tip2].integer_size;
+				} else {
+					size_bits = 8;
+				}
 				if ((3 == label->scope) && (2 == label->type)) {
-					debug_print(DEBUG_OUTPUT_LLVM, 1, "Label:0x%x: &data found. size=0x%lx\n", m, label->size_bits);
+					debug_print(DEBUG_OUTPUT_LLVM, 1, "Label:0x%x: &data found. size=0x%lx\n", m, size_bits);
 					GlobalVariable* gvar_int32_mem1 = new GlobalVariable(/*Module=*/*mod,
-						/*Type=*/IntegerType::get(mod->getContext(), label->size_bits),
+						/*Type=*/IntegerType::get(mod->getContext(), size_bits),
 						/*isConstant=*/false,
 						/*Linkage=*/GlobalValue::InternalLinkage,
 						/*Initializer=*/0, // has initializer, specified below
 						/*Name=*/"data0");
-					gvar_int32_mem1->setAlignment(label->size_bits >> 3);
+					gvar_int32_mem1->setAlignment(size_bits >> 3);
 					value[m] = gvar_int32_mem1;
 				}
 			}
@@ -1121,26 +1177,37 @@ int LLVM_ir_export::output(struct self_s *self)
 					if (external_entry_points[l].params_size > 0) {
 						char buffer[1024];
 						for (m = 0; m < external_entry_points[l].params_size; m++) {
-							int label_index;
+							uint64_t label_index;
 							tmp = external_entry_points[l].params[m];
 							label_index = external_entry_points[l].label_redirect[tmp].redirect;
 							//if (label_index == 3) {
 							///* EIP or param_stack0000 */
 							//}
-							if (labels_ext[label_index].lab_pointer > 0) {
-								int size = labels_ext[label_index].pointer_type_size_bits;
-								debug_print(DEBUG_OUTPUT_LLVM, 1, "Stack Param=0x%x: Pointer Label 0x%x, size_bits = 0x%x\n",
-									m, label_index, size);
-								if (size < 8) {
-									debug_print(DEBUG_OUTPUT_LLVM, 1, "FIXME: size too small\n");
-									size = 64;
-								}
-								declaration[l].FuncTy_0_args.push_back(PointerType::get(IntegerType::get(mod->getContext(), size), 0));
+							if (labels_ext[label_index].tip2) {
+								lab_pointer = external_entry_points[l].tip2[labels_ext[label_index].tip2].pointer;
 							} else {
-								int size = labels_ext[label_index].size_bits;
-								debug_print(DEBUG_OUTPUT_LLVM, 1, "Stack Param=0x%x: Label 0x%x, size_bits = 0x%x\n",
-									m, label_index, size);
-								declaration[l].FuncTy_0_args.push_back(IntegerType::get(mod->getContext(), size));
+								lab_pointer = 0;
+							}
+							if (lab_pointer > 0) {
+								//int size = labels_ext[label_index].pointer_type_size_bits;
+								// FIXME:  get the correct size here for the pointer
+								size_bits = 8;
+								debug_print(DEBUG_OUTPUT_LLVM, 1, "Stack Param=0x%x: Pointer Label 0x%lx, size_bits = 0x%lx\n",
+									m, label_index, size_bits);
+								if (size_bits < 8) {
+									debug_print(DEBUG_OUTPUT_LLVM, 1, "FIXME: size too small\n");
+									size_bits = 8;
+								}
+								declaration[l].FuncTy_0_args.push_back(PointerType::get(IntegerType::get(mod->getContext(), size_bits), 0));
+							} else {
+								if (labels_ext[label_index].tip2) {
+									size_bits = external_entry_points[l].tip2[labels_ext[label_index].tip2].integer_size;
+								} else {
+									size_bits = 8;
+								}
+								debug_print(DEBUG_OUTPUT_LLVM, 1, "Stack Param=0x%x: Label 0x%lx, size_bits = 0x%lx\n",
+									m, label_index, size_bits);
+								declaration[l].FuncTy_0_args.push_back(IntegerType::get(mod->getContext(), size_bits));
 							}
 						}
 					}
@@ -1163,11 +1230,22 @@ int LLVM_ir_export::output(struct self_s *self)
 							printf("Label 0x%x->0x%x:", tmp, label_index);
 							tmp = label_to_string(&external_entry_points[l].labels[label_index], buffer, 1023);
 							label = &external_entry_points[l].labels[label_index];
-							printf("%s/0x%lx,ps=0x%lx, lp=0x%lx\n",
+							if (label->tip2) {
+								size_bits = external_entry_points[l].tip2[label->tip2].integer_size;
+							} else {
+								size_bits = 8;
+							}
+							if (label->tip2) {
+								lab_pointer = external_entry_points[l].tip2[label->tip2].pointer;
+							} else {
+								lab_pointer = 0;
+							}
+							printf("%s/0x%lx,ps=0x%x, lp=0x%lx\n",
 								buffer,
-								label->size_bits,
-								label->pointer_type_size_bits,
-								label->lab_pointer);
+								size_bits,
+								/* FIXME: Get the pointer size right */
+								8,
+								lab_pointer);
 
 							if (n + 1 < external_entry_points[l].params_size) {
 								tmp = printf("\n");
@@ -1306,6 +1384,8 @@ int LLVM_ir_export::output(struct self_s *self)
 				if ((labels[m].scope == 1) && 
 					(labels[m].type == 2)) {
 					tmp = label_to_string(&labels[m], buffer, 1023);
+					/* FIXME: get these corrected */
+#if 0
 					if (labels[m].lab_pointer && labels[m].pointer_type == 2) {
 						size_bits = labels[m].pointer_type_size_bits;
 						debug_print(DEBUG_OUTPUT_LLVM, 1, "Creating alloca for ptr to int label 0x%x, size_bits = 0x%x\n", m, size_bits);
@@ -1319,6 +1399,22 @@ int LLVM_ir_export::output(struct self_s *self)
 						PointerType* PointerTy_1 = PointerType::get(IntegerType::get(mod->getContext(), size_bits), 0);
 						//AllocaInst* ptr_local = new AllocaInst(PointerTy_1, buffer, bb[1]);
 						AllocaInst* ptr_local = builder->CreateAlloca(PointerTy_1, nullptr, buffer);
+						ptr_local->setAlignment(size_bits >> 3);
+						value[m] = ptr_local;
+					}
+#endif
+					/* FIXME: temp all alloc are I8 */
+					if (tip2[m].pointer) {
+						size_bits = 8;
+						debug_print(DEBUG_OUTPUT_LLVM, 1, "Creating alloca for ptr to ptr label 0x%x, size_bits = 0x%x\n", m, size_bits);
+						PointerType* PointerTy_1 = PointerType::get(IntegerType::get(mod->getContext(), size_bits), 0);
+						AllocaInst* ptr_local = builder->CreateAlloca(PointerTy_1, nullptr, buffer);
+						ptr_local->setAlignment(size_bits >> 3);
+						value[m] = ptr_local;
+					} else {
+						size_bits = tip2[m].integer_size;
+						debug_print(DEBUG_OUTPUT_LLVM, 1, "Creating alloca for ptr to int label 0x%x, size_bits = 0x%x\n", m, size_bits);
+						AllocaInst* ptr_local = builder->CreateAlloca(IntegerType::get(mod->getContext(), size_bits), nullptr, buffer);
 						ptr_local->setAlignment(size_bits >> 3);
 						value[m] = ptr_local;
 					}
@@ -1348,10 +1444,16 @@ int LLVM_ir_export::output(struct self_s *self)
 						exit(1);
 					}
 					tmp = label_to_string(&labels[value_id], buffer, 1023);
-					if (labels[value_id].lab_pointer) {
-						size_bits = labels[m].pointer_type_size_bits;
+					if (labels[value_id].tip2) {
+						lab_pointer = external_entry_points[l].tip2[labels[value_id].tip2].pointer;
+					} else {
+						lab_pointer = 0;
+					}
+					if (lab_pointer) {
+						//size_bits = labels[m].pointer_type_size_bits;
 						/* FIXME:size 8 */
-						if (!size_bits) size_bits = 8;
+						//if (!size_bits) size_bits = 8;
+						size_bits = 8;
 						PointerType* PointerTy_1 = PointerType::get(IntegerType::get(mod->getContext(), size_bits), 0);
 						//phi_node = PHINode::Create(PointerTy_1,
 						//	nodes[node].phi[m].phi_node_size,
@@ -1361,7 +1463,11 @@ int LLVM_ir_export::output(struct self_s *self)
 							buffer);
 						value[value_id] = phi_node;
 					} else {
-						size_bits = labels[value_id].size_bits;
+						if (labels[value_id].tip2) {
+							size_bits = external_entry_points[l].tip2[labels[value_id].tip2].integer_size;
+						} else {
+							size_bits = 8;
+						}
 						debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM phi base size = 0x%x\n", size_bits);
 						//phi_node = PHINode::Create(IntegerType::get(mod->getContext(), size_bits),
 						//	nodes[node].phi[m].phi_node_size,
@@ -1397,9 +1503,9 @@ int LLVM_ir_export::output(struct self_s *self)
 				debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM: PHI PHASE 2: node=0x%x\n", node);
 
 				for (m = 0; m < nodes[node].phi_size; m++) {
-					int size_bits = labels[nodes[node].phi[m].value_id].size_bits;
+					//int size_bits = labels[nodes[node].phi[m].value_id].size_bits;
 					debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM:phi 0x%x\n", m);
-					debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM phi base size = 0x%x\n", size_bits);
+					//debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM phi base size = 0x%x\n", size_bits);
 					PHINode* phi_node = (PHINode*)value[nodes[node].phi[m].value_id];
 					/* l = 0 has already been handled */
 					for (l = 1; l < nodes[node].phi[m].phi_node_size; l++) {
@@ -1413,13 +1519,14 @@ int LLVM_ir_export::output(struct self_s *self)
 						}
 						redirect_value_id = label_redirect[value_id].redirect;
 						first_previous_node = nodes[node].phi[m].phi_node[l].first_prev_node;
-						debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM:phi 0x%x:0x%x FPN=0x%x, SN=0x%x, value_id=0x%x, redirected_value_id=0x%x, size=0x%lx\n",
+						debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM:phi 0x%x:0x%x FPN=0x%x, SN=0x%x, value_id=0x%x, redirected_value_id=0x%x\n",
 							m, l,
 							nodes[node].phi[m].phi_node[l].first_prev_node,
 							nodes[node].phi[m].phi_node[l].node,
 							value_id,
-							redirect_value_id,
-							labels[redirect_value_id].size_bits);
+							redirect_value_id);
+							/* FIXME: add this size */
+							//labels[redirect_value_id].size_bits);
 						if (value_id > 0) {
 							phi_node->addIncoming(value[redirect_value_id], bb[first_previous_node]);
 						}

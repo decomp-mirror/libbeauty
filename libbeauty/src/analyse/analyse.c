@@ -1645,7 +1645,7 @@ int log_to_label(int store, int indirect, uint64_t index, uint64_t size, uint64_
 				value_id,
 				indirect_offset_value);
 
-	label->tip_size = 0;
+	//label->tip_size = 0;
 	switch (store) {
 	case STORE_DIRECT:
 		/* FIXME: Handle the case of an immediate value being &data */
@@ -1659,21 +1659,21 @@ int log_to_label(int store, int indirect, uint64_t index, uint64_t size, uint64_
 		if (indirect == IND_MEM) {
 			label->scope = 3;
 			label->type = 1;
-			label->lab_pointer = 1;
+			//label->lab_pointer = 1;
 			label->value = index;
-			label->size_bits = size;
+			//label->size_bits = size;
 		} else if (relocated) {
 			label->scope = 3;
 			label->type = 2;
-			label->lab_pointer = 0;
+			//label->lab_pointer = 0;
 			label->value = index;
-			label->size_bits = size;
+			//label->size_bits = size;
 		} else {
 			label->scope = 3;
 			label->type = 3;
-			label->lab_pointer = 0;
+			//label->lab_pointer = 0;
 			label->value = index;
-			label->size_bits = size;
+			//label->size_bits = size;
 		}
 		break;
 	case STORE_REG:
@@ -1683,16 +1683,16 @@ int log_to_label(int store, int indirect, uint64_t index, uint64_t size, uint64_
 			if (IND_STACK == indirect) {
 				label->scope = 2;
 				label->type = 2;
-				label->lab_pointer = 0;
+				//label->lab_pointer = 0;
 				label->value = indirect_offset_value;
-				label->size_bits = size;
+				//label->size_bits = size;
 				debug_print(DEBUG_ANALYSE, 1, "PARAM_STACK^\n");
 			} else if (0 == indirect) {
 				label->scope = 2;
 				label->type = 1;
-				label->lab_pointer = 0;
+				//label->lab_pointer = 0;
 				label->value = index;
-				label->size_bits = size;
+				//label->size_bits = size;
 				debug_print(DEBUG_ANALYSE, 1, "PARAM_REG^\n");
 			} else {
 				debug_print(DEBUG_ANALYSE, 1, "JCD: UNKNOWN PARAMS\n");
@@ -1703,15 +1703,15 @@ int log_to_label(int store, int indirect, uint64_t index, uint64_t size, uint64_
 			if (IND_STACK == indirect) {
 				label->scope = 1;
 				label->type = 2;
-				label->lab_pointer = 0;
+				//label->lab_pointer = 0;
 				label->value = -indirect_offset_value;
-				label->size_bits = size;
+				//label->size_bits = size;
 			} else if (0 == indirect) {
 				label->scope = 1;
 				label->type = 1;
-				label->lab_pointer = 0;
+				//label->lab_pointer = 0;
 				label->value = value_id;
-				label->size_bits = size;
+				//label->size_bits = size;
 			} else {
 				debug_print(DEBUG_ANALYSE, 1, "JCD: UNKNOWN LOCAL\n");
 			}
@@ -1727,23 +1727,23 @@ int log_to_label(int store, int indirect, uint64_t index, uint64_t size, uint64_
 			/* FIXME: get the label->value right */
 			label->scope = 1;
 			label->type = 1;
-			label->lab_pointer = 1;
+			//label->lab_pointer = 1;
 			label->value = value_id;
-			label->size_bits = size;
+			//label->size_bits = size;
 			break;
 		case 4: /* Constant */
 			label->scope = 6;
 			label->type = 1;
-			label->lab_pointer = 0;
+			//label->lab_pointer = 0;
 			label->value = value_id;
-			label->size_bits = size;
+			//label->size_bits = size;
 			break;
 		default:
 			label->scope = 0;
 			label->type = value_scope;
-			label->lab_pointer = 0;
+			//label->lab_pointer = 0;
 			label->value = 0;
-			label->size_bits = 0;
+			//label->size_bits = 0;
 			debug_print(DEBUG_ANALYSE, 1, "unknown value scope: %04"PRIx64";\n", (value_scope));
 			return 1;
 			break;
@@ -1754,12 +1754,14 @@ int log_to_label(int store, int indirect, uint64_t index, uint64_t size, uint64_
 		return 1;
 		break;
 	}
-	debug_print(DEBUG_ANALYSE, 1, "label in log_to_label: scope=0x%"PRIx64", type=0x%"PRIx64", lab_pointer=0x%"PRIx64", lab_value = 0x%"PRIx64", lab_size_bits = 0x%"PRIx64"\n",
+	//debug_print(DEBUG_ANALYSE, 1, "label in log_to_label: scope=0x%"PRIx64", type=0x%"PRIx64", lab_pointer=0x%"PRIx64", lab_value = 0x%"PRIx64", lab_size_bits = 0x%"PRIx64"\n",
+	debug_print(DEBUG_ANALYSE, 1, "label in log_to_label: scope=0x%"PRIx64", type=0x%"PRIx64", lab_value = 0x%"PRIx64"\n",
 		label->scope,
 		label->type,
-		label->lab_pointer,
-		label->value,
-		label->size_bits);
+		//label->lab_pointer,
+		label->value
+		//label->size_bits);
+		);
 	return 0;
 }
 
@@ -1788,15 +1790,16 @@ int register_label(struct external_entry_point_s *entry_point, int inst, int ope
 
 	label_offset = label_redirect[value_id].redirect;
 	label = &labels[label_offset];
-	debug_print(DEBUG_ANALYSE, 1, "Registering label: value_id = 0x%"PRIx64", scope 0x%"PRIx64", type 0x%"PRIx64", value 0x%"PRIx64", size 0x%"PRIx64", pointer 0x%"PRIx64", signed 0x%"PRIx64", unsigned 0x%"PRIx64", label_offset 0x%x\n",
+	//debug_print(DEBUG_ANALYSE, 1, "Registering label: value_id = 0x%"PRIx64", scope 0x%"PRIx64", type 0x%"PRIx64", value 0x%"PRIx64", size 0x%"PRIx64", pointer 0x%"PRIx64", signed 0x%"PRIx64", unsigned 0x%"PRIx64", label_offset 0x%x\n",
+	debug_print(DEBUG_ANALYSE, 1, "Registering label: value_id = 0x%"PRIx64", scope 0x%"PRIx64", type 0x%"PRIx64", value 0x%"PRIx64", label_offset 0x%x\n",
 		value_id,
 		label->scope,
 		label->type,
 		label->value,
-		label->size_bits,
-		label->lab_pointer,
-		label->lab_signed,
-		label->lab_unsigned,
+		//label->size_bits,
+		//label->lab_pointer,
+		//label->lab_signed,
+		//label->lab_unsigned,
 		label_offset);
 	//int params_size;
 	//int *params;

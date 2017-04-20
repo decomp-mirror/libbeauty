@@ -165,6 +165,7 @@ struct ast_type_index_s {
 	uint64_t index; /* index into the specific object table */
 };
 
+#if 0
 struct tip_s {
 	int valid;  /* Is this entry valid? More use for when we need to delete individual entries */
 	int node;   /* The node that the inst or phi is contained in */
@@ -179,6 +180,48 @@ struct tip_s {
 	int lab_integer_first;
 	int lab_unsigned_integer_first;
 	int lab_signed_integer_first;
+};
+#endif
+
+struct rule_s {
+	int node;   /* The node that the inst or phi is contained in */
+	int inst_number; /* Number of the inst_log entry */
+	int phi_number; /* Number of the phi */
+	int operand; /* Which operand of the instruction? 1 = srcA/value1, 2 = srcB/value2, 3 = dstA/value3 */
+	/* If inst is ADD. Found from the inst_number */
+	/* If Pointer/Pointer 50/50 then this is undefined */
+	/* If Pointer/Int 50/50 then this is a pointer */
+	/* If Int/Pointer 50/50 then this is a pointer */
+	/* If Int/Int 50/50 then this is a Int */
+	/* If inst is SUB. Found from the inst_number */
+	/* If Pointer/Pointer 50/50 then this is Int */
+	/* If Pointer/Int 50/50 then this is a pointer */
+	/* If Int/Pointer 50/50 then this is undefined */
+	/* If Int/Int 50/50 then this is a Int */
+	int tipA_derived_from; /* Derived from srcA */
+	int tipB_derived_from; /* Derived from srcB */
+	int tip_derived_from_this; /* Derived from dstA */
+	int pointer;
+	/* If inst is LOAD/STORE. We might be a pointer to a different tip */
+	int pointer_to_tip2;
+	int size_bits;
+};
+
+struct tip2_s {
+	int valid;  /* Is this entry valid? More use for when we need to delete individual entries */
+	/* Type is associated with the value in a memory location */
+	/* FIXME: How to handle "unions" */
+	/* Special care must be taken with Params that are pointers. As types will be relative to the Param pointer start point */
+	/* Maybe an address space for each param that is a pointer? */
+	uint64_t associated_address_space; /* Param, Local alloc, memory, SSA register. (not CPU register) */
+	uint64_t associated_label;
+	uint64_t rule_size;
+	struct rule_s *rules; /* The list of rules */
+	uint64_t integer;   /* After processing all the rules, what type do we think this is? */
+	uint64_t integer_size;
+	uint64_t pointer;
+	uint64_t pointer_to_tip;
+	int probability; /* How sure are we about its type */
 };
 
 /* redirect is used for SSA correction, when one needs to rename a variable */
@@ -197,20 +240,19 @@ struct label_s {
 	/* value */
 	uint64_t value;
 	/* size in bits */
-	uint64_t size_bits;
+	//uint64_t size_bits;
 	/* pointer type: Unknown = 0, Pointer-to-Pointer = 1, Pointer-to-int = 2 */
-	uint64_t pointer_type;
+	//uint64_t pointer_type;
 	/* pointer type size in bits */
-	uint64_t pointer_type_size_bits;
+	//uint64_t pointer_type_size_bits;
 	/* is it a pointer */
-	uint64_t lab_pointer;
+	//uint64_t lab_pointer;
 	/* is it a signed */
-	uint64_t lab_signed;
+	//uint64_t lab_signed;
 	/* is it a unsigned */
-	uint64_t lab_unsigned;
+	//uint64_t lab_unsigned;
 	/* Type Inference Propagation */
-	int tip_size;
-	struct tip_s *tip;
+	uint64_t tip2;
 	/* human readable name */
 	char *name;
 };
@@ -296,6 +338,7 @@ struct external_entry_point_s {
 	/* FIXME: add function return type and param types */
 	struct label_redirect_s *label_redirect;
 	struct label_s *labels;
+	struct tip2_s *tip2;
 	int variable_id;
 	int *search_back_seen;
 };
