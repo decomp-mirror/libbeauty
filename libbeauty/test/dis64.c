@@ -2718,6 +2718,188 @@ int tip_result_print(struct self_s *self, int entry_point)
 	return 0;
 }
 
+int insert_nop_before(struct self_s *self, int inst, int *new_inst);
+int insert_nop_after(struct self_s *self, int inst, int *new_inst);
+
+/* This searches the tip list and discovers:
+   If a label is used with different bit widths by different instructions, add a zext
+   so that the label can be split into two, and thus not consist of multi-bit-size instructions.
+ */
+int tip_fixup1(struct self_s *self, int entry_point, int tip_index, int rule_index, int old_size, int new_size)
+{
+	struct external_entry_point_s *external_entry_point = &(self->external_entry_points[entry_point]);
+	struct control_flow_node_s *nodes = external_entry_point->nodes;
+	struct inst_log_entry_s *inst_log_entry = self->inst_log_entry;
+	struct label_redirect_s *label_redirect = external_entry_point->label_redirect;
+	struct label_s *labels = external_entry_point->labels;
+	struct inst_log_entry_s *inst_log1;
+	struct instruction_s *instruction;
+	struct label_s *label;
+	struct label_s label_local;
+	struct tip2_s *tip = external_entry_point->tip2;
+	struct tip2_s *tip_this;
+	struct rule_s *rule_this;
+	int n;
+	int tmp;
+	int variable_id;
+	int variable_id_add_tip;
+	int node;
+
+	tip_this = &(tip[tip_index]);
+	rule_this = &(tip_this->rules[rule_index]);
+//	label = &labels[label_redirect[label_index].redirect];
+	int inst_new;
+	int inst_modified;
+	int operand_modified;
+
+	inst_modified = rule_this->inst_number;
+	operand_modified = rule_this->operand;
+//				node = label->tip[n].node;
+	tmp = insert_nop_before(self, inst_modified, &inst_new);
+#if 0
+				/* FIXME: Not support LOAD, STORE or MOV inst yet. */
+				if (inst_log_entry[inst_modified].instruction.opcode == LOAD) {
+					debug_print(DEBUG_ANALYSE_TIP, 1, "ZEXT/TRUNC before unhandled LOAD instruction\n");
+					exit(1);
+				}
+				if (inst_log_entry[inst_modified].instruction.opcode == STORE) {
+					debug_print(DEBUG_ANALYSE_TIP, 1, "ZEXT/TRUNC before unhandled STORE instruction\n");
+					exit(1);
+				}
+				if (inst_log_entry[inst_modified].instruction.opcode == MOV) {
+					debug_print(DEBUG_ANALYSE_TIP, 1, "ZEXT/TRUNC before unhandled MOV instruction\n");
+					/* Need to first separate the label merge that the MOV instruction did,
+					   Add the ZEXT/TRUNC.
+					   Re-implement the new label merge that rhe MOV instruction should do.
+					   NOTE: Maybe move the label merge to later?
+					 */
+					//exit(1);
+				}
+#endif
+	if (old_size > new_size) {
+		inst_log_entry[inst_new].instruction.opcode = TRUNC;
+	} else {
+		inst_log_entry[inst_new].instruction.opcode = ZEXT;
+	}
+	inst_log_entry[inst_new].instruction.flags = 0;
+	debug_print(DEBUG_ANALYSE_TIP, 1, "label needed zext/trunc: size=0x%x, inst_new=0x%x. tip:0x%x node = 0x%x, inst = 0x%x, phi = 0x%x, operand = 0x%x, pointer = 0x%x, size_bits = 0x%x\n",
+		old_size,
+		inst_new,
+		tip_index,
+		rule_this->node,
+		rule_this->inst_number,
+		rule_this->phi_number,
+		rule_this->operand,
+		rule_this->pointer,
+		rule_this->size_bits);
+	tmp = dis64_copy_operand(self, inst_modified, operand_modified, inst_new, 1, old_size);
+	tmp = dis64_copy_operand(self, inst_modified, operand_modified, inst_new, 3, new_size);
+	inst_log_entry[inst_new].instruction.srcA.value_size = old_size;
+	inst_log_entry[inst_new].instruction.dstA.index = REG_TMP3;
+	inst_log_entry[inst_new].value3.value_id =
+		external_entry_point->variable_id;
+	if (operand_modified == 1) {
+		inst_log_entry[inst_modified].instruction.srcA.index = REG_TMP3;
+	} else if (operand_modified == 2) {
+		inst_log_entry[inst_modified].instruction.srcB.index = REG_TMP3;
+	} else if (operand_modified == 3) {
+		inst_log_entry[inst_modified].instruction.dstA.index = REG_TMP3;
+	} else {
+		printf("operand out of range.\n");
+		exit(1);
+	}
+	inst_log1 =  &inst_log_entry[inst_new];
+	tmp  = assign_id_label_dst(self, entry_point, inst_new, inst_log1, &label_local);
+	variable_id = external_entry_point->variable_id;
+	variable_id_add_tip = variable_id;
+	if (!tmp) {
+		debug_print(DEBUG_ANALYSE_TIP, 1, "variable_id = %x\n", variable_id);
+		if (variable_id >= 10000) {
+			printf("ERROR: variable_id overrun 10000 limit. Trying to write to %d\n", variable_id);
+			exit(1);
+		}
+		label_redirect[variable_id].redirect = variable_id;
+		labels[variable_id].scope = label_local.scope;
+		labels[variable_id].type = label_local.type;
+		labels[variable_id].value = label_local.value;
+		//labels[variable_id].size_bits = label_local.size_bits;
+		//labels[variable_id].lab_pointer += label_local.lab_pointer;
+		variable_id++;
+		external_entry_point->variable_id = variable_id;
+		debug_print(DEBUG_ANALYSE_TIP, 1, "variable_id increased to = %x\n", variable_id);
+	} else {
+		printf("ERROR: assign_id_label_dst() failed. entry_point = 0x%x, inst = 0x%x\n",
+			entry_point, inst_new);
+		exit(1);
+	}
+	if (operand_modified == 1) {
+		inst_log_entry[inst_modified].value1.value_id = variable_id_add_tip;
+	} else if (operand_modified == 2) {
+		inst_log_entry[inst_modified].value2.value_id = variable_id_add_tip;
+	} else if (operand_modified == 3) {
+		inst_log_entry[inst_modified].value3.value_id = variable_id_add_tip;
+	} else {
+		printf("operand out of range.\n");
+		exit(1);
+	}
+	/* Now update the tip table with the changes */
+	/* Update the tip to point to the new inst.
+	   Update the label on the new instruction to include a tip for the
+	   new inst, the REG_TMP3 and its label.
+	*/
+//int rule_add(struct self_s *self, int entry_point, int node, int inst, int phi, int operand,
+//	int label_index, int tipA_derived_from, int tipB_derived_from, int tip_derived_from_this, int pointer, int pointer_to_tip2, int size_bits)
+	tmp = rule_add(self, entry_point, node, inst_new, 0, 2, variable_id_add_tip, 0, 0, tip_index, 0, 0, new_size);
+	tmp = rule_add(self, entry_point, node, inst_modified, 0, operand_modified, variable_id_add_tip, 0, 0, tip_index, 0, 0, new_size);
+	rule_this->inst_number = inst_new;
+	rule_this->operand = 1;
+	rule_this->size_bits = old_size;
+	return 0;
+}
+
+int tip_fixup_bit_width(struct self_s *self, int entry_point) 
+{
+	struct external_entry_point_s *external_entry_point = &(self->external_entry_points[entry_point]);
+	struct control_flow_node_s *nodes = external_entry_point->nodes;
+	struct inst_log_entry_s *inst_log_entry = self->inst_log_entry;
+	struct label_redirect_s *label_redirect = external_entry_point->label_redirect;
+	struct label_s *labels = external_entry_point->labels;
+	struct tip2_s *tip = external_entry_point->tip2;
+	struct tip2_s *tip_this;
+	struct rule_s *rule_this;
+	struct inst_log_entry_s *inst_log1;
+	struct instruction_s *instruction;
+	int l,m;
+	int size;
+
+	debug_print(DEBUG_ANALYSE_TIP, 1, "entered\n");
+
+	for(l = 0; l < 1000; l++) {
+		tip_this = &(tip[l]);
+		size = 0;
+		if (tip_this->valid == 0) {
+			//debug_print(DEBUG_ANALYSE_TIP, 1, "0x%x empty\n", l);
+			continue;
+		}
+		for(m = 0; m < tip[l].rule_size; m++) {
+			rule_this = &(tip_this->rules[m]);
+			inst_log1 =  &inst_log_entry[rule_this->inst_number];
+			instruction =  &inst_log1->instruction;
+			if (!rule_this->pointer) {
+				if (rule_this->size_bits) {
+					debug_print(DEBUG_ANALYSE_TIP, 1, "0x%x:0x%x size = 0x%x\n", l, m, rule_this->size_bits);
+					if ((size) && (rule_this->size_bits != size)) {
+						printf("integer size varying. Need to add TRUNC or ZEXT or SEX in.\n");
+						tip_fixup1(self, entry_point, l, m, size, rule_this->size_bits);
+					}
+					size = rule_this->size_bits;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
 int tip_rules_process(struct self_s *self, int entry_point) 
 {
 	struct external_entry_point_s *external_entry_point = &(self->external_entry_points[entry_point]);
@@ -3018,9 +3200,6 @@ int dis64_copy_operand(struct self_s *self, int inst_from, int operand_from, int
 
 	return 0;
 }
-
-int insert_nop_before(struct self_s *self, int inst, int *new_inst);
-int insert_nop_after(struct self_s *self, int inst, int *new_inst);
 
 #if 0
 /* This searches the tip list and discovers:
@@ -5765,6 +5944,16 @@ int main(int argc, char *argv[])
 			rule_print(self, l);
 		}
 	}
+	/* Fixup TIP with zext and trunk when integer bit widths vary for a single label. */
+	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+		if (external_entry_points[l].valid && external_entry_points[l].type == 1) {
+			tip_fixup_bit_width(self, l);
+		}
+	}
+
+	/* Print instuctions showing any new ones inserted */
+	//print_dis_instructions(self);
+
 	/* Process TIP rules */
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 		if (external_entry_points[l].valid && external_entry_points[l].type == 1) {
