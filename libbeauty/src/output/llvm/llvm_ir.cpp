@@ -1104,7 +1104,7 @@ int LLVM_ir_export::output(struct self_s *self)
 	struct label_s *label;
 	struct tip2_s *tip2;
 	char buffer[1024];
-	int index;
+	uint64_t index;
 	uint64_t lab_pointer;
 	uint64_t size_bits;
 	std::string Buf1;
@@ -1276,15 +1276,28 @@ int LLVM_ir_export::output(struct self_s *self)
 					}
                                 }
                         }
-
+			/* FIXME:  Can this loop be pulled out of the "n" loop ? */
 			for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 				if ((external_entry_points[l].valid != 0) &&
 					(external_entry_points[l].type == 1)) {
+					FunctionType *FT;
 					/* FIXME: Need to be able to adjust the return type. */
-					FunctionType *FT =
-						FunctionType::get(Type::getInt64Ty(Context),
-							declaration[l].FuncTy_0_args,
-							false); /*not vararg*/
+					index = external_entry_points[l].function_return_type;
+					lab_pointer = external_entry_points[l].tip2[index].pointer;
+					size_bits = external_entry_points[l].tip2[index].integer_size;
+					if (lab_pointer) {
+						/* Pointer type */
+						PointerType* PointerTy_1 = PointerType::get(IntegerType::get(mod->getContext(), 64), 0);
+						FT = FunctionType::get(PointerTy_1,
+								declaration[l].FuncTy_0_args,
+								false); /*not vararg*/
+					} else {
+						/* Integer type */
+						IntegerType* IntTy_1 = IntegerType::get(mod->getContext(), size_bits);
+						FT = FunctionType::get(IntTy_1,
+								declaration[l].FuncTy_0_args,
+								false); /*not vararg*/
+					}
 					declaration[l].FT = FT;
 				}
 			}

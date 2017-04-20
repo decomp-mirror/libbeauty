@@ -304,8 +304,12 @@ struct external_entry_point_s {
 	uint64_t inst_log_end; /* Where the function ends in inst_log */
 	struct process_state_s process_state;
 	char *name;
+	/* Index to the label that is returned.
+	 * Used to set up the function prototype
+	 */
+	uint64_t function_return_type;
 	/* FIXME: Handle variable amount of params */
-	/* param types are stored in the label */
+	/* param types are stored in the label tip2 */
 	int params_size;
 	int *params;
 	/* params_reg_ordered_size holds the number of register params in reg_params_order[] order */ 

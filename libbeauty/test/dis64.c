@@ -2636,7 +2636,6 @@ int rule_add(struct self_s *self, int entry_point, int node, int inst, int phi, 
 
 	} else {
 	}
-exit1:
 	return 0;
 }
 
@@ -3259,6 +3258,53 @@ int redirect_mov_reg_reg_labels(struct self_s *self, struct external_entry_point
 	} while (!found);
 
 	return 0;
+}
+
+uint64_t function_find_return_label(struct self_s *self, struct external_entry_point_s *external_entry_point, int node)
+{
+	struct control_flow_node_s *nodes = external_entry_point->nodes;
+	struct inst_log_entry_s *inst_log_entry = self->inst_log_entry;
+	struct label_redirect_s *label_redirect = external_entry_point->label_redirect;
+	struct label_s *labels = external_entry_point->labels;
+	int m;
+	struct inst_log_entry_s *inst_log1;
+	struct instruction_s *instruction;
+	int variable_id = external_entry_point->variable_id;
+	uint64_t stack_address;
+	struct memory_s *memory;
+	int value_id;
+	int value_id3;
+	uint64_t index = 0;
+	int inst;
+	struct label_s label;
+	int found = 0;
+	debug_print(DEBUG_MAIN, 1, " node 0x%x\n", node);
+
+	inst = nodes[node].inst_start;
+	do {
+		inst_log1 =  &inst_log_entry[inst];
+		instruction =  &inst_log1->instruction;
+		switch (instruction->opcode) {
+		case RET:
+			value_id = inst_log1->value1.value_id;
+			index = label_redirect[value_id].redirect;
+			found = 1;
+			break;
+		default:
+			break;
+		}
+		if (inst == nodes[node].inst_end) {
+			found = 1;
+		}
+		if (inst_log1->next_size > 0) {
+			inst = inst_log1->next[0];
+		} else {
+			/* Exit here */
+			found = 1;
+		}
+	} while (!found);
+
+	return index;
 }
 
 int change_add_to_gep1(struct self_s *self, struct external_entry_point_s *external_entry_point, int node)
@@ -5793,6 +5839,24 @@ int main(int argc, char *argv[])
 		}
 	}
 #endif
+	/* Discover the function return type */
+	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+		if (external_entry_points[l].valid && external_entry_points[l].type == 1) {
+			for(n = 1; n < external_entry_points[l].nodes_size; n++) {
+				uint64_t label_index = 0;
+				if (!external_entry_points[l].nodes[n].valid) {
+					/* Only output nodes that are valid */
+					continue;
+				}
+				label_index = function_find_return_label(self, &external_entry_points[l], n);
+				if (label_index) {
+					/* Found the return */
+					external_entry_points[l].function_return_type = label_index;
+					break;
+				}
+			}
+		}
+	}
 
 #if 0
 	/* Discover pointer types */
