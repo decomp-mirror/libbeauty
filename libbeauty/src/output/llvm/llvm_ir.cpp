@@ -110,13 +110,16 @@ int sprint_srcA_srcB(raw_string_ostream &OS1, Value *srcA, Value *srcB)
 		debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: srcB NULL\n");
 		exit(1);
 	}
+	OS1 << "srcA: ";
 	srcA->print(OS1);
-	OS1 << ", ";
+	OS1 << "\n";
+	OS1 << "srcB: ";
 	srcB->print(OS1);
-	OS1 << ", ";
+	OS1 << "\n";
 	OS1 << "srcA_type = ";
 	srcA->getType()->print(OS1);
-	OS1 << ", srcB_type = ";
+	OS1 << "\n";
+	OS1 << "srcB_type = ";
 	srcB->getType()->print(OS1);
 	OS1.flush();
 	return 0;
@@ -140,6 +143,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 	int value_id;
 	int value_id_dst;
 	struct label_s *label;
+	int param_stack = 0;
 	int tmp;
 	char buffer[1024];
 	int node_true;
@@ -611,6 +615,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		break;
 	case 0x25:  // LOAD
 		LoadInst* dstA_load;
+		param_stack = 0;
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: OPCODE = 0x%x:LOAD\n", inst, inst_log1->instruction.opcode);
 //		if (inst_log1->instruction.dstA.index == 0x28) {
 //			/* Skip the 0x28 reg as it is the SP reg */
@@ -618,7 +623,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 //		}
 		switch (inst_log1->instruction.srcA.indirect) {
 		case 1:  // Memory
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx, value_id2 = 0x%lx->0x%lx value_id3 = 0x%lx->0x%lx\n",
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "LOAD Memory: value_id1 = 0x%lx->0x%lx, value_id2 = 0x%lx->0x%lx value_id3 = 0x%lx->0x%lx\n",
 				inst_log1->value1.value_id,
 				external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
 				inst_log1->value2.value_id,
@@ -674,13 +679,14 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			}
 			break;
 		case 2:  // Stack
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx, value_id2 = 0x%lx->0x%lx value_id3 = 0x%lx->0x%lx\n",
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "LOAD Stack: value_id1 = 0x%lx->0x%lx, value_id2 = 0x%lx->0x%lx value_id3 = 0x%lx->0x%lx\n",
 				inst_log1->value1.value_id,
 				external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
 				inst_log1->value2.value_id,
 				external_entry_point->label_redirect[inst_log1->value2.value_id].redirect,
 				inst_log1->value3.value_id,
 				external_entry_point->label_redirect[inst_log1->value3.value_id].redirect);
+
 			value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
 			if (!value[value_id]) {
 				tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
@@ -690,6 +696,12 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 				}
 			}
 			srcA = value[value_id];
+			label = &(external_entry_point->labels[value_id]);
+			if ((2 == label->scope) &&
+				(2 == label->type)) {
+				param_stack = 1;
+			}
+
 			value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].redirect;
 			if (!value[value_id]) {
 				tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
@@ -699,9 +711,10 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 				}
 			}
 			srcB = value[value_id];
+
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "srcA = %p, srcB = %p\n", srcA, srcB);
 			sprint_srcA_srcB(OS1, srcA, srcB);
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "SRC:\n%s\n", Buf1.c_str());
 			Buf1.clear();
 
 			value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
@@ -712,11 +725,18 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			} else {
 				size_bits = 8;
 			}
-			dstA = builder->CreateAlignedLoad(srcA, size_bits >> 3, buffer);
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "DST: size_bits = 0x%lx\n", size_bits);
+
+			if (param_stack) {
+				// FIXME: is srcA is a param_stack... make this a NOP 
+				dstA = srcA;
+			} else {
+				dstA = builder->CreateAlignedLoad(srcA, size_bits >> 3, buffer);
+			}
 
 			dstA->print(OS1);
 			OS1.flush();
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "DST: %s\n", Buf1.c_str());
 			Buf1.clear();
 
 			if (value_id_dst) {
@@ -828,6 +848,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		// FIXME: JCD: Need to cast the stored to be the type of the srcA
 		//dstA = new StoreInst(srcA, srcB, false, bb[node]);
 		dstA = builder->CreateStore(srcA, srcB_store);
+		OS1 << "dstA: ";
 		dstA->print(OS1);
 		OS1 << "\n";
 		OS1.flush();
@@ -1259,8 +1280,9 @@ int LLVM_ir_export::output(struct self_s *self)
 			for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 				if ((external_entry_points[l].valid != 0) &&
 					(external_entry_points[l].type == 1)) {
+					/* FIXME: Need to be able to adjust the return type. */
 					FunctionType *FT =
-						FunctionType::get(Type::getInt32Ty(Context),
+						FunctionType::get(Type::getInt64Ty(Context),
 							declaration[l].FuncTy_0_args,
 							false); /*not vararg*/
 					declaration[l].FT = FT;

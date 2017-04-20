@@ -169,7 +169,7 @@ FuncTy_0_args.push_back(IntegerType::get(module->getContext(), 32)); // Second a
  Value* ptr_5 = builder->CreateAlignedLoad(gvar_ptr_mem, 8, "ptr_5");
 //  ptr_5->setAlignment(8);
  Value* ptr_6 = builder->CreateGEP(ptr_1, ConstantInt::get(C, APInt(32, 2)), "ptr_6");
- Value* ptr_7 = builder->CreateAlignedLoad(ptr_6, 8, "ptr_7");
+ Value* int_7 = builder->CreateAlignedLoad(ptr_6, 8, "int_7");
 
 //  GetElementPtrInst* ptr_6 = GetElementPtrInst::Create(IntegerType::get(mod->getContext(), 32), ptr_5, {
 //   const_int64_3
