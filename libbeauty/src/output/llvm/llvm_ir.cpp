@@ -1285,6 +1285,8 @@ int LLVM_ir_export::output(struct self_s *self)
 					index = external_entry_points[l].function_return_type;
 					lab_pointer = external_entry_points[l].tip2[index].pointer;
 					size_bits = external_entry_points[l].tip2[index].integer_size;
+					debug_print(DEBUG_OUTPUT_LLVM, 1, "FT return type: index=0x%lx, size_bits=0x%lx\n",
+						       index, size_bits);
 					if (lab_pointer) {
 						/* Pointer type */
 						PointerType* PointerTy_1 = PointerType::get(IntegerType::get(mod->getContext(), 64), 0);

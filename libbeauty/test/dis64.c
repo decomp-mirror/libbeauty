@@ -2754,6 +2754,10 @@ int tip_rules_process(struct self_s *self, int entry_point)
 			} else {
 				if (rule_this->size_bits) {
 					debug_print(DEBUG_ANALYSE_TIP, 1, "0x%x:0x%x size = 0x%x\n", l, m, rule_this->size_bits);
+					if ((size) && (rule_this->size_bits != size)) {
+						printf("integer size varying. Need to add TRUNC or ZEXT or SEX in.\n");
+						exit(1);
+					}
 					size = rule_this->size_bits;
 				}
 			}
@@ -5851,6 +5855,7 @@ int main(int argc, char *argv[])
 				label_index = function_find_return_label(self, &external_entry_points[l], n);
 				if (label_index) {
 					/* Found the return */
+					debug_print(DEBUG_MAIN, 1, "function_return: 0x%lx\n", label_index);
 					external_entry_points[l].function_return_type = label_index;
 					break;
 				}
