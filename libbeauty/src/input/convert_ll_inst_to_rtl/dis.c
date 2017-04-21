@@ -276,6 +276,7 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 			exit(1);
 		}
 		if (srcB_operand->kind == KIND_SCALE) {
+			debug_print(DEBUG_INPUT_DIS, 1, "srcB KIND_SCALE\n");
 			scale_operand = srcB_operand;
 			// Most likely opcode LEA. Deal with scale, put result in REG_TMP1
 			if (scale_operand->operand[2].value == 0) {
@@ -293,6 +294,7 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 				instruction->flags = 0;
 				convert_operand(self, ll_inst->address, scale_operand, 2, &(instruction->srcA));
 				convert_operand(self, ll_inst->address, scale_operand, 1, &(instruction->srcB));
+				instruction->srcB.value_size = instruction->srcA.value_size;
 				convert_operand(self, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
 				dis_instructions->instruction_number++;
 				previous_operand = &operand_reg_tmp1;
@@ -341,7 +343,7 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 				dis_instructions->instruction_number++;
 				previous_operand = &operand_reg_tmp1;
 				srcA_operand = &operand_reg_tmp1;
-			} else {
+			} else if (scale_operand->operand[0].value > 0) {
 				instruction = &dis_instructions->instruction[dis_instructions->instruction_number];
 				if (imm_sign) {	
 					instruction->opcode = SUB;
@@ -354,6 +356,8 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 				convert_operand(self, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
 				dis_instructions->instruction_number++;
 				previous_operand = &operand_reg_tmp1;
+				srcA_operand = &operand_reg_tmp1;
+			} else {
 				srcA_operand = &operand_reg_tmp1;
 			}
 			final_opcode = MOV;
@@ -567,9 +571,11 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 	struct instruction_s *instruction;
 	struct reloc_table_s *reloc_table_entry;
 
+	debug_print(DEBUG_INPUT_DIS, 1, "start\n");
 	dis_instructions->instruction_number = 0;
 	dis_instructions->bytes_used = ll_inst->octets;
 
+	debug_print(DEBUG_INPUT_DIS, 1, "ll_inst->opcode = 0x%x\n", ll_inst->opcode);
 	switch (ll_inst->opcode) {
 	case NOP:
 		/* Do nothing */

@@ -1538,14 +1538,13 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 	for (n = 0; n < num_operands; n++) {
 		Operand = &Inst->getOperand(n);
 		/* FIXME Operand */
-		debug_print(DEBUG_INPUT_DIS, 1, "Operand = 0x%" PRIx64 "\n", Operand);
+		debug_print(DEBUG_INPUT_DIS, 1, "Operand = 0x%p\n", Operand);
 		debug_print(DEBUG_INPUT_DIS, 1, "Valid = %d, isReg = %d, isImm = %d, isFPImm = %d, isExpr = %d, isInst = %d\n",
 			Operand->isValid(), Operand->isReg(), Operand->isImm(), Operand->isFPImm(), Operand->isExpr(), Operand->isInst());
 		//outs() << format("Operand.Kind = 0x%x\n", Operand->Kind);
 		if (Operand->isImm()) {
-			debug_print(DEBUG_INPUT_DIS, 1, "Imm = 0x%lx, ", Operand->getImm());
 			int size_of_imm = X86II::getSizeOfImm(TSFlags);
-			debug_print(DEBUG_INPUT_DIS, 1, "sizeof(Imm) = 0x%xi\n", size_of_imm);
+			debug_print(DEBUG_INPUT_DIS, 1, "Imm = 0x%lx, TSFlags = 0x%x, ImmMask = 0x%lx, sizeof(Imm) = 0x%x\n", Operand->getImm(), TSFlags, X86II::ImmMask, size_of_imm);
 		}
 		if (Operand->isReg()) {
 			uint32_t reg;
@@ -1581,7 +1580,7 @@ int llvm::DecodeAsmX86_64::PrintOperand(struct operand_low_level_s *operand) {
 			operand->operand[1].value,
 			operand->operand[1].size,
 			operand->operand[1].offset);
-		debug_print(DEBUG_INPUT_DIS, 1, "SCALE_INDEX_REG:0x%lx:size = 0lx%x\n", operand->operand[2].value, operand->operand[2].size);
+		debug_print(DEBUG_INPUT_DIS, 1, "SCALE_INDEX_REG:0x%lx:size = 0x%x\n", operand->operand[2].value, operand->operand[2].size);
 		debug_print(DEBUG_INPUT_DIS, 1, "SCALE_IMM_OFFSET:0x%lx:symbol size = 0x%x, symbol offset = 0x%lx\n",
 			operand->operand[3].value,
 			operand->operand[3].size,
