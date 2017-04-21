@@ -153,7 +153,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 	std::string Buf1;
 	raw_string_ostream OS1(Buf1);
 
-	IRBuilder<> *builder = declaration[0].builder;
+	IRBuilder<> *builder = declaration[external_entry].builder;
+	builder->SetInsertPoint(bb[node]);
 
 	switch (inst_log1->instruction.opcode) {
 	case 1:  // MOV
@@ -1025,6 +1026,8 @@ int LLVM_ir_export::add_node_instructions(struct self_s *self, Module *mod, stru
 	int block_end;
 
 	debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM Node 0x%x\n", node);
+	IRBuilder<> *builder = declaration[external_entry].builder;
+	builder->SetInsertPoint(bb[node]);
 	inst = nodes[node].inst_start;
 	inst_next = inst;
 
@@ -1048,7 +1051,8 @@ int LLVM_ir_export::add_node_instructions(struct self_s *self, Module *mod, stru
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM node end: node = 0x%x, inst_end = 0x%x, next_size = 0x%x\n",
 			node, nodes[node].inst_end, nodes[node].next_size);
 		node_true = nodes[node].link_next[0].node;
-		BranchInst::Create(bb[node_true], bb[node]);
+		//BranchInst::Create(bb[node_true], bb[node]);
+		builder->CreateBr(bb[node_true]);
 	}
 	return 0;
 }
@@ -1448,6 +1452,7 @@ int LLVM_ir_export::output(struct self_s *self)
 			label_redirect = external_entry_points[l].label_redirect;
 			tip2 = external_entry_points[l].tip2;
 			IRBuilder<> *builder = declaration[l].builder;
+			builder->SetInsertPoint(bb[1]);
 
 			/* Create the AllocaInst's */
 			/* labels[0] should be empty and is a invalid value to errors can be caught. */
@@ -1610,7 +1615,8 @@ int LLVM_ir_export::output(struct self_s *self)
 	}
 #endif
 	/* FIXME: Work with more than one function */
-	function_name = external_entry_points[1].name;
+	function_name = external_entry_points[0].name;
+	debug_print(DEBUG_OUTPUT_LLVM, 1, "output_filename: %s\n", function_name);
 	snprintf(output_filename, 500, "./llvm/%s.bc", function_name);
 	std::string ErrorInfo;
 	std::error_code error_code;
