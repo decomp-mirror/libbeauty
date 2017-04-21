@@ -148,8 +148,13 @@ then
 else
 	echo "FAILED"
 fi
-#echo -n test20:
-#if ../../../test/dis64 test20.o 2>&1 | grep -q "END - FINISHED PROCESSING"
+echo -n test20:
+if ../../../test/dis64 test20.o 2>&1 | grep -q "END - FINISHED PROCESSING"
+then
+	echo "PASSED"
+else
+	echo "FAILED"
+fi
 echo -n test21:
 if ../../../test/dis64 test21.o 2>&1 | grep -q "END - FINISHED PROCESSING"
 then
