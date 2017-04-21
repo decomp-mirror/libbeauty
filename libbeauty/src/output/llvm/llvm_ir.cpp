@@ -1091,7 +1091,6 @@ int LLVM_ir_export::output(struct self_s *self)
 {
 	const char *function_name = "test123";
 	char output_filename[512];
-	int n;
 	int m;
 	int l;
 	int tmp;
@@ -1110,24 +1109,38 @@ int LLVM_ir_export::output(struct self_s *self)
 	std::string Buf1;
 	raw_string_ostream OS1(Buf1);
 	StringRef PassPipeline;
-	
+
+	debug_print(DEBUG_OUTPUT_LLVM, 1, "sizeof(void**) = 0x%lx, sizeof(Value**) = 0x%lx\n", sizeof(void**), sizeof(Value**));
 	struct external_entry_point_s *external_entry_points = self->external_entry_points;
 	struct declaration_s *declaration = static_cast <struct declaration_s *> (calloc(EXTERNAL_ENTRY_POINTS_MAX, sizeof (struct declaration_s)));
 
-	for (n = 0; n < EXTERNAL_ENTRY_POINTS_MAX; n++) {
-		if ((external_entry_points[n].valid != 0) &&
-			(external_entry_points[n].type == 1) && 
-			(external_entry_points[n].nodes_size)) {
-			Value** value = (Value**) calloc(external_entry_points[n].variable_id, sizeof(Value*));
-			nodes = external_entry_points[n].nodes;
-			nodes_size = external_entry_points[n].nodes_size;
-			labels = external_entry_points[n].labels;
-			labels_size = external_entry_points[n].variable_id;
-			label_redirect = external_entry_points[n].label_redirect;
-			tip2 = external_entry_points[n].tip2;
-			Module *mod = new Module("test_llvm_export", Context);
- 			mod->setDataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64-S128");
-			mod->setTargetTriple("x86_64-pc-linux-gnu");
+	Module *mod = new Module("test_llvm_export", Context);
+	mod->setDataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64-S128");
+	mod->setTargetTriple("x86_64-pc-linux-gnu");
+
+	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+		if ((external_entry_points[l].valid != 0) &&
+			(external_entry_points[l].type == 1) &&
+			(external_entry_points[l].nodes_size)) {
+			nodes_size = external_entry_points[l].nodes_size;
+			Value **value = (Value**) calloc(external_entry_points[l].variable_id, sizeof(Value*));
+			external_entry_points[l].llvm_value = (void**)value;
+			BasicBlock **bb = (BasicBlock **)calloc(nodes_size + 1, sizeof (BasicBlock *));
+			external_entry_points[l].llvm_basic_blocks = (void**)bb;
+		}
+	}
+
+	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+		if ((external_entry_points[l].valid != 0) &&
+			(external_entry_points[l].type == 1) && 
+			(external_entry_points[l].nodes_size)) {
+			Value **value = (Value**)external_entry_points[l].llvm_value;
+			nodes = external_entry_points[l].nodes;
+			nodes_size = external_entry_points[l].nodes_size;
+			labels = external_entry_points[l].labels;
+			labels_size = external_entry_points[l].variable_id;
+			label_redirect = external_entry_points[l].label_redirect;
+			tip2 = external_entry_points[l].tip2;
 
 			/* Add globals */
 			for (m = 0; m < labels_size; m++) {
@@ -1150,269 +1163,292 @@ int LLVM_ir_export::output(struct self_s *self)
 					value[m] = gvar_int32_mem1;
 				}
 			}
+		}
+	}
 
-			for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
-				if ((external_entry_points[l].valid != 0) &&
-					(external_entry_points[l].type == 1) &&
-					(n == 0)) {
-					//std::vector<Type*>FuncTy_0_args;
-					struct label_s *labels_ext = external_entry_points[l].labels;
+	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+		if ((external_entry_points[l].valid != 0) &&
+			(external_entry_points[l].type == 1)) {
+			//std::vector<Type*>FuncTy_0_args;
+			struct label_s *labels_ext = external_entry_points[l].labels;
+			Value **value = (Value**)external_entry_points[l].llvm_value;
 #if 0
-					for (m = 0; m < external_entry_points[l].params_reg_ordered_size; m++) {
-						index = external_entry_points[l].params[m];
-						if (labels_ext[index].lab_pointer > 0) {
-							int size = labels_ext[index].pointer_type_size_bits;
-							debug_print(DEBUG_OUTPUT_LLVM, 1, "Reg Param=0x%x: Pointer Label 0x%x, size_bits = 0x%x\n", m, index, size);
-							if (size < 8) {
-								debug_print(DEBUG_OUTPUT_LLVM, 1, "FIXME: size too small\n");
-								size = 8;
-							}
-							declaration[l].FuncTy_0_args.push_back(PointerType::get(IntegerType::get(mod->getContext(), size), 0));
-						} else {
-							int size = labels_ext[index].size_bits;
-							debug_print(DEBUG_OUTPUT_LLVM, 1, "Reg Param=0x%x: Label 0x%x, size_bits = 0x%x\n", m, index, size);
-							declaration[l].FuncTy_0_args.push_back(IntegerType::get(mod->getContext(), size));
-						}
+			for (m = 0; m < external_entry_points[l].params_reg_ordered_size; m++) {
+				index = external_entry_points[l].params[m];
+				if (labels_ext[index].lab_pointer > 0) {
+					int size = labels_ext[index].pointer_type_size_bits;
+					debug_print(DEBUG_OUTPUT_LLVM, 1, "Reg Param=0x%x: Pointer Label 0x%x, size_bits = 0x%x\n", m, index, size);
+					if (size < 8) {
+						debug_print(DEBUG_OUTPUT_LLVM, 1, "FIXME: size too small\n");
+						size = 8;
 					}
+					declaration[l].FuncTy_0_args.push_back(PointerType::get(IntegerType::get(mod->getContext(), size), 0));
+				} else {
+					int size = labels_ext[index].size_bits;
+					debug_print(DEBUG_OUTPUT_LLVM, 1, "Reg Param=0x%x: Label 0x%x, size_bits = 0x%x\n", m, index, size);
+					declaration[l].FuncTy_0_args.push_back(IntegerType::get(mod->getContext(), size));
+				}
+			}
 
-					for (m = 0; m < external_entry_points[l].params_stack_ordered_size; m++) {
-						index = external_entry_points[l].params_stack_ordered[m];
-						if (index == 3) {
-						/* EIP or param_stack0000 */
-						}
-						if (labels_ext[index].lab_pointer > 0) {
-							int size = labels_ext[index].pointer_type_size_bits;
-							debug_print(DEBUG_OUTPUT_LLVM, 1, "Stack Param=0x%x: Pointer Label 0x%x, size_bits = 0x%x\n", m, index, size);
-							if (size < 8) {
-								debug_print(DEBUG_OUTPUT_LLVM, 1, "FIXME: size too small\n");
-								size = 64;
-							}
-							declaration[l].FuncTy_0_args.push_back(PointerType::get(IntegerType::get(mod->getContext(), size), 0));
-						} else {
-							int size = labels_ext[index].size_bits;
-							debug_print(DEBUG_OUTPUT_LLVM, 1, "Stack Param=0x%x: Label 0x%x, size_bits = 0x%x\n", m, index, size);
-							declaration[l].FuncTy_0_args.push_back(IntegerType::get(mod->getContext(), size));
-						}
+			for (m = 0; m < external_entry_points[l].params_stack_ordered_size; m++) {
+				index = external_entry_points[l].params_stack_ordered[m];
+				if (index == 3) {
+				/* EIP or param_stack0000 */
+				}
+				if (labels_ext[index].lab_pointer > 0) {
+					int size = labels_ext[index].pointer_type_size_bits;
+					debug_print(DEBUG_OUTPUT_LLVM, 1, "Stack Param=0x%x: Pointer Label 0x%x, size_bits = 0x%x\n", m, index, size);
+					if (size < 8) {
+						debug_print(DEBUG_OUTPUT_LLVM, 1, "FIXME: size too small\n");
+						size = 64;
 					}
+					declaration[l].FuncTy_0_args.push_back(PointerType::get(IntegerType::get(mod->getContext(), size), 0));
+				} else {
+					int size = labels_ext[index].size_bits;
+					debug_print(DEBUG_OUTPUT_LLVM, 1, "Stack Param=0x%x: Label 0x%x, size_bits = 0x%x\n", m, index, size);
+					declaration[l].FuncTy_0_args.push_back(IntegerType::get(mod->getContext(), size));
+				}
+			}
 #endif
-					if (external_entry_points[l].params_size > 0) {
-						char buffer[1024];
-						for (m = 0; m < external_entry_points[l].params_size; m++) {
-							uint64_t label_index;
-							tmp = external_entry_points[l].params[m];
-							label_index = external_entry_points[l].label_redirect[tmp].redirect;
-							//if (label_index == 3) {
-							///* EIP or param_stack0000 */
-							//}
-							if (labels_ext[label_index].tip2) {
-								lab_pointer = external_entry_points[l].tip2[labels_ext[label_index].tip2].pointer;
-							} else {
-								lab_pointer = 0;
-							}
-							if (lab_pointer > 0) {
-								//int size = labels_ext[label_index].pointer_type_size_bits;
-								// FIXME:  get the correct size here for the pointer
-								size_bits = 8;
-								debug_print(DEBUG_OUTPUT_LLVM, 1, "Stack Param=0x%x: Pointer Label 0x%lx, size_bits = 0x%lx\n",
-									m, label_index, size_bits);
-								if (size_bits < 8) {
-									debug_print(DEBUG_OUTPUT_LLVM, 1, "FIXME: size too small\n");
-									size_bits = 8;
-								}
-								declaration[l].FuncTy_0_args.push_back(PointerType::get(IntegerType::get(mod->getContext(), size_bits), 0));
-							} else {
-								if (labels_ext[label_index].tip2) {
-									size_bits = external_entry_points[l].tip2[labels_ext[label_index].tip2].integer_size;
-								} else {
-									size_bits = 8;
-								}
-								debug_print(DEBUG_OUTPUT_LLVM, 1, "Stack Param=0x%x: Label 0x%lx, size_bits = 0x%lx\n",
-									m, label_index, size_bits);
-								declaration[l].FuncTy_0_args.push_back(IntegerType::get(mod->getContext(), size_bits));
-							}
-						}
-					}
-
-
-
-					// dump names for all arguments.
-					debug_print(DEBUG_OUTPUT_LLVM, 1, "Dump all the function args LLVM version\n");
-					unsigned Idx = 0;
-					for (Idx = 0; Idx < declaration[l].FuncTy_0_args.size(); Idx++) {
-						declaration[l].FuncTy_0_args[Idx]->dump();
-					}
-					debug_print(DEBUG_OUTPUT_LLVM, 1, "Dump all the function args Source version\n");
-					if (external_entry_points[l].params_size > 0) {
-						char buffer[1024];
-						for (m = 0; m < external_entry_points[l].params_size; m++) {
-							int label_index;
-							tmp = external_entry_points[l].params[m];
-							label_index = external_entry_points[l].label_redirect[tmp].redirect;
-							printf("Label 0x%x->0x%x:", tmp, label_index);
-							tmp = label_to_string(&external_entry_points[l].labels[label_index], buffer, 1023);
-							label = &external_entry_points[l].labels[label_index];
-							if (label->tip2) {
-								size_bits = external_entry_points[l].tip2[label->tip2].integer_size;
-							} else {
-								size_bits = 8;
-							}
-							if (label->tip2) {
-								lab_pointer = external_entry_points[l].tip2[label->tip2].pointer;
-							} else {
-								lab_pointer = 0;
-							}
-							printf("%s/0x%lx,ps=0x%x, lp=0x%lx\n",
-								buffer,
-								size_bits,
-								/* FIXME: Get the pointer size right */
-								8,
-								lab_pointer);
-
-							if (n + 1 < external_entry_points[l].params_size) {
-								tmp = printf("\n");
-							}
-							tmp = printf("\n");
-						}
-					}
-                                }
-                        }
-			/* FIXME:  Can this loop be pulled out of the "n" loop ? */
-			for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
-				if ((external_entry_points[l].valid != 0) &&
-					(external_entry_points[l].type == 1)) {
-					FunctionType *FT;
-					/* FIXME: Need to be able to adjust the return type. */
-					index = external_entry_points[l].function_return_type;
-					lab_pointer = external_entry_points[l].tip2[index].pointer;
-					size_bits = external_entry_points[l].tip2[index].integer_size;
-					debug_print(DEBUG_OUTPUT_LLVM, 1, "FT return type: index=0x%lx, size_bits=0x%lx\n",
-						       index, size_bits);
-					if (lab_pointer) {
-						/* Pointer type */
-						PointerType* PointerTy_1 = PointerType::get(IntegerType::get(mod->getContext(), 64), 0);
-						FT = FunctionType::get(PointerTy_1,
-								declaration[l].FuncTy_0_args,
-								false); /*not vararg*/
+			if (external_entry_points[l].params_size > 0) {
+				char buffer[1024];
+				for (m = 0; m < external_entry_points[l].params_size; m++) {
+					uint64_t label_index;
+					tmp = external_entry_points[l].params[m];
+					label_index = external_entry_points[l].label_redirect[tmp].redirect;
+					//if (label_index == 3) {
+					///* EIP or param_stack0000 */
+					//}
+					if (labels_ext[label_index].tip2) {
+						lab_pointer = external_entry_points[l].tip2[labels_ext[label_index].tip2].pointer;
 					} else {
-						/* Integer type */
-						IntegerType* IntTy_1 = IntegerType::get(mod->getContext(), size_bits);
-						FT = FunctionType::get(IntTy_1,
-								declaration[l].FuncTy_0_args,
-								false); /*not vararg*/
+						lab_pointer = 0;
 					}
-					declaration[l].FT = FT;
+					if (lab_pointer > 0) {
+						//int size = labels_ext[label_index].pointer_type_size_bits;
+						// FIXME:  get the correct size here for the pointer
+						size_bits = 8;
+						debug_print(DEBUG_OUTPUT_LLVM, 1, "Stack Param=0x%x: Pointer Label 0x%lx, size_bits = 0x%lx\n",
+							m, label_index, size_bits);
+						if (size_bits < 8) {
+							debug_print(DEBUG_OUTPUT_LLVM, 1, "FIXME: size too small\n");
+							size_bits = 8;
+						}
+						declaration[l].FuncTy_0_args.push_back(PointerType::get(IntegerType::get(mod->getContext(), size_bits), 0));
+					} else {
+						if (labels_ext[label_index].tip2) {
+							size_bits = external_entry_points[l].tip2[labels_ext[label_index].tip2].integer_size;
+						} else {
+							size_bits = 8;
+						}
+						debug_print(DEBUG_OUTPUT_LLVM, 1, "Stack Param=0x%x: Label 0x%lx, size_bits = 0x%lx\n",
+							m, label_index, size_bits);
+						declaration[l].FuncTy_0_args.push_back(IntegerType::get(mod->getContext(), size_bits));
+					}
 				}
 			}
-			for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
-				if ((external_entry_points[l].valid != 0) &&
-					(external_entry_points[l].type == 1)) {
-					function_name = external_entry_points[l].name;
-					Function *F =
-						Function::Create(declaration[l].FT, Function::ExternalLinkage, function_name, mod);
 
-					declaration[l].F = F;
-					Function::arg_iterator AI = F->arg_begin();
-					char buffer[1024];
-					for (m = 0; m < external_entry_points[l].params_size; m++) {
-						int label_index;
-						tmp = external_entry_points[l].params[m];
-						label_index = external_entry_points[l].label_redirect[tmp].redirect;
-						tmp = label_to_string(&external_entry_points[l].labels[label_index], buffer, 1023);
-						printf("buffer=%s\n", buffer);
-						AI->setName(buffer);
-						value[label_index] = &*AI;
-						AI++;
+
+
+			// dump names for all arguments.
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "Dump all the function args LLVM version\n");
+			unsigned Idx = 0;
+			for (Idx = 0; Idx < declaration[l].FuncTy_0_args.size(); Idx++) {
+				declaration[l].FuncTy_0_args[Idx]->dump();
+			}
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "Dump all the function args Source version\n");
+			if (external_entry_points[l].params_size > 0) {
+				char buffer[1024];
+				for (m = 0; m < external_entry_points[l].params_size; m++) {
+					int label_index;
+					tmp = external_entry_points[l].params[m];
+					label_index = external_entry_points[l].label_redirect[tmp].redirect;
+					printf("Label 0x%x->0x%x:", tmp, label_index);
+					tmp = label_to_string(&external_entry_points[l].labels[label_index], buffer, 1023);
+					label = &external_entry_points[l].labels[label_index];
+					if (label->tip2) {
+						size_bits = external_entry_points[l].tip2[label->tip2].integer_size;
+					} else {
+						size_bits = 8;
 					}
+					if (label->tip2) {
+						lab_pointer = external_entry_points[l].tip2[label->tip2].pointer;
+					} else {
+						lab_pointer = 0;
+					}
+					printf("%s/0x%lx,ps=0x%x, lp=0x%lx\n",
+						buffer,
+						size_bits,
+						/* FIXME: Get the pointer size right */
+						8,
+						lab_pointer);
 
-					declaration[l].F->print(OS1);
-					debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
-					Buf1.clear();
+					tmp = printf("\n");
 				}
 			}
+		}
+	}
+	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+		if ((external_entry_points[l].valid != 0) &&
+			(external_entry_points[l].type == 1)) {
+			FunctionType *FT;
+			Value **value = (Value**)external_entry_points[l].llvm_value;
+			/* FIXME: Need to be able to adjust the return type. */
+			index = external_entry_points[l].function_return_type;
+			lab_pointer = external_entry_points[l].tip2[index].pointer;
+			size_bits = external_entry_points[l].tip2[index].integer_size;
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "FT return type: index=0x%lx, size_bits=0x%lx\n",
+				       index, size_bits);
+			if (lab_pointer) {
+				/* Pointer type */
+				PointerType* PointerTy_1 = PointerType::get(IntegerType::get(mod->getContext(), 64), 0);
+				FT = FunctionType::get(PointerTy_1,
+						declaration[l].FuncTy_0_args,
+						false); /*not vararg*/
+			} else {
+				/* Integer type */
+				IntegerType* IntTy_1 = IntegerType::get(mod->getContext(), size_bits);
+				FT = FunctionType::get(IntTy_1,
+						declaration[l].FuncTy_0_args,
+						false); /*not vararg*/
+			}
+			declaration[l].FT = FT;
+		}
+	}
+	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+		if ((external_entry_points[l].valid != 0) &&
+			(external_entry_points[l].type == 1)) {
+			function_name = external_entry_points[l].name;
+			Value **value = (Value**)external_entry_points[l].llvm_value;
+			Function *F =
+				Function::Create(declaration[l].FT, Function::ExternalLinkage, function_name, mod);
+
+			declaration[l].F = F;
+			Function::arg_iterator AI = F->arg_begin();
+			char buffer[1024];
+			for (m = 0; m < external_entry_points[l].params_size; m++) {
+				int label_index;
+				tmp = external_entry_points[l].params[m];
+				label_index = external_entry_points[l].label_redirect[tmp].redirect;
+				tmp = label_to_string(&external_entry_points[l].labels[label_index], buffer, 1023);
+				printf("buffer=%s\n", buffer);
+				AI->setName(buffer);
+				value[label_index] = &*AI;
+				AI++;
+			}
+
+			declaration[l].F->print(OS1);
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+			Buf1.clear();
+		}
+	}
 
 #if 0
-			for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
-				if ((external_entry_points[l].valid != 0) &&
-					(external_entry_points[l].type == 1)) {
-					Function::arg_iterator args = declaration[l].F->arg_begin();
-					debug_print(DEBUG_OUTPUT_LLVM, 1, "Function: %s()  param_size = 0x%x\n", function_name, external_entry_points[l].params_size);
-					for (m = 0; m < external_entry_points[l].params_reg_ordered_size; m++) {
-						index = external_entry_points[l].params_reg_ordered[m];
-						tmp = label_to_string(&(labels[index]), buffer, 1023);
-						debug_print(DEBUG_OUTPUT_LLVM, 1, "Adding reg param:%s:value index=0x%x\n", buffer, index);
-						args->setName(buffer);
-						args++;
-					}
-					for (m = 0; m < external_entry_points[l].params_stack_ordered_size; m++) {
-						index = external_entry_points[l].params_stack_ordered[m];
-						tmp = label_to_string(&(labels[index]), buffer, 1023);
-						debug_print(DEBUG_OUTPUT_LLVM, 1, "Adding stack param:%s:value index=0x%x\n", buffer, index);
-						args->setName(buffer);
-						args++;
-					}
-					declaration[l].F->dump();
-				}
-			}
-#endif
-
-
-			function_name = external_entry_points[n].name;
-			snprintf(output_filename, 500, "./llvm/%s.bc", function_name);
-#if 0
-			// Debug params_reg_ordered indexes
-			for (m = 0; m < external_entry_points[n].params_reg_ordered_size; m++) {
-				index = external_entry_points[n].params_reg_ordered[m];
-				printf("external_entry_points[%d].params_reg_ordered[%d] = %d;\n",
-					n, m, index);
-			}
-			Function::arg_iterator args = declaration[n].F->arg_begin();
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "Function: %s()  param_size = 0x%x\n", function_name, external_entry_points[n].params_size);
-			for (m = 0; m < external_entry_points[n].params_reg_ordered_size; m++) {
-				index = external_entry_points[n].params_reg_ordered[m];
-				if (!index) {
-					debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: value[index]: Index = 0. \n");
-					continue;
-				}
-				value[index] = &*args;
+	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+		if ((external_entry_points[l].valid != 0) &&
+			(external_entry_points[l].type == 1)) {
+			Function::arg_iterator args = declaration[l].F->arg_begin();
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "Function: %s()  param_size = 0x%x\n", function_name, external_entry_points[l].params_size);
+			for (m = 0; m < external_entry_points[l].params_reg_ordered_size; m++) {
+				index = external_entry_points[l].params_reg_ordered[m];
 				tmp = label_to_string(&(labels[index]), buffer, 1023);
 				debug_print(DEBUG_OUTPUT_LLVM, 1, "Adding reg param:%s:value index=0x%x\n", buffer, index);
-				value[index]->setName(buffer);
-				sprint_value(OS1, value[index]);
-				debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
-				Buf1.clear();
+				args->setName(buffer);
 				args++;
 			}
-			for (m = 0; m < external_entry_points[n].params_stack_ordered_size; m++) {
-				index = external_entry_points[n].params_stack_ordered[m];
-				if (!index) {
-					debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: value[index]: Index = 0. \n");
-					exit(1);
-				}
-				value[index] = &*args;
+			for (m = 0; m < external_entry_points[l].params_stack_ordered_size; m++) {
+				index = external_entry_points[l].params_stack_ordered[m];
 				tmp = label_to_string(&(labels[index]), buffer, 1023);
 				debug_print(DEBUG_OUTPUT_LLVM, 1, "Adding stack param:%s:value index=0x%x\n", buffer, index);
-				value[index]->setName(buffer);
-				sprint_value(OS1, value[index]);
-				debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
-				Buf1.clear();
+				args->setName(buffer);
 				args++;
 			}
+			declaration[l].F->dump();
+		}
+	}
 #endif
 
+#if 0
+	// Debug params_reg_ordered indexes
+	for (m = 0; m < external_entry_points[n].params_reg_ordered_size; m++) {
+		index = external_entry_points[n].params_reg_ordered[m];
+		printf("external_entry_points[%d].params_reg_ordered[%d] = %d;\n",
+			n, m, index);
+	}
+	Function::arg_iterator args = declaration[n].F->arg_begin();
+	debug_print(DEBUG_OUTPUT_LLVM, 1, "Function: %s()  param_size = 0x%x\n", function_name, external_entry_points[n].params_size);
+	for (m = 0; m < external_entry_points[n].params_reg_ordered_size; m++) {
+		index = external_entry_points[n].params_reg_ordered[m];
+		if (!index) {
+			debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: value[index]: Index = 0. \n");
+			continue;
+		}
+		value[index] = &*args;
+		tmp = label_to_string(&(labels[index]), buffer, 1023);
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "Adding reg param:%s:value index=0x%x\n", buffer, index);
+		value[index]->setName(buffer);
+		sprint_value(OS1, value[index]);
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+		Buf1.clear();
+		args++;
+	}
+	for (m = 0; m < external_entry_points[n].params_stack_ordered_size; m++) {
+		index = external_entry_points[n].params_stack_ordered[m];
+		if (!index) {
+			debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: value[index]: Index = 0. \n");
+			exit(1);
+		}
+		value[index] = &*args;
+		tmp = label_to_string(&(labels[index]), buffer, 1023);
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "Adding stack param:%s:value index=0x%x\n", buffer, index);
+		value[index]->setName(buffer);
+		sprint_value(OS1, value[index]);
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+		Buf1.clear();
+		args++;
+	}
+#endif
+
+	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+		if ((external_entry_points[l].valid != 0) &&
+			(external_entry_points[l].type == 1) && 
+			(external_entry_points[l].nodes_size)) {
+			Value **value = (Value**)external_entry_points[l].llvm_value;
+			BasicBlock **bb = (BasicBlock**)external_entry_points[l].llvm_basic_blocks;
+			nodes = external_entry_points[l].nodes;
+			nodes_size = external_entry_points[l].nodes_size;
+			labels = external_entry_points[l].labels;
+			labels_size = external_entry_points[l].variable_id;
+			label_redirect = external_entry_points[l].label_redirect;
+			tip2 = external_entry_points[l].tip2;
+
 			/* Create all the nodes/basic blocks */
-			BasicBlock **bb = (BasicBlock **)calloc(nodes_size + 1, sizeof (BasicBlock *));
 			for (m = 1; m < nodes_size; m++) {
 				std::string node_string;
 				std::stringstream tmp_str;
 				tmp_str << "Node_0x" << std::hex << m;
 				node_string = tmp_str.str();
 				debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM2: %s\n", node_string.c_str());
-				bb[m] = BasicBlock::Create(Context, node_string, declaration[n].F);
+				bb[m] = BasicBlock::Create(Context, node_string, declaration[l].F);
 			}
 			IRBuilder<> *builder = new IRBuilder<>(bb[1]);
-			for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
-				declaration[l].builder = builder;
-			}
+			declaration[l].builder = builder;
+		}
+	}
+	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+		if ((external_entry_points[l].valid != 0) &&
+			(external_entry_points[l].type == 1) && 
+			(external_entry_points[l].nodes_size)) {
+			Value **value = (Value**)external_entry_points[l].llvm_value;
+			BasicBlock **bb = (BasicBlock**)external_entry_points[l].llvm_basic_blocks;
+			nodes = external_entry_points[l].nodes;
+			nodes_size = external_entry_points[l].nodes_size;
+			labels = external_entry_points[l].labels;
+			labels_size = external_entry_points[l].variable_id;
+			label_redirect = external_entry_points[l].label_redirect;
+			tip2 = external_entry_points[l].tip2;
+			IRBuilder<> *builder = declaration[l].builder;
+
 			/* Create the AllocaInst's */
 			/* labels[0] should be empty and is a invalid value to errors can be caught. */
 			for (m = 1; m < labels_size; m++) {
@@ -1533,7 +1569,7 @@ int LLVM_ir_export::output(struct self_s *self)
 					}
 					/* The rest of the PHI instruction is added later */
 				}
-				LLVM_ir_export::add_node_instructions(self, mod, declaration, value, bb, node, n);
+				LLVM_ir_export::add_node_instructions(self, mod, declaration, value, bb, node, l);
 			}
 #if 1
 			for (node = 1; node < nodes_size; node++) {
@@ -1545,21 +1581,21 @@ int LLVM_ir_export::output(struct self_s *self)
 					//debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM phi base size = 0x%x\n", size_bits);
 					PHINode* phi_node = (PHINode*)value[nodes[node].phi[m].value_id];
 					/* l = 0 has already been handled */
-					for (l = 1; l < nodes[node].phi[m].phi_node_size; l++) {
+					for (int n = 1; n < nodes[node].phi[m].phi_node_size; n++) {
 						int value_id;
 						int redirect_value_id;
 						int first_previous_node;
-						value_id = nodes[node].phi[m].phi_node[l].value_id;
+						value_id = nodes[node].phi[m].phi_node[n].value_id;
 						if (!value_id) {
 							debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: labels_redirect[value_id]: value_id = 0. \n");
 							exit(1);
 						}
 						redirect_value_id = label_redirect[value_id].redirect;
-						first_previous_node = nodes[node].phi[m].phi_node[l].first_prev_node;
+						first_previous_node = nodes[node].phi[m].phi_node[n].first_prev_node;
 						debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM:phi 0x%x:0x%x FPN=0x%x, SN=0x%x, value_id=0x%x, redirected_value_id=0x%x\n",
-							m, l,
-							nodes[node].phi[m].phi_node[l].first_prev_node,
-							nodes[node].phi[m].phi_node[l].node,
+							m, n,
+							nodes[node].phi[m].phi_node[n].first_prev_node,
+							nodes[node].phi[m].phi_node[n].node,
 							value_id,
 							redirect_value_id);
 							/* FIXME: add this size */
@@ -1570,67 +1606,70 @@ int LLVM_ir_export::output(struct self_s *self)
 					}
 				}
 			}
-#endif
-			std::string ErrorInfo;
-			std::error_code error_code;
-			raw_fd_ostream OS(output_filename, error_code, llvm::sys::fs::F_None);
-			raw_fd_ostream OS2("llvm_output_errors.txt", error_code, llvm::sys::fs::F_None);
-
-			if (error_code) {
-				// *ErrorMessage = strdup(error_code.message().c_str());
-				return -1;
-			}
-
-			TargetMachine* TM = nullptr;
-			PassBuilder PB(TM);
-
-			LoopAnalysisManager LAM(DebugPM);
-			FunctionAnalysisManager FAM(DebugPM);
-			CGSCCAnalysisManager CGAM(DebugPM);
-			ModuleAnalysisManager MAM(DebugPM);
-
-			PB.registerModuleAnalyses(MAM);
-			PB.registerCGSCCAnalyses(CGAM);
-			PB.registerFunctionAnalyses(FAM);
-			PB.registerLoopAnalyses(LAM);
-			PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
-
-			ModulePassManager MPM(DebugPM);
-
-			/* True is is fails */
-			if (verifyModule(*mod, &OS2)) {
-				PassPipeline = "function(print)";
-				if (!PB.parsePassPipeline(MPM, PassPipeline, 0,
-					DebugPM)) {
-					std::cout << ": unable to parse pass pipeline description. " ;
-					std::cout << PassPipeline.data() ;
-					std::cout << "\n" ;
-					return 1;
-				}
-
-				MPM.run(*mod, MAM);
-				printf(": Error verifying module!\n");
-				debug_print(DEBUG_OUTPUT_LLVM, 1, ": Error verifying module!\n");
-				OS2.close();
-				exit(1);
-			}
-
-			PassPipeline = "print,module(function(dse),cgscc(function-attrs)),print";
-			if (!PB.parsePassPipeline(MPM, PassPipeline, 0,
-				DebugPM)) {
-				std::cout << ": unable to parse pass pipeline description. " ;
-				std::cout << PassPipeline.data() ;
-				std::cout << "\n" ;
-				return 1;
-			}
-
-			MPM.run(*mod, MAM);
-
-
-			WriteBitcodeToFile(mod, OS);
-			delete mod;
 		}
 	}
+#endif
+	/* FIXME: Work with more than one function */
+	function_name = external_entry_points[1].name;
+	snprintf(output_filename, 500, "./llvm/%s.bc", function_name);
+	std::string ErrorInfo;
+	std::error_code error_code;
+	raw_fd_ostream OS(output_filename, error_code, llvm::sys::fs::F_None);
+	raw_fd_ostream OS2("llvm_output_errors.txt", error_code, llvm::sys::fs::F_None);
+
+	if (error_code) {
+		// *ErrorMessage = strdup(error_code.message().c_str());
+		return -1;
+	}
+
+	TargetMachine* TM = nullptr;
+	PassBuilder PB(TM);
+
+	LoopAnalysisManager LAM(DebugPM);
+	FunctionAnalysisManager FAM(DebugPM);
+	CGSCCAnalysisManager CGAM(DebugPM);
+	ModuleAnalysisManager MAM(DebugPM);
+
+	PB.registerModuleAnalyses(MAM);
+	PB.registerCGSCCAnalyses(CGAM);
+	PB.registerFunctionAnalyses(FAM);
+	PB.registerLoopAnalyses(LAM);
+	PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+	ModulePassManager MPM(DebugPM);
+
+	/* True is is fails */
+	if (verifyModule(*mod, &OS2)) {
+		PassPipeline = "function(print)";
+		if (!PB.parsePassPipeline(MPM, PassPipeline, 0,
+			DebugPM)) {
+			std::cout << ": unable to parse pass pipeline description. " ;
+			std::cout << PassPipeline.data() ;
+			std::cout << "\n" ;
+			return 1;
+		}
+
+		MPM.run(*mod, MAM);
+		printf(": Error verifying module!\n");
+		debug_print(DEBUG_OUTPUT_LLVM, 1, ": Error verifying module!\n");
+		OS2.close();
+		exit(1);
+	}
+
+	PassPipeline = "print,module(function(dse),cgscc(function-attrs)),print";
+	if (!PB.parsePassPipeline(MPM, PassPipeline, 0,
+		DebugPM)) {
+		std::cout << ": unable to parse pass pipeline description. " ;
+		std::cout << PassPipeline.data() ;
+		std::cout << "\n" ;
+		return 1;
+	}
+
+	MPM.run(*mod, MAM);
+
+
+	WriteBitcodeToFile(mod, OS);
+	delete mod;
 
 	return 0;
 }

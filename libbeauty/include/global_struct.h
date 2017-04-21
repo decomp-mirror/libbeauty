@@ -345,6 +345,8 @@ struct external_entry_point_s {
 	struct tip2_s *tip2;
 	int variable_id;
 	int *search_back_seen;
+	void** llvm_value;
+	void** llvm_basic_blocks;
 };
 
 /* Memory and Registers are a list of accessed stores. */
