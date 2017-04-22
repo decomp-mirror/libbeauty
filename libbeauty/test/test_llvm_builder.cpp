@@ -107,6 +107,12 @@ Module* makeLLVMModule(LLVMContext &Context, char *output_filename) {
  if (PointerTy_1 == PointerTy_2) {
 	printf("Match\n");
  }
+ // Constant Definitions
+ ConstantInt* const_int64_1 = ConstantInt::get(C, APInt(64, StringRef("10"), 10));
+// PointerType* const_ptr_int64_1 = PointerType::get(ConstantInt::get(C, APInt(64, StringRef("10"), 10)));
+ Value* const_ptr_int64_1 = ConstantExpr::getIntToPtr(
+		     const_int64_1 , PointerTy_1);
+ ConstantInt* const_int64_2 = ConstantInt::get(C, APInt(64, StringRef("20"), 20));
 // This creates the i8* type
 //PointerType* PointerTy = PointerType::get(IntegerType::get(mod->getContext(), 8), 0);
 // This creates the i8** type
@@ -169,12 +175,16 @@ FuncTy_0_args.push_back(IntegerType::get(module->getContext(), 32)); // Second a
  Value* ptr_5 = builder->CreateAlignedLoad(gvar_ptr_mem, 8, "ptr_5");
 //  ptr_5->setAlignment(8);
  Value* ptr_6 = builder->CreateGEP(ptr_1, ConstantInt::get(C, APInt(32, 2)), "ptr_6");
- Value* int_7 = builder->CreateAlignedLoad(ptr_6, 8, "int_7");
+ Value* ptr_7 = builder->CreateGEP(const_ptr_int64_1, const_int64_2, "ptr_7");
+ Value* int_6 = builder->CreateAlignedLoad(ptr_6, 8, "int_6");
+ Value* int_7 = builder->CreateAlignedLoad(ptr_7, 8, "int_7");
 
 //  GetElementPtrInst* ptr_6 = GetElementPtrInst::Create(IntegerType::get(mod->getContext(), 32), ptr_5, {
 //   const_int64_3
 //  }, "", label_4);
- Value* cond1 = builder->CreateICmpEQ(ConstantInt::get(C, APInt(32, 1)), ConstantInt::get(C, APInt(32, 2)), "cond1");
+// Value* cond1 = builder->CreateICmpEQ(ConstantInt::get(C, APInt(32, 1)), ConstantInt::get(C, APInt(32, 2)), "cond1");
+// Value* cond1 = builder->CreateICmpEQ(ConstantInt::get(C, APInt(32,1)), int_6, "cond1");
+ Value* cond1 = builder->CreateICmpEQ(int_6, int_7, "cond1");
  BasicBlock *bb1 = BasicBlock::Create(C, "label1", test0_func);
  BasicBlock *bb2 = BasicBlock::Create(C, "label2", test0_func);
  BasicBlock *bb3 = BasicBlock::Create(C, "label3", test0_func);
