@@ -1694,6 +1694,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 	struct instruction_s *instruction;
 	int variable_id = external_entry_point->variable_id;
 	uint64_t stack_address;
+	uint64_t data_address;
 	struct memory_s *memory;
 	struct extension_call_s *call;
 
@@ -1957,12 +1958,59 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 					}
 					break;
 				case IND_MEM:
-					inst_log1->value1.value_id = 
-						reg_tracker[instruction->srcA.index];
+					inst_log1->value1.value_id = 0;
 					debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x:LOAD FIXME: srcA mem given value_id = 0x%"PRIx64"\n",
 						entry_point, node, inst,
 						inst_log1->value1.value_id);
+					data_address = inst_log1->value3.indirect_init_value + inst_log1->value3.indirect_offset_value;
+					debug_print(DEBUG_MAIN, 1, "assign_id: data_address = 0x%"PRIx64"\n", data_address);
+					print_store(external_entry_point->process_state.memory_data);
+					memory = search_store(
+						external_entry_point->process_state.memory_data,
+						data_address,
+						inst_log1->instruction.srcA.indirect_size);
+					if (memory) {
+						debug_print(DEBUG_MAIN, 1, "MEM memory = %p\n", memory);
+						if (memory->value_id) {
+							inst_log1->value1.value_id = memory->value_id;
+							ret = 0;
+							break;
+						} else {
+							inst_log1->value1.value_id = variable_id;
+							memory->value_id = variable_id;
+							memset(&label, 0, sizeof(struct label_s));
+							ret = log_to_label(instruction->srcA.store,
+								instruction->srcA.indirect,
+								instruction->srcA.index,
+								instruction->srcA.value_size,
+								instruction->srcA.relocated,
+								inst_log1->value1.value_scope,
+								inst_log1->value1.value_id,
+								inst_log1->value1.indirect_offset_value,
+								&label);
+							if (ret) {
+								debug_print(DEBUG_MAIN, 1, "assign_id: IND_MEM log_to_label failed\n");
+								exit(1);
+							}
+							debug_print(DEBUG_MAIN, 1, "MEM variable_id = 0x%x\n", variable_id);
+							if (variable_id >= 10000) {
+								debug_print(DEBUG_MAIN, 1, "variable_id overrun 10000 limit. Trying to write to %d\n",
+										variable_id);
+								exit(1);
+							}
+
+							external_entry_point->label_redirect[variable_id].redirect = variable_id;
+							external_entry_point->labels[variable_id].scope = label.scope;
+							external_entry_point->labels[variable_id].type = label.type;
+							external_entry_point->labels[variable_id].value = label.value;
+							//external_entry_point->labels[variable_id].size_bits = label.size_bits;
+							//external_entry_point->labels[variable_id].lab_pointer += label.lab_pointer;
+							variable_id++;
+						}
+					} else {
+						debug_print(DEBUG_MAIN, 1, "FIXME: assign_id: memory not found for mem address\n");
 						exit(1);
+					}
 					break;
 				default:
 					debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x:LOAD UNHANDLED srcA.indirect = 0x%x\n",
@@ -2121,6 +2169,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 					debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x:STORE FIXME srcA given value_id = 0x%"PRIx64"\n",
 						entry_point, node, inst,
 						inst_log1->value1.value_id);
+					exit(1);
 					break;
 				default:
 					debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x:STORE UNHANDLED srcA.indirect = 0x%x\n",
@@ -2616,11 +2665,12 @@ int rule_add(struct self_s *self, int entry_point, int node, int inst, int phi, 
 		tip_this->rules[index].pointer = pointer;
 		tip_this->rules[index].pointer_to_tip2 = pointer_to_tip2;
 		tip_this->rules[index].size_bits = size_bits;
-		debug_print(DEBUG_ANALYSE_TIP, 1, "0x%x:0x%lx node = 0x%x, inst = 0x%x, phi = 0x%x, operand = 0x%x, tipA_derived_from = 0x%x, tipB_derived_from = 0x%x, tip_derived_from_this = 0x%x, pointer = 0x%x, pointer_to_tip2 = 0x%x, size_bits = 0x%x\n",
+		debug_print(DEBUG_ANALYSE_TIP, 1, "0x%x:0x%lx node = 0x%x, inst = 0x%x:%s, phi = 0x%x, operand = 0x%x, tipA_derived_from = 0x%x, tipB_derived_from = 0x%x, tip_derived_from_this = 0x%x, pointer = 0x%x, pointer_to_tip2 = 0x%x, size_bits = 0x%x\n",
 			label_index,
 			label_redirect_index,
 			tip_this->rules[index].node,
 			tip_this->rules[index].inst_number,
+			opcode_table[instruction->opcode],
 			tip_this->rules[index].phi_number,
 			tip_this->rules[index].operand,
 			tip_this->rules[index].tipA_derived_from,
@@ -2721,8 +2771,9 @@ int tip_result_print(struct self_s *self, int entry_point)
 
 int insert_nop_before(struct self_s *self, int inst, int *new_inst);
 int insert_nop_after(struct self_s *self, int inst, int *new_inst);
+int dis64_copy_operand(struct self_s *self, int inst_from, int operand_from, int inst_to, int operand_to, int size);
 
-/* This searches the tip list and discovers:
+	/* This searches the tip list and discovers:
    If a label is used with different bit widths by different instructions, add a zext
    so that the label can be split into two, and thus not consist of multi-bit-size instructions.
  */
@@ -2755,7 +2806,7 @@ int tip_fixup1(struct self_s *self, int entry_point, int tip_index, int rule_ind
 
 	inst_modified = rule_this->inst_number;
 	operand_modified = rule_this->operand;
-//				node = label->tip[n].node;
+	node = rule_this->node;
 	tmp = insert_nop_before(self, inst_modified, &inst_new);
 #if 0
 				/* FIXME: Not support LOAD, STORE or MOV inst yet. */

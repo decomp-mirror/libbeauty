@@ -7,6 +7,7 @@ extern struct memory_s *search_store(
         struct memory_s *memory, uint64_t index, int size);
 extern struct memory_s *add_new_store(
 	struct memory_s *memory, uint64_t index, int size);
+extern int print_store(struct memory_s *memory);
 
 //extern instructions_t instructions;
 extern uint8_t *inst;

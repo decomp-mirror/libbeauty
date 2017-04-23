@@ -631,6 +631,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 				external_entry_point->label_redirect[inst_log1->value2.value_id].redirect,
 				inst_log1->value3.value_id,
 				external_entry_point->label_redirect[inst_log1->value3.value_id].redirect);
+			/*
 			value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
 			if (!value[value_id]) {
 				tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
@@ -640,8 +641,10 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 				}
 			}
 			srcA = value[value_id];
+			*/
 			value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].redirect;
 			if (!value[value_id]) {
+				debug_print(DEBUG_OUTPUT_LLVM, 1, "fill_value: value_id = 0x%x\n", value_id);
 				tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 				if (tmp) {
 					debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: failed LLVM Value is NULL. srcB value_id = 0x%x\n", value_id);
@@ -650,10 +653,16 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			}
 			srcB = value[value_id];
 
+			srcB->print(OS1);
+			OS1.flush();
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "srcB: %s\n", Buf1.c_str());
+			Buf1.clear();
+			/*
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "srcA = %p, srcB = %p\n", srcA, srcB);
 			sprint_srcA_srcB(OS1, srcA, srcB);
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 			Buf1.clear();
+			*/
 
 			value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
 			label = &external_entry_point->labels[value_id_dst];
@@ -663,7 +672,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			} else {
 				size_bits = 8;
 			}
-			dstA = builder->CreateAlignedLoad(srcA, size_bits >> 3, buffer);
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "CreateLoad: size_bits = 0x%lx 0x%lx\n", size_bits, size_bits >> 3);
+			dstA = builder->CreateAlignedLoad(srcB, size_bits >> 3, buffer);
 			//dstA_load = new LoadInst(srcA, buffer, false, bb[node]);
 			//dstA_load->setAlignment(label->size_bits >> 3);
 			//dstA = dstA_load;
@@ -870,9 +880,15 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			external_entry_point->label_redirect[inst_log1->value2.value_id].redirect,
 			inst_log1->value3.value_id,
 			external_entry_point->label_redirect[inst_log1->value3.value_id].redirect);
-
+// Constant Definitions
+//  ConstantInt* const_int64_1 = ConstantInt::get(C, APInt(64, StringRef("10"), 10));
+//  // PointerType* const_ptr_int64_1 = PointerType::get(ConstantInt::get(C, APInt(64, StringRef("10"), 10)));
+//   Value* const_ptr_int64_1 = ConstantExpr::getIntToPtr(
+//                        const_int64_1 , PointerTy_1);
+//
 		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
 		if (!value[value_id]) {
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "fill_value: value_id = 0x%x\n", value_id);
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
 				debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: failed LLVM Value is NULL. srcA value_id = 0x%x\n", value_id);
@@ -883,6 +899,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 
 		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].redirect;
 		if (!value[value_id]) {
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "fill_value: value_id = 0x%x\n", value_id);
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
 				debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: failed LLVM Value is NULL. srcB value_id = 0x%x\n", value_id);
@@ -909,8 +926,23 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		sprint_srcA_srcB(OS1, srcA, srcB);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 		Buf1.clear();
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "isConstant() srcA = 0x%x, srcB = 0x%x\n", srcA->getType()->getTypeID(), srcB->getType()->getTypeID());
+		{
+			int srcA_type = srcA->getType()->getTypeID();
+			int srcB_type = srcB->getType()->getTypeID();
+			if ((Type::TypeID::IntegerTyID == srcA_type) && (Type::TypeID::PointerTyID == srcB_type)) {
+				/* Swap srcA and srcB */
+				Value *tmp_src = srcA;
+				srcA = srcB;
+				srcB = tmp_src;
+				sprint_srcA_srcB(OS1, srcA, srcB);
+				debug_print(DEBUG_OUTPUT_LLVM, 1, "swapped %s\n", Buf1.c_str());
+				Buf1.clear();
+			}
+		}
 
 		tmp = label_to_string(&external_entry_point->labels[inst_log1->value3.value_id], buffer, 1023);
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: OPCODE = 0x%x:GEP1\n", inst, inst_log1->instruction.opcode);
 		dstA = builder->CreateGEP(srcA, srcB, buffer);
 		//dstA = GetElementPtrInst::Create(srcA, srcB, buffer, bb[node]);
 		//         Type *AgTy = cast<PointerType>(I->getType())->getElementType();
@@ -1156,7 +1188,9 @@ int LLVM_ir_export::output(struct self_s *self)
 					size_bits = 8;
 				}
 				if ((3 == label->scope) && (2 == label->type)) {
-					debug_print(DEBUG_OUTPUT_LLVM, 1, "Label:0x%x: &data found. size=0x%lx\n", m, size_bits);
+					debug_print(DEBUG_OUTPUT_LLVM, 1, "Label:0x%x: &data found. size=0x%lx, pointer=0x%lx\n",
+							m, size_bits,
+							tip2[labels[index].tip2].pointer);
 					GlobalVariable* gvar_int32_mem1 = new GlobalVariable(/*Module=*/*mod,
 						/*Type=*/IntegerType::get(mod->getContext(), size_bits),
 						/*isConstant=*/false,
