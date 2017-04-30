@@ -36,7 +36,7 @@ const char * helper_opcode_table[] = {
 	"H_CALLT",  // 0x21
 	"H_PHI",  // 0x22
 	"H_ICMP",  // 0x23
-	"H_BC",  // 0x24
+	"H_BRANCH",  // 0x24
 	"H_LOAD",  // 0x25
 	"H_STORE",  // 0x26
 	"H_LEA",  // 0x27
@@ -53,6 +53,10 @@ const char * helper_opcode_table[] = {
 	"H_JMPM",  // 0x32
 	"H_MOVS",  // 0x33
 	"H_IMULD",  // 0x34
+	"H_MULD",  // 0x35
+	"H_TRUNC",  // 0x36
+	"H_ZEXT",  // 0x37
+	"H_BITCAST",  // 0x38
 };
 
 #define H_NONE 0x00 // Used for instructions we have not implemented support for yet.
@@ -91,7 +95,7 @@ const char * helper_opcode_table[] = {
 #define H_CALLT 0x21 /* Call jump table */
 #define H_PHI 0x22 /* A PHI point */
 #define H_ICMP 0x23 /* ICMP. Similar to LLVM ICMP */
-#define H_BC 0x24 /* Branch Conditional. Similar to LLVM ICMP */
+#define H_BRANCH 0x24 /* Branch Conditional. Similar to LLVM ICMP */
 #define H_LOAD 0x25 /* Load from memory/stack */
 #define H_STORE 0x26 /* Store to memory/stack */
 #define H_LEA 0x27 /* Used at the MC Inst low level */
@@ -109,6 +113,9 @@ const char * helper_opcode_table[] = {
 #define H_MOVS 0x33 /* MOVS strings */
 #define H_IMULD 0x34 /* IMUL with EDX,EAX desinations for opcode_form 0x15 */
 #define H_MULD 0x35 /* MUL with EDX,EAX desinations for opcode_form 0x14 */
+#define H_TRUNC 0x36 /* TRUNC */
+#define H_ZEXT 0x37 /* ZEXT */
+#define H_BITCAST 0x38 /* BITCAST */
 
 const char * helper_predicate_table[] = {
 	"H_NONE",

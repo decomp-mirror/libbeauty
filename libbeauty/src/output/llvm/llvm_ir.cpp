@@ -587,8 +587,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 		Buf1.clear();
 		break;
-	case 0x24:  // BC
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: OPCODE = 0x%x:BC\n", inst, inst_log1->instruction.opcode);
+	case 0x24:  // BRANCH
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: OPCODE = 0x%x:BRANCH\n", inst, inst_log1->instruction.opcode);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx\n",
 			inst_log1->value1.value_id,
 			external_entry_point->label_redirect[inst_log1->value1.value_id].redirect);
@@ -1032,6 +1032,36 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		dstA = builder->CreateZExt(srcA, IntegerType::get(mod->getContext(), size_bits), buffer);
 		value[value_id_dst] = dstA;
 		break;
+
+	case 0x38:  // BITCAST
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: OPCODE = 0x%x:BITCAST\n", inst, inst_log1->instruction.opcode);
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx, value_id3 = 0x%lx->0x%lx\n",
+			inst_log1->value1.value_id,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
+			inst_log1->value3.value_id,
+			external_entry_point->label_redirect[inst_log1->value3.value_id].redirect);
+		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
+		if (!value[value_id]) {
+			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
+			if (tmp) {
+				debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: failed LLVM Value is NULL. srcA value_id = 0x%x\n", value_id);
+				exit(1);
+			}
+		}
+		srcA = value[value_id];
+		value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
+		label = &external_entry_point->labels[value_id_dst];
+		tmp = label_to_string(label, buffer, 1023);
+		if (external_entry_point->labels[value_id_dst].tip2) {
+			size_bits = external_entry_point->tip2[external_entry_point->labels[value_id_dst].tip2].integer_size;
+		} else {
+			size_bits = 8;
+		}
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "label->tip2: size_bits = 0x%lx\n", size_bits);
+		dstA = builder->CreateBitCast(srcA, PointerType::get(IntegerType::get(mod->getContext(), size_bits), 0), buffer);
+		value[value_id_dst] = dstA;
+		break;
+
 
 	default:
 		debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: LLVM 0x%x: OPCODE = 0x%x. Not yet handled.\n", inst, inst_log1->instruction.opcode);

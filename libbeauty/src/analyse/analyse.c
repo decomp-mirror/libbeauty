@@ -2022,8 +2022,8 @@ int scan_for_labels_in_function_body(struct self_s *self, int entry_point_index)
 				debug_print(DEBUG_ANALYSE, 1, "IF: This might give signed or unsigned info to labels\n");
 				break;
 
-			case BC:
-				debug_print(DEBUG_ANALYSE, 1, "BC: TODO\n");
+			case BRANCH:
+				debug_print(DEBUG_ANALYSE, 1, "BRANCH: TODO\n");
 				break;
 
 			case NOP:

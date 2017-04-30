@@ -974,7 +974,7 @@ int fill_node_used_register_table(struct self_s *self, int entry_point)
 			case IF:
 				/* This does nothing to the table */
 				break;
-			case BC:
+			case BRANCH:
 				/* Branch Conditional */
 				if ((instruction->srcA.store == STORE_REG) &&
 					(instruction->srcA.indirect == IND_DIRECT)) {
@@ -2545,7 +2545,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 			break;
 		case IF:
 			break;
-		case BC:
+		case BRANCH:
 			switch (instruction->srcA.store) {
 			case STORE_DIRECT:
 				memset(&label, 0, sizeof(struct label_s));
@@ -2576,7 +2576,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				//labels[variable_id].lab_pointer += label.lab_pointer;
 				labels[variable_id].value = label.value;
 				//labels[variable_id].size_bits = label.size_bits;
-				debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x: BC srcA direct given value_id = 0x%"PRIx64"\n",
+				debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x: BRANCH srcA direct given value_id = 0x%"PRIx64"\n",
 					entry_point, node, inst,
 					inst_log1->value1.value_id); 
 				variable_id++;
@@ -2585,7 +2585,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				/* FIXME: TODO*/
 				inst_log1->value1.value_id = 
 					reg_tracker[instruction->srcA.index];
-				debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x: BC srcA given value_id = 0x%"PRIx64"\n",
+				debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x: BRANCH srcA given value_id = 0x%"PRIx64"\n",
 					entry_point, node, inst,
 					inst_log1->value1.value_id); 
 				break;
@@ -3024,7 +3024,7 @@ int is_pointer_mem(struct label_s *labels, int value_id)
 {
 	struct label_s *label = &labels[value_id];
 	int mem = 0;
-	debug_print(DEBUG_ANALYSE_TIP, 1, "label: scope = 0x%x type = 0x%x\n", label->scope, label->type);
+	debug_print(DEBUG_ANALYSE_TIP, 1, "label: scope = 0x%lx type = 0x%lx\n", label->scope, label->type);
 	if ((3 == label->scope) && (2 == label->type)) {
 		mem = 1;
 	}
@@ -3189,9 +3189,9 @@ int build_tip2_table(struct self_s *self, int entry_point, int node)
 			ret = 0;
 			break;
 
-		case BC:
+		case BRANCH:
 			value_id1 = inst_log1->value1.value_id;
-			/* size_bits = 1 for a BC */
+			/* size_bits = 1 for a BRANCH */
 			tmp = rule_add(self, entry_point, node, inst, 0, 1, value_id1, 0, 0, 0, 0, 0, 1);
 			ret = 0;
 			break;
@@ -4051,7 +4051,7 @@ int fix_flag_dependency_instructions(struct self_s *self)
 				inst_log_entry[prev].instruction.dstA.relocated = 0;
 				inst_log_entry[prev].instruction.dstA.value_size = 1;
 				inst_log_entry[prev].value3.value_scope =  2;
-				instruction->opcode = BC;
+				instruction->opcode = BRANCH;
 				instruction->srcA.index = REG_LESS;
 				instruction->srcA.store = STORE_REG;
 				instruction->srcA.indirect = IND_DIRECT;
@@ -4177,7 +4177,7 @@ int fix_flag_dependency_instructions(struct self_s *self)
 				inst_log1_flags->instruction.dstA.value_size = 1;
 				inst_log1_flags->value3.value_scope =  2;
 				/* FIXME: fill in rest of instruction dstA and then its value3 */
-				instruction->opcode = BC;
+				instruction->opcode = BRANCH;
 				instruction->srcA.index = REG_OVERFLOW + inst_log1->instruction.srcA.index;
 				instruction->srcA.store = STORE_REG;
 				instruction->srcA.indirect = IND_DIRECT;
@@ -4191,7 +4191,7 @@ int fix_flag_dependency_instructions(struct self_s *self)
 				//	debug_print(DEBUG_MAIN, 1, "flag NOT HANDLED inst 0x%x TEST OP:0x%x\n", n, inst_log1_flags->instruction.opcode);
 				//	exit (1);
 				//}
-				/* Change TEST,IF to AND,ICMP,BC */
+				/* Change TEST,IF to AND,ICMP,BRANCH */
 				tmp = insert_nop_after(self, self->flag_dependency[n], &new_inst);
 				reg_size = inst_log1_flags->instruction.srcA.value_size;
 				inst_log1_flags->instruction.opcode = rAND;
@@ -4223,7 +4223,7 @@ int fix_flag_dependency_instructions(struct self_s *self)
 				inst_log_entry[new_inst].value3.value_scope =  2;
 
 				/* FIXME: fill in rest of instruction dstA and then its value3 */
-				instruction->opcode = BC;
+				instruction->opcode = BRANCH;
 				instruction->srcA.index = REG_OVERFLOW + inst_log1->instruction.srcA.index;
 				instruction->srcA.store = STORE_REG;
 				instruction->srcA.indirect = IND_DIRECT;
@@ -4258,7 +4258,7 @@ int fix_flag_dependency_instructions(struct self_s *self)
 				inst_log_entry[new_inst].value3.value_scope =  2;
 
 				/* FIXME: fill in rest of instruction dstA and then its value3 */
-				instruction->opcode = BC;
+				instruction->opcode = BRANCH;
 				instruction->srcA.index = REG_OVERFLOW + inst_log1->instruction.srcA.index;
 				instruction->srcA.store = STORE_REG;
 				instruction->srcA.indirect = IND_DIRECT;
@@ -4284,7 +4284,7 @@ int fix_flag_dependency_instructions(struct self_s *self)
 				inst_log_entry[new_inst].value3.value_scope =  2;
 
 				/* FIXME: fill in rest of instruction dstA and then its value3 */
-				instruction->opcode = BC;
+				instruction->opcode = BRANCH;
 				instruction->srcA.index = REG_OVERFLOW + inst_log1->instruction.srcA.index;
 				instruction->srcA.store = STORE_REG;
 				instruction->srcA.indirect = IND_DIRECT;
@@ -4330,7 +4330,7 @@ int fix_flag_dependency_instructions(struct self_s *self)
 					inst_log_entry[new_inst].value3.value_scope =  2;
 
 					/* FIXME: fill in rest of instruction dstA and then its value3 */
-					instruction->opcode = BC;
+					instruction->opcode = BRANCH;
 					instruction->srcA.index = REG_OVERFLOW + inst_log1->instruction.srcA.index;
 					instruction->srcA.store = STORE_REG;
 					instruction->srcA.indirect = IND_DIRECT;
@@ -4803,11 +4803,11 @@ int assign_id_label_dst(struct self_s *self, int function, int inst, struct inst
 		}
 		break;
 	case IF:
-	case BC:
+	case BRANCH:
 	case RET:
 	case JMP:
 	case JMPT:
-		debug_print(DEBUG_MAIN, 1, "IF, BC, RET, JMP, JMPT have no DST\n");
+		debug_print(DEBUG_MAIN, 1, "IF, BRANCH, RET, JMP, JMPT have no DST\n");
 		ret = 0;
 		break;
 	default:

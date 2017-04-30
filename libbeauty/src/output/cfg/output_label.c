@@ -814,6 +814,7 @@ int output_inst_in_c(struct self_s *self, struct process_state_s *process_state,
 		case SEX:
 		case ZEXT:
 		case TRUNC:
+		case BITCAST:
 			if (inst_log1->value1.value_type == 6) {
 				debug_print(DEBUG_OUTPUT, 1, "ERROR1\n");
 				//break;
@@ -1329,7 +1330,7 @@ int output_inst_in_c(struct self_s *self, struct process_state_s *process_state,
 
 			break;
 
-		case BC:
+		case BRANCH:
 			/* FIXME: Never gets here, why? */
 			/* Don't do anything for this instruction. */
 			/* only does anything if combined with a branch instruction */
@@ -1344,7 +1345,7 @@ int output_inst_in_c(struct self_s *self, struct process_state_s *process_state,
 //			debug_print(DEBUG_OUTPUT, 1, "\t LHS=%d, ",inst_log1->prev[0]);
 //			debug_print(DEBUG_OUTPUT, 1, "IF goto label%04"PRIx32";\n", inst_log1->next[1]);
 			if (IND_MEM == instruction->srcA.indirect) {
-				debug_print(DEBUG_OUTPUT, 1, "BC: srcA Illegal indirect\n");
+				debug_print(DEBUG_OUTPUT, 1, "BRANCH: srcA Illegal indirect\n");
 				return 1;
 			} else {
 				value_id = inst_log1->value1.value_id;

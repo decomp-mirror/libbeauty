@@ -79,7 +79,7 @@ enum {
 #define CALLT 0x21 /* Call jump table */
 #define PHI 0x22 /* A PHI point */
 #define ICMP 0x23 /* ICMP. Similar to LLVM ICMP */
-#define BC 0x24 /* Branch Conditional. Similar to LLVM ICMP */
+#define BRANCH 0x24 /* Branch Conditional. Similar to LLVM ICMP */
 #define LOAD 0x25 /* Load from memory/stack */
 #define STORE 0x26 /* Store to memory/stack */
 #define LEA 0x27 /* Used at the MC Inst low level */
@@ -99,6 +99,7 @@ enum {
 #define MULD 0x35 /* MULD special instruction to be expanded to USEX,USEX,MUL, LSHR, TRUNC, TRUNC */
 #define TRUNC 0x36 /* Truncate from large number of bits to smaller number of bits. */
 #define ZEXT 0x37 /* Zero Extention */
+#define BITCAST 0x38 /* Bit Cast */
 
 #define FLAG_NONE 0
 #define FLAG_OVERFLOW 1

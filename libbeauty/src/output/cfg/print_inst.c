@@ -78,7 +78,7 @@ const char * opcode_table[] = {
 	"CALLT",  // 0x21
 	"PHI",  // 0x22
 	"ICMP",  // 0x23
-	"BC",  // 0x24
+	"BRANCH",  // 0x24
 	"LOAD",  // 0x25
 	"STORE",  // 0x26
 	"LEA",  // 0x27
@@ -98,6 +98,7 @@ const char * opcode_table[] = {
 	"MULD",  // 0x35
 	"TRUNC",  // 0x36
 	"ZEXT",  // 0x37
+	"BITCAST",  // 0x38
 };
 
 char *store_table[] = { "i", "r", "m", "s" };
@@ -368,7 +369,7 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 		}
 		ret = 0;
 		break;
-	case BC:
+	case BRANCH:
 		if (instruction->srcA.indirect) {
 			tmp = snprintf(buffer, 1023, " %s[%s0x%"PRIx64"]/%d,",
 				indirect_table[instruction->srcA.indirect],
@@ -538,6 +539,25 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 		ret = 0;
 		break;
 	case TRUNC:
+		if (instruction->srcA.indirect ||
+			(instruction->dstA.indirect)) {
+			ret = 1;
+			break;
+		}
+		tmp = snprintf(buffer, 1023, " %s0x%"PRIx64"/%d,",
+			store_table[instruction->srcA.store],
+			instruction->srcA.index,
+			instruction->srcA.value_size);
+		tmp = string_cat(string, buffer, strlen(buffer));
+
+		tmp = snprintf(buffer, 1023, " %s0x%"PRIx64"/%d",
+			store_table[instruction->dstA.store],
+			instruction->dstA.index,
+			instruction->dstA.value_size);
+		tmp = string_cat(string, buffer, strlen(buffer));
+		ret = 0;
+		break;
+	case BITCAST:
 		if (instruction->srcA.indirect ||
 			(instruction->dstA.indirect)) {
 			ret = 1;

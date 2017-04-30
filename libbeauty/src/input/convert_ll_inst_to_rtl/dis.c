@@ -68,7 +68,7 @@ const char * dis_opcode_table[] = {
 	"CALLT",  // 0x21
 	"PHI",  // 0x22
 	"ICMP",  // 0x23
-	"BC",  // 0x24
+	"BRANCH",  // 0x24 
 	"LOAD",  // 0x25
 	"STORE",  // 0x26
 	"LEA",  // 0x27
@@ -82,6 +82,13 @@ const char * dis_opcode_table[] = {
 	"GEP1", // 0x2f
 	"CALLM", // 0x30
 	"SETCC", // 0x31
+	"JMPM", // 0x32
+	"MOVS", // 0x33
+	"IMULD", // 0x34
+	"MULD", // 0x35
+	"TRUNC", // 0x36
+	"ZEXT", // 0x37
+	"BITCAST", // 0x38 
 	""
 };
 
@@ -867,7 +874,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		break;
 	case ICMP: /* ICMP. Similar to LLVM ICMP */
 		break;
-	case BC: /* Branch Conditional. Similar to LLVM ICMP */
+	case BRANCH: /* Branch Conditional. Similar to LLVM ICMP */
 		break;
 	case LOAD: /* Load from memory/stack */
 		tmp  = convert_base(self, ll_inst, 0, dis_instructions);
