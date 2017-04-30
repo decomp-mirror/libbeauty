@@ -1053,11 +1053,17 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		label = &external_entry_point->labels[value_id_dst];
 		tmp = label_to_string(label, buffer, 1023);
 		if (external_entry_point->labels[value_id_dst].tip2) {
-			size_bits = external_entry_point->tip2[external_entry_point->labels[value_id_dst].tip2].integer_size;
+			uint64_t pointer_to_tip;
+			pointer_to_tip = external_entry_point->tip2[label->tip2].pointer_to_tip;
+			if (pointer_to_tip) {
+				size_bits = external_entry_point->tip2[pointer_to_tip].integer_size;
+			} else {
+				size_bits = 8;
+			}
 		} else {
 			size_bits = 8;
 		}
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "label->tip2: size_bits = 0x%lx\n", size_bits);
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "BITCAST: label->tip2: size_bits = 0x%lx\n", size_bits);
 		dstA = builder->CreateBitCast(srcA, PointerType::get(IntegerType::get(mod->getContext(), size_bits), 0), buffer);
 		value[value_id_dst] = dstA;
 		break;

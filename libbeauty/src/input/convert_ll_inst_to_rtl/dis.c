@@ -215,6 +215,12 @@ struct operand_low_level_s operand_reg_tmp2 = {
 	.operand = {{.value = REG_TMP2, .size = 64, .offset = 0}},
 };
 
+struct operand_low_level_s operand_reg_tmp3 = {
+	.kind = KIND_REG,
+	.size = 64,
+	.operand = {{.value = REG_TMP3, .size = 64, .offset = 0}},
+};
+
 
 int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, int flags, struct dis_instructions_s *dis_instructions) {
 	int tmp;
@@ -495,23 +501,34 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 
 		if ((srcA_operand->kind == KIND_IND_SCALE) ||
 			(srcB_operand->kind == KIND_IND_SCALE)) {
+
+			instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
+			instruction->opcode = BITCAST;
+			instruction->flags = 0;
+			convert_operand(self, ll_inst->address, previous_operand, 0, &(instruction->srcA));
+			instruction->srcA.value_size = 0; /* Don't know the size at this point */
+			convert_operand(self, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->dstA));
+			//instruction->dstA.value_size = ll_inst->srcA.size;
+			instruction->dstA.value_size = 0;
+			dis_instructions->instruction_number++;
+
 			instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 			instruction->opcode = LOAD;
 			instruction->flags = 0;
-			convert_operand(self, ll_inst->address, previous_operand, 0, &(instruction->srcA));
+			convert_operand(self, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->srcA));
 			instruction->srcA.value_size = ll_inst->srcA.size;
 			if (ind_stack) {
 				instruction->srcA.indirect = IND_STACK;
 			} else {
 				instruction->srcA.indirect = IND_MEM;
 			}
-			convert_operand(self, ll_inst->address, previous_operand, 0, &(instruction->srcB));
+			convert_operand(self, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->srcB));
 			instruction->srcB.value_size = 64;
-			convert_operand(self, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->dstA));
+			convert_operand(self, ll_inst->address, &operand_reg_tmp3, 0, &(instruction->dstA));
 			instruction->dstA.value_size = ll_inst->srcA.size;
 			dis_instructions->instruction_number++;
+			previous_operand = &operand_reg_tmp3;
 		}
-		previous_operand = &operand_reg_tmp2;
 		
 		if (ll_inst->srcA.kind == KIND_IND_SCALE) {
 			srcA_operand = previous_operand;

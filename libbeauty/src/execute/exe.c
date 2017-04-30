@@ -859,6 +859,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 	case CALL:
 	case IF:
 	case SEX:
+	case BITCAST:
 		break;
 	default:
 		debug_print(DEBUG_EXE, 1, "ERROR: Unchecked value_size\n");
@@ -2044,7 +2045,64 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		put_value_RTL_instruction(self, process_state, inst);
 		break;
 
+	case BITCAST:
+		debug_print(DEBUG_EXE, 1, "BITCAST\n");
+		/* Get value of srcA */
+		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcA), &(inst->value1), 0); 
+		/* Create result */
+		inst->value3.start_address = instruction->dstA.index;
+		inst->value3.length = instruction->dstA.value_size;
+		//inst->value3.length = inst->value1.length;
+		/* FIXME: Stored value in reg store should be size modified */
+		value = search_store(process_state->memory_reg,
+				instruction->dstA.index,
+				instruction->dstA.value_size);
+		if (value) {
+			/* Only update it if is is found */
+			value->length = instruction->dstA.value_size;
+		}
+		debug_print(DEBUG_EXE, 1, "BITCAST dest length = %d %d\n", inst->value1.length, inst->value3.length);
+		inst->value3.init_value_type = inst->value1.init_value_type;
+		inst->value3.init_value = inst->value1.init_value;
+		inst->value3.offset_value = inst->value1.offset_value;
+		inst->value3.value_type = inst->value1.value_type;
+		if (inst->instruction.dstA.indirect) {
+			inst->value3.indirect_init_value =
+				inst->value1.indirect_init_value;
+			inst->value3.indirect_offset_value =
+				inst->value1.indirect_offset_value;
+			inst->value3.value_id =
+				inst->value1.value_id;
+		}
+		inst->value3.ref_memory =
+			inst->value1.ref_memory;
+		inst->value3.ref_log =
+			inst->value1.ref_log;
+		/* Note: value_scope stays from the dst, not the src. */
+		/* FIXME Maybe Exception is the MOV instruction */
+		inst->value3.value_scope = inst->value1.value_scope;
+		/* MOV param to local */
+		/* When the destination is a param_reg,
+		 * Change it to a local_reg */
+		if ((inst->value3.value_scope == 1) &&
+			(STORE_REG == instruction->dstA.store) &&
+			(1 == inst->value1.value_scope) &&
+			(0 == instruction->dstA.indirect)) {
+			inst->value3.value_scope = 2;
+		}
+		/* Counter */
+		inst->value3.value_id = 0;
+		inst->value1.value_id = 0;
+		/* 1 - Entry Used */
+		inst->value3.valid = 1;
+			debug_print(DEBUG_EXE, 1, "value=0x%"PRIx64"+0x%"PRIx64"=0x%"PRIx64"\n",
+				inst->value3.init_value,
+				inst->value3.offset_value,
+				inst->value3.init_value +
+					inst->value3.offset_value);
+		put_value_RTL_instruction(self, process_state, inst);
 		break;
+
 	default:
 		debug_print(DEBUG_EXE, 1, "Unhandled EXE intruction 0x%x\n", instruction->opcode);
 		ret = 1;

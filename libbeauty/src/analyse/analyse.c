@@ -1918,6 +1918,7 @@ int scan_for_labels_in_function_body(struct self_s *self, int entry_point_index)
 			case SEX:
 			case ZEXT:
 			case TRUNC:
+			case BITCAST:
 				debug_print(DEBUG_ANALYSE, 1, "MOV, SEX, TRUNC or ZEXT\n");
 				value_id = inst_log1->value1.value_id;
 				debug_print(DEBUG_ANALYSE, 1, "value1\n");

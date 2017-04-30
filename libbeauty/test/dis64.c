@@ -752,6 +752,7 @@ int fill_node_used_register_table(struct self_s *self, int entry_point)
 			/* DSTA, SRCA, SRCB == nothing */
 			case MOV:
 			case TRUNC:
+			case BITCAST:
 				/* If SRC and DST in same instruction, let SRC dominate. */
 				if ((instruction->srcA.store == STORE_REG) &&
 					(instruction->srcA.indirect == IND_DIRECT)) {
@@ -1724,6 +1725,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 		case NOP:
 			break;
 		case MOV:
+		case BITCAST:
 			switch (instruction->srcA.store) {
 			case STORE_DIRECT:
 				memset(&label, 0, sizeof(struct label_s));
@@ -3086,6 +3088,17 @@ int build_tip2_table(struct self_s *self, int entry_point, int node)
 			ret = 0;
 			break;
 
+		case BITCAST:
+			value_id1 = inst_log1->value1.value_id;
+			value_id3 = inst_log1->value3.value_id;
+			size_bits1 = 0;
+			size_bits3 = 0;
+			is_pointer = 1;
+			tmp = rule_add(self, entry_point, node, inst, 0, 1, value_id1, 0, 0, value_id3, is_pointer, 0, size_bits1);
+			tmp = rule_add(self, entry_point, node, inst, 0, 3, value_id3, value_id1, 0, 0, is_pointer, 0, size_bits3);
+			ret = 0;
+			break;
+
 		case LOAD:
 			/* If the destination is a pointer register, the source must also be a pointer */
 			value_id1 = inst_log1->value1.value_id;
@@ -3199,6 +3212,7 @@ int build_tip2_table(struct self_s *self, int entry_point, int node)
 		default:
 			debug_print(DEBUG_ANALYSE_TIP, 1, "build_tip_table failed for Inst:0x%x:0x%04x, OP 0x%x\n",
 				entry_point, inst, instruction->opcode);
+			exit(1);
 			goto exit1;
 		}
 		if (inst == nodes[node].inst_end) {
@@ -4641,6 +4655,7 @@ int assign_id_label_dst(struct self_s *self, int function, int inst, struct inst
 	case SEX:
 	case ZEXT:
 	case TRUNC:
+	case BITCAST:
 	case ICMP:
 	case LOAD:
 		switch (instruction->dstA.indirect) {
