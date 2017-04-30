@@ -2664,7 +2664,12 @@ int rule_add(struct self_s *self, int entry_point, int node, int inst, int phi, 
 		tip_this->rules[index].tip_derived_from_this = tip_derived_from_this;
 		tip_this->rules[index].pointer = pointer;
 		tip_this->rules[index].pointer_to_tip2 = pointer_to_tip2;
-		tip_this->rules[index].size_bits = size_bits;
+		if (pointer) {
+			/* If its a pointer, it has no size yet. The size is only filled in if it might be an int */
+			tip_this->rules[index].size_bits = 0;
+		} else {
+			tip_this->rules[index].size_bits = size_bits;
+		}
 		debug_print(DEBUG_ANALYSE_TIP, 1, "0x%x:0x%lx node = 0x%x, inst = 0x%x:%s, phi = 0x%x, operand = 0x%x, tipA_derived_from = 0x%x, tipB_derived_from = 0x%x, tip_derived_from_this = 0x%x, pointer = 0x%x, pointer_to_tip2 = 0x%x, size_bits = 0x%x\n",
 			label_index,
 			label_redirect_index,
@@ -2984,6 +2989,8 @@ int tip_rules_process(struct self_s *self, int entry_point)
 				tip_this->pointer = 1;
 				if (rule_this->pointer_to_tip2) {
 					tip_this->pointer_to_tip = rule_this->pointer_to_tip2;
+					/* A pointer has no size yet */
+					tip_this->integer_size = 0;
 				}
 			} else {
 				if (rule_this->size_bits) {
@@ -2996,7 +3003,7 @@ int tip_rules_process(struct self_s *self, int entry_point)
 				}
 			}
 		}
-		if (tip_this->pointer == 0 && size) {
+		if ((tip_this->pointer == 0) && size) {
 			tip_this->integer_size = size;
 		}
 	}
@@ -3012,6 +3019,19 @@ int is_pointer_reg(struct operand_s *operand) {
 	}
 	return 0;
 }
+
+int is_pointer_mem(struct label_s *labels, int value_id)
+{
+	struct label_s *label = &labels[value_id];
+	int mem = 0;
+	debug_print(DEBUG_ANALYSE_TIP, 1, "label: scope = 0x%x type = 0x%x\n", label->scope, label->type);
+	if ((3 == label->scope) && (2 == label->type)) {
+		mem = 1;
+	}
+/* FIXME: detect a @data0  type */
+	return mem;
+}
+
 
 /* The TIP table is build initially to identify pointers first.
  * It can do this from the LOAD and STORE instructions.
@@ -3033,7 +3053,7 @@ int build_tip2_table(struct self_s *self, int entry_point, int node)
 	int found = 0;
 	int ret = 1;
 	int tmp;
-	int value_id1, value_id2, value_id3;
+	int value_id, value_id1, value_id2, value_id3;
 	int size_bits1, size_bits2, size_bits3;
 	int is_pointer = 0;
 	int is_pointer1 = 0;
@@ -3118,17 +3138,29 @@ int build_tip2_table(struct self_s *self, int entry_point, int node)
 		case SAR:
 		case SEX:
 		case ICMP:
-			value_id1 = inst_log1->value1.value_id;
-			value_id2 = inst_log1->value2.value_id;
-			value_id3 = inst_log1->value3.value_id;
+			value_id = inst_log1->value1.value_id;
+			value_id1 = label_redirect[value_id].redirect;
+			value_id = inst_log1->value2.value_id;
+			value_id2 = label_redirect[value_id].redirect;
+			value_id = inst_log1->value3.value_id;
+			value_id3 = label_redirect[value_id].redirect;
 			size_bits1 = instruction->srcA.value_size;
 			size_bits2 = instruction->srcB.value_size;
 			size_bits3 = instruction->dstA.value_size;
 			is_pointer1 = is_pointer_reg(&(instruction->srcA));
+			if (is_pointer_mem(labels, value_id1)) {
+				is_pointer1 = 1;
+			}
 			if (value_id1 == 3) is_pointer1 = 1;
 			is_pointer2 = is_pointer_reg(&(instruction->srcB));
+			if (is_pointer_mem(labels, value_id2)) {
+				is_pointer2 = 1;
+			}
 			if (value_id2 == 3) is_pointer2 = 1;
 			is_pointer3 = is_pointer_reg(&(instruction->dstA));
+			if (is_pointer_mem(labels, value_id3)) {
+				is_pointer3 = 1;
+			}
 			if (value_id3 == 3) is_pointer3 = 1;
 			debug_print(DEBUG_ANALYSE_TIP, 1, "ADD-SUB is_p1 0x%x, is_p2 0x%x, is_p3 0x%x\n",
 					is_pointer1,
