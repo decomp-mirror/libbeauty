@@ -1224,7 +1224,7 @@ int LLVM_ir_export::output(struct self_s *self)
 					size_bits = 8;
 				}
 				if ((3 == label->scope) && (2 == label->type)) {
-					debug_print(DEBUG_OUTPUT_LLVM, 1, "Label:0x%x: &data found. size=0x%lx, pointer=0x%lx\n",
+					debug_print(DEBUG_OUTPUT_LLVM, 1, "Adding GLOBAL: Label:0x%x: &data found. size=0x%lx, pointer=0x%lx\n",
 							m, size_bits,
 							tip2[labels[index].tip2].pointer);
 					GlobalVariable* gvar_int32_mem1 = new GlobalVariable(/*Module=*/*mod,
