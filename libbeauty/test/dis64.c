@@ -1502,7 +1502,9 @@ int fill_phi_dst_size_from_src_size(struct self_s *self, int entry_point)
 					} else {
 						size_bits = 0;
 					}
-					printf("fill_phi_dst_size node = 0x%x, phi_reg = 0x%x, value_id = 0x%x, size = 0x%lx, label_redirect = 0x%lx\n", node, nodes[node].phi[n].reg, value_id, size_bits, label_redirect[value_id].redirect);
+					printf("fill_phi_dst_size node = 0x%x, phi_reg = 0x%x, value_id = 0x%x, size = 0x%lx, label_redirect = 0x%lx:0x%lx\n",
+						node, nodes[node].phi[n].reg, value_id, size_bits,
+						label_redirect[value_id].domain, label_redirect[value_id].index);
 					if (size_bits == 0) {
 						continue;
 					}
@@ -1653,7 +1655,8 @@ int assign_labels_to_dst(struct self_s *self, int entry_point, int node)
 				debug_print(DEBUG_MAIN, 1, "ERROR: variable_id overrun 10000 limit. Trying to write to %d\n", variable_id);
 				exit(1);
 			}
-			label_redirect[variable_id].redirect = variable_id;
+			label_redirect[variable_id].domain = 1;
+			label_redirect[variable_id].index = variable_id;
 			labels[variable_id].scope = label.scope;
 			labels[variable_id].type = label.type;
 			labels[variable_id].value = label.value;
@@ -1750,7 +1753,8 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				}
 				
 				inst_log1->value1.value_id = variable_id;
-				label_redirect[variable_id].redirect = variable_id;
+				label_redirect[variable_id].domain = 1;
+				label_redirect[variable_id].index = variable_id;
 				labels[variable_id].scope = label.scope;
 				labels[variable_id].type = label.type;
 				//labels[variable_id].lab_pointer += label.lab_pointer;
@@ -1825,7 +1829,8 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				}
 				
 				inst_log1->value1.value_id = variable_id;
-				label_redirect[variable_id].redirect = variable_id;
+				label_redirect[variable_id].domain = 1;
+				label_redirect[variable_id].index = variable_id;
 				labels[variable_id].scope = label.scope;
 				labels[variable_id].type = label.type;
 				//labels[variable_id].lab_pointer += label.lab_pointer;
@@ -1894,7 +1899,8 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 									exit(1);
 								}
 
-								external_entry_point->label_redirect[variable_id].redirect = variable_id;
+								external_entry_point->label_redirect[variable_id].domain = 1;
+								external_entry_point->label_redirect[variable_id].index = variable_id;
 								external_entry_point->labels[variable_id].scope = label.scope;
 								external_entry_point->labels[variable_id].type = label.type;
 								external_entry_point->labels[variable_id].value = label.value;
@@ -1939,7 +1945,8 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 									exit(1);
 								}
 
-								external_entry_point->label_redirect[variable_id].redirect = variable_id;
+								external_entry_point->label_redirect[variable_id].domain = 1;
+								external_entry_point->label_redirect[variable_id].index = variable_id;
 								external_entry_point->labels[variable_id].scope = label.scope;
 								external_entry_point->labels[variable_id].type = label.type;
 								external_entry_point->labels[variable_id].value = label.value;
@@ -2000,8 +2007,9 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 										variable_id);
 								exit(1);
 							}
-
-							external_entry_point->label_redirect[variable_id].redirect = variable_id;
+							/* FIXME: Should this be domain 2 */
+							external_entry_point->label_redirect[variable_id].domain = 1;
+							external_entry_point->label_redirect[variable_id].index = variable_id;
 							external_entry_point->labels[variable_id].scope = label.scope;
 							external_entry_point->labels[variable_id].type = label.type;
 							external_entry_point->labels[variable_id].value = label.value;
@@ -2047,7 +2055,8 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				}
 				
 				inst_log1->value2.value_id = variable_id;
-				label_redirect[variable_id].redirect = variable_id;
+				label_redirect[variable_id].domain = 1;
+				label_redirect[variable_id].index = variable_id;
 				labels[variable_id].scope = label.scope;
 				labels[variable_id].type = label.type;
 				//labels[variable_id].lab_pointer += label.lab_pointer;
@@ -2131,7 +2140,8 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				}
 				
 				inst_log1->value1.value_id = variable_id;
-				label_redirect[variable_id].redirect = variable_id;
+				label_redirect[variable_id].domain = 1;
+				label_redirect[variable_id].index = variable_id;
 				labels[variable_id].scope = label.scope;
 				labels[variable_id].type = label.type;
 				//labels[variable_id].lab_pointer += label.lab_pointer;
@@ -2205,7 +2215,8 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				}
 				
 				inst_log1->value2.value_id = variable_id;
-				label_redirect[variable_id].redirect = variable_id;
+				label_redirect[variable_id].domain = 1;
+				label_redirect[variable_id].index = variable_id;
 				labels[variable_id].scope = label.scope;
 				labels[variable_id].type = label.type;
 				//labels[variable_id].lab_pointer += label.lab_pointer;
@@ -2287,7 +2298,8 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				}
 				
 				inst_log1->value1.value_id = variable_id;
-				label_redirect[variable_id].redirect = variable_id;
+				label_redirect[variable_id].domain = 1;
+				label_redirect[variable_id].index = variable_id;
 				labels[variable_id].scope = label.scope;
 				labels[variable_id].type = label.type;
 				//labels[variable_id].lab_pointer += label.lab_pointer;
@@ -2350,7 +2362,8 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				}
 				
 				inst_log1->value2.value_id = variable_id;
-				label_redirect[variable_id].redirect = variable_id;
+				label_redirect[variable_id].domain = 1;
+				label_redirect[variable_id].index = variable_id;
 				labels[variable_id].scope = label.scope;
 				labels[variable_id].type = label.type;
 				//labels[variable_id].lab_pointer += label.lab_pointer;
@@ -2436,7 +2449,8 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				}
 				
 				inst_log1->value1.value_id = variable_id;
-				label_redirect[variable_id].redirect = variable_id;
+				label_redirect[variable_id].domain = 1;
+				label_redirect[variable_id].index = variable_id;
 				labels[variable_id].scope = label.scope;
 				labels[variable_id].type = label.type;
 				//labels[variable_id].lab_pointer += label.lab_pointer;
@@ -2483,7 +2497,8 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				}
 				
 				inst_log1->value2.value_id = variable_id;
-				label_redirect[variable_id].redirect = variable_id;
+				label_redirect[variable_id].domain = 1;
+				label_redirect[variable_id].index = variable_id;
 				labels[variable_id].scope = label.scope;
 				labels[variable_id].type = label.type;
 				//labels[variable_id].lab_pointer += label.lab_pointer;
@@ -2572,7 +2587,8 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				}
 				
 				inst_log1->value1.value_id = variable_id;
-				label_redirect[variable_id].redirect = variable_id;
+				label_redirect[variable_id].domain = 1;
+				label_redirect[variable_id].index = variable_id;
 				labels[variable_id].scope = label.scope;
 				labels[variable_id].type = label.type;
 				//labels[variable_id].lab_pointer += label.lab_pointer;
@@ -2626,6 +2642,18 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 	return 0;
 }
 
+int check_domain(struct label_redirect_s *label_redirect)
+{
+	if (1 != label_redirect->domain) {
+		debug_print(DEBUG_MAIN, 1, "check_domain failed\n", label_redirect->domain);
+		printf("check_domain failed\n");
+		assert(0);
+		exit(1);
+	}
+	return 0;
+}
+
+
 int rule_add(struct self_s *self, int entry_point, int node, int inst, int phi, int operand,
 	int label_index, int tipA_derived_from, int tipB_derived_from, int tip_derived_from_this, int pointer, int pointer_to_tip2, int size_bits)
 {
@@ -2642,7 +2670,8 @@ int rule_add(struct self_s *self, int entry_point, int node, int inst, int phi, 
 	int tmp;
 	int index;
 	struct label_s *label;
-	uint64_t label_redirect_index = label_redirect[label_index].redirect;
+	check_domain(&(label_redirect[label_index]));
+	uint64_t label_redirect_index = label_redirect[label_index].index;
 	label = &labels[label_redirect_index];
 	if (label->tip2 == 0) {
 		label->tip2 = label_redirect_index;
@@ -2877,7 +2906,8 @@ int tip_fixup1(struct self_s *self, int entry_point, int tip_index, int rule_ind
 			printf("ERROR: variable_id overrun 10000 limit. Trying to write to %d\n", variable_id);
 			exit(1);
 		}
-		label_redirect[variable_id].redirect = variable_id;
+		label_redirect[variable_id].domain = 1;
+		label_redirect[variable_id].index = variable_id;
 		labels[variable_id].scope = label_local.scope;
 		labels[variable_id].type = label_local.type;
 		labels[variable_id].value = label_local.value;
@@ -3152,11 +3182,14 @@ int build_tip2_table(struct self_s *self, int entry_point, int node)
 		case SEX:
 		case ICMP:
 			value_id = inst_log1->value1.value_id;
-			value_id1 = label_redirect[value_id].redirect;
+			check_domain(&(label_redirect[value_id]));
+			value_id1 = label_redirect[value_id].index;
 			value_id = inst_log1->value2.value_id;
-			value_id2 = label_redirect[value_id].redirect;
+			check_domain(&(label_redirect[value_id]));
+			value_id2 = label_redirect[value_id].index;
 			value_id = inst_log1->value3.value_id;
-			value_id3 = label_redirect[value_id].redirect;
+			check_domain(&(label_redirect[value_id]));
+			value_id3 = label_redirect[value_id].index;
 			size_bits1 = instruction->srcA.value_size;
 			size_bits2 = instruction->srcB.value_size;
 			size_bits3 = instruction->dstA.value_size;
@@ -3511,7 +3544,8 @@ int redirect_mov_reg_reg_labels(struct self_s *self, struct external_entry_point
 				value_id = inst_log1->value1.value_id;
 				value_id3 = inst_log1->value3.value_id;
 				/* Use the redirect as the source in case the source value_id has previously been redirected */
-				label_redirect[value_id3].redirect = label_redirect[value_id].redirect;
+				label_redirect[value_id3].domain = label_redirect[value_id].domain;
+				label_redirect[value_id3].index = label_redirect[value_id].index;
 			/* MOV imm,reg */
 			} else if ((IND_DIRECT == instruction->srcA.indirect) &&
 				(STORE_DIRECT == instruction->srcA.store) &&
@@ -3521,7 +3555,8 @@ int redirect_mov_reg_reg_labels(struct self_s *self, struct external_entry_point
 				value_id = inst_log1->value1.value_id;
 				value_id3 = inst_log1->value3.value_id;
 				/* Use the redirect as the source in case the source value_id has previously been redirected */
-				label_redirect[value_id3].redirect = label_redirect[value_id].redirect;
+				label_redirect[value_id3].domain = label_redirect[value_id].domain;
+				label_redirect[value_id3].index = label_redirect[value_id].index;
 			} 
 			break;
 		default:
@@ -3568,7 +3603,8 @@ uint64_t function_find_return_label(struct self_s *self, struct external_entry_p
 		switch (instruction->opcode) {
 		case RET:
 			value_id = inst_log1->value1.value_id;
-			index = label_redirect[value_id].redirect;
+			check_domain(&(label_redirect[value_id]));
+			index = label_redirect[value_id].index;
 			found = 1;
 			break;
 		default:
@@ -3616,9 +3652,12 @@ int change_add_to_gep1(struct self_s *self, struct external_entry_point_s *exter
 		switch (instruction->opcode) {
 		case ADD:
 			debug_print(DEBUG_MAIN, 1, "change_add_to_gep1() node 0x%x, inst 0x%x\n", node, inst);
-			value_id1 = label_redirect[inst_log1->value1.value_id].redirect;
-			value_id2 = label_redirect[inst_log1->value2.value_id].redirect;
-			value_id3 = label_redirect[inst_log1->value3.value_id].redirect;
+			check_domain(&(label_redirect[inst_log1->value1.value_id]));
+			value_id1 = label_redirect[inst_log1->value1.value_id].index;
+			check_domain(&(label_redirect[inst_log1->value2.value_id]));
+			value_id2 = label_redirect[inst_log1->value2.value_id].index;
+			check_domain(&(label_redirect[inst_log1->value3.value_id]));
+			value_id3 = label_redirect[inst_log1->value3.value_id].index;
 			if ((tip2[value_id1].pointer > 0) ||
 				(tip2[value_id2].pointer > 0) ||
 				(tip2[value_id3].pointer > 0)) {
@@ -3629,9 +3668,12 @@ int change_add_to_gep1(struct self_s *self, struct external_entry_point_s *exter
 			break;
 		case SUB:
 			debug_print(DEBUG_MAIN, 1, "change_sub_to_gep1() node 0x%x, inst 0x%x\n", node, inst);
-			value_id1 = label_redirect[inst_log1->value1.value_id].redirect;
-			value_id2 = label_redirect[inst_log1->value2.value_id].redirect;
-			value_id3 = label_redirect[inst_log1->value3.value_id].redirect;
+			check_domain(&(label_redirect[inst_log1->value1.value_id]));
+			value_id1 = label_redirect[inst_log1->value1.value_id].index;
+			check_domain(&(label_redirect[inst_log1->value2.value_id]));
+			value_id2 = label_redirect[inst_log1->value2.value_id].index;
+			check_domain(&(label_redirect[inst_log1->value3.value_id]));
+			value_id3 = label_redirect[inst_log1->value3.value_id].index;
 			/* FIXME: P1 - P2 = I, not P3. */
 			if ((tip2[value_id1].pointer > 0) ||
 				(tip2[value_id2].pointer > 0) ||
@@ -4916,7 +4958,8 @@ int fill_reg_dependency_table(struct self_s *self, struct external_entry_point_s
 					nodes[n].used_register[m].src_first_value_id = external_entry_point->variable_id;
 					nodes[n].used_register[m].src_first_node = 0;
 					nodes[n].used_register[m].src_first_label = 3;
-					external_entry_point->label_redirect[external_entry_point->variable_id].redirect = external_entry_point->variable_id;
+					external_entry_point->label_redirect[external_entry_point->variable_id].domain = 1;
+					external_entry_point->label_redirect[external_entry_point->variable_id].index = external_entry_point->variable_id;
 					external_entry_point->labels[external_entry_point->variable_id].scope = 2;
 					external_entry_point->labels[external_entry_point->variable_id].type = 1;
 					//external_entry_point->labels[external_entry_point->variable_id].lab_pointer = 0;
@@ -4958,21 +5001,30 @@ int dump_labels_table(struct self_s *self, char *buffer)
 			for (n = 0x1; n < 0x500; n++) {
 				struct label_s *label;
 				struct tip2_s *tip2;
-				tmp = external_entry_points[l].label_redirect[n].redirect;
-				label = &(external_entry_points[l].labels[tmp]);
-				tip2 = &(external_entry_points[l].tip2[tmp]);
-				if (label->scope) {
-					printf("Label 0x%x->0x%x:", n, tmp);
-					tmp = label_to_string(label, buffer, 1023);
-					printf("%s/0x%lx,ps=0x%lx, lp=0x%lx, scope=0x%lx\n",
-						buffer,
-						tip2->integer_size,
-						/* FIXME:get correct pointer size */
-						0L,
-						//label->pointer_type_size_bits,
-						tip2->pointer,
-						label->scope);
+				uint64_t label_domain;
+				uint64_t label_index;
+				//check_domain(&(external_entry_points[l].label_redirect[n]));
+				label_domain = external_entry_points[l].label_redirect[n].domain;
+				label_index = external_entry_points[l].label_redirect[n].index;
+				if (1 == label_domain) {
+					label = &(external_entry_points[l].labels[label_index]);
+					tip2 = &(external_entry_points[l].tip2[label_index]);
+					if (label->scope) {
+						printf("Label 0x%x->0x%x:", n, label_index);
+						tmp = label_to_string(label, buffer, 1023);
+						printf("%s/0x%lx,ps=0x%lx, lp=0x%lx, scope=0x%lx\n",
+							buffer,
+							tip2->integer_size,
+							/* FIXME:get correct pointer size */
+							0L,
+							//label->pointer_type_size_bits,
+							tip2->pointer,
+							label->scope);
+					}
+				} else {
+					printf("Label 0x%x->0x%lx:0x%lx", n, label_domain, label_index);
 				}
+
 			}
 		}
 	}
@@ -5834,7 +5886,8 @@ int main(int argc, char *argv[])
 
 			/* Init special labels */
 			/* param_stack0000 == EIP on the stack */
-			external_entry_points[l].label_redirect[3].redirect = 3;
+			external_entry_points[l].label_redirect[3].domain = 1;
+			external_entry_points[l].label_redirect[3].index = 3;
 			external_entry_points[l].labels[3].scope = 2;
 			external_entry_points[l].labels[3].type = 2;
 			external_entry_points[l].labels[3].value = 0;
@@ -5902,7 +5955,8 @@ int main(int argc, char *argv[])
 					printf("JCD: phi insts found at node 0x%x\n", n);
 					for (m = 0; m < external_entry_points[l].nodes[n].phi_size; m++) {
 						external_entry_points[l].nodes[n].phi[m].value_id = external_entry_points[l].variable_id;
-						external_entry_points[l].label_redirect[external_entry_points[l].variable_id].redirect = external_entry_points[l].variable_id;
+						external_entry_points[l].label_redirect[external_entry_points[l].variable_id].domain = 1;
+						external_entry_points[l].label_redirect[external_entry_points[l].variable_id].index = external_entry_points[l].variable_id;
 						external_entry_points[l].labels[external_entry_points[l].variable_id].scope = 1;
 						external_entry_points[l].labels[external_entry_points[l].variable_id].type = 1;
 						//external_entry_points[l].labels[external_entry_points[l].variable_id].lab_pointer = 0;
@@ -6927,7 +6981,7 @@ int main(int argc, char *argv[])
 
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 		if ((external_entry_points[l].valid) && (external_entry_points[l].type == 1)) {
-			tmp = output_cfg_dot(self, external_entry_points[l].label_redirect, external_entry_points[l].labels, l);
+			tmp = output_cfg_dot(self, external_entry_points[l].label_redirect, external_entry_points[l].labels, NULL, l);
 		}
 	}
 	/***************************************************
@@ -7110,7 +7164,8 @@ int main(int argc, char *argv[])
 				external_entry_points[l].inst_log,
 				external_entry_points[l].inst_log_end,
 				external_entry_points[l].label_redirect,
-				external_entry_points[l].labels);
+				external_entry_points[l].labels,
+				NULL);
 			if (tmp) {
 				return 1;
 			}

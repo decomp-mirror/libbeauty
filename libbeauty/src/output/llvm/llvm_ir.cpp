@@ -125,6 +125,15 @@ int sprint_srcA_srcB(raw_string_ostream &OS1, Value *srcA, Value *srcB)
 	return 0;
 }
 
+int check_domain(struct label_redirect_s *label_redirect)
+{
+	if (label_redirect->domain != 1) {
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "Check Domain failed. %lu\n", label_redirect->domain);
+		assert(0);
+		exit(1);
+	}
+	return 0;
+}
 
 int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct declaration_s *declaration, Value **value, BasicBlock **bb, int node, int external_entry, int inst)
 {
@@ -166,13 +175,16 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 //			/* Skip the 0x28 reg as it is the SP reg */
 //			break;
 //		}
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx, value_id3 = 0x%lx->0x%lx\n",
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx:0x%lx, value_id3 = 0x%lx->0x%lx:0x%lx\n",
 			inst_log1->value1.value_id,
-			external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].index,
 			inst_log1->value3.value_id,
-			external_entry_point->label_redirect[inst_log1->value3.value_id].redirect);
+			external_entry_point->label_redirect[inst_log1->value3.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value3.value_id].index);
 		if (inst_log1->instruction.srcA.store == 0) {  /* IMM */
-			value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
+			tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
+			value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
 			if (!value[value_id]) {
 				tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 				if (tmp) {
@@ -188,12 +200,15 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 //			/* Skip the 0x28 reg as it is the SP reg */
 //			break;
 //		}
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx, value_id2 = 0x%lx->0x%lx\n",
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx:0x%lx, value_id2 = 0x%lx->0x%lx:0x%lx\n",
 			inst_log1->value1.value_id,
-			external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].index,
 			inst_log1->value2.value_id,
-			external_entry_point->label_redirect[inst_log1->value2.value_id].redirect);
-		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
+			external_entry_point->label_redirect[inst_log1->value2.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value2.value_id].index);
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -202,7 +217,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			}
 		}
 		srcA = value[value_id];
-		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].redirect;
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value2.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -230,12 +246,15 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 //			/* Skip the 0x28 reg as it is the SP reg */
 //			break;
 //		}
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx, value_id2 = 0x%lx->0x%lx\n",
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx:0x%lx, value_id2 = 0x%lx->0x%lx:0x%lx\n",
 			inst_log1->value1.value_id,
-			external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].index,
 			inst_log1->value2.value_id,
-			external_entry_point->label_redirect[inst_log1->value2.value_id].redirect);
-		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
+			external_entry_point->label_redirect[inst_log1->value2.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value2.value_id].index);
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -258,7 +277,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			external_entry_point->tip2[external_entry_point->labels[value_id].tip2].pointer,
 			external_entry_point->labels[value_id].name);
 
-		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].redirect;
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value2.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -301,12 +321,15 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 //			/* Skip the 0x28 reg as it is the SP reg */
 //			break;
 //		}
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx, value_id2 = 0x%lx->0x%lx\n",
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx:0x%lx, value_id2 = 0x%lx->0x%lx:0x%lx\n",
 			inst_log1->value1.value_id,
-			external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].index,
 			inst_log1->value2.value_id,
-			external_entry_point->label_redirect[inst_log1->value2.value_id].redirect);
-		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
+			external_entry_point->label_redirect[inst_log1->value2.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value2.value_id].index);
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -315,7 +338,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			}
 		}
 		srcA = value[value_id];
-		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].redirect;
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value2.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -343,12 +367,15 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 //			/* Skip the 0x28 reg as it is the SP reg */
 //			break;
 //		}
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx, value_id2 = 0x%lx->0x%lx\n",
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx:0x%lx, value_id2 = 0x%lx->0x%lx:0x%lx\n",
 			inst_log1->value1.value_id,
-			external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].index,
 			inst_log1->value2.value_id,
-			external_entry_point->label_redirect[inst_log1->value2.value_id].redirect);
-		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
+			external_entry_point->label_redirect[inst_log1->value2.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value2.value_id].index);
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -357,7 +384,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			}
 		}
 		srcA = value[value_id];
-		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].redirect;
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value2.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -385,12 +413,15 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 //			/* Skip the 0x28 reg as it is the SP reg */
 //			break;
 //		}
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx, value_id2 = 0x%lx->0x%lx\n",
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx:0x%lx, value_id2 = 0x%lx->0x%lx:0x%lx\n",
 			inst_log1->value1.value_id,
-			external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].index,
 			inst_log1->value2.value_id,
-			external_entry_point->label_redirect[inst_log1->value2.value_id].redirect);
-		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
+			external_entry_point->label_redirect[inst_log1->value2.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value2.value_id].index);
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -399,7 +430,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			}
 		}
 		srcA = value[value_id];
-		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].redirect;
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value2.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -443,7 +475,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: params_size = 0x%x:0x%x\n", inst, call_info->params_reg_size, declaration[0].FT->getNumParams());
 			for (n = 0; n < call_info->params_reg_size; n++) {
-				value_id = external_entry_point->label_redirect[call_info->params_reg[n]].redirect;
+				tmp = check_domain(&(external_entry_point->label_redirect[call_info->params_reg[n]]));
+				value_id = external_entry_point->label_redirect[call_info->params_reg[n]].index;
 				debug_print(DEBUG_OUTPUT_LLVM, 1, "call_info_params = 0x%x->0x%x, %p\n", call_info->params_reg[n], value_id, value[value_id]);
 				if (!value_id) {
 					debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: invalid call_info_param\n");
@@ -488,7 +521,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		break;
 	case 0x1e:  // RET
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: OPCODE = 0x%x:RET\n", inst, inst_log1->instruction.opcode);
-		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -510,12 +544,15 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		break;
 	case 0x1f:  // SEX
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: OPCODE = 0x%x:SEX\n", inst, inst_log1->instruction.opcode);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx, value_id3 = 0x%lx->0x%lx\n",
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx:0x%lx, value_id3 = 0x%lx->0x%lx:0x%lx\n",
 			inst_log1->value1.value_id,
-			external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].index,
 			inst_log1->value3.value_id,
-			external_entry_point->label_redirect[inst_log1->value3.value_id].redirect);
-		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
+			external_entry_point->label_redirect[inst_log1->value3.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value3.value_id].index);
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -527,7 +564,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		sprint_value(OS1, srcA);
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 		Buf1.clear();
-		value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value3.value_id]));
+		value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].index;
 		label = &external_entry_point->labels[value_id_dst];
 		tmp = label_to_string(label, buffer, 1023);
 		if (external_entry_point->labels[value_id_dst].tip2) {
@@ -549,12 +587,15 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 //			break;
 //		}
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "ICMP predicate = 0x%x\n", inst_log1->instruction.predicate);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx, value_id2 = 0x%lx->0x%lx\n",
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx:0x%lx, value_id2 = 0x%lx->0x%lx:0x%lx\n",
 			inst_log1->value1.value_id,
-			external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].index,
 			inst_log1->value2.value_id,
-			external_entry_point->label_redirect[inst_log1->value2.value_id].redirect);
-		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
+			external_entry_point->label_redirect[inst_log1->value2.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value2.value_id].index);
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -564,7 +605,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			}
 		}
 		srcA = value[value_id];
-		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].redirect;
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value2.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -589,10 +631,12 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		break;
 	case 0x24:  // BRANCH
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: OPCODE = 0x%x:BRANCH\n", inst, inst_log1->instruction.opcode);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx\n",
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx:0x%lx\n",
 			inst_log1->value1.value_id,
-			external_entry_point->label_redirect[inst_log1->value1.value_id].redirect);
-		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
+			external_entry_point->label_redirect[inst_log1->value1.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].index);
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -624,13 +668,16 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 //		}
 		switch (inst_log1->instruction.srcA.indirect) {
 		case 1:  // Memory
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "LOAD Memory: value_id1 = 0x%lx->0x%lx, value_id2 = 0x%lx->0x%lx value_id3 = 0x%lx->0x%lx\n",
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "LOAD Memory: value_id1 = 0x%lx->0x%lx:0x%lx, value_id2 = 0x%lx->0x%lx:0x%lx value_id3 = 0x%lx->0x%lx:0x%lx\n",
 				inst_log1->value1.value_id,
-				external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
+				external_entry_point->label_redirect[inst_log1->value1.value_id].domain,
+				external_entry_point->label_redirect[inst_log1->value1.value_id].index,
 				inst_log1->value2.value_id,
-				external_entry_point->label_redirect[inst_log1->value2.value_id].redirect,
+				external_entry_point->label_redirect[inst_log1->value2.value_id].domain,
+				external_entry_point->label_redirect[inst_log1->value2.value_id].index,
 				inst_log1->value3.value_id,
-				external_entry_point->label_redirect[inst_log1->value3.value_id].redirect);
+				external_entry_point->label_redirect[inst_log1->value3.value_id].domain,
+				external_entry_point->label_redirect[inst_log1->value3.value_id].index);
 			/*
 			value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
 			if (!value[value_id]) {
@@ -642,7 +689,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			}
 			srcA = value[value_id];
 			*/
-			value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].redirect;
+			tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value2.value_id]));
+			value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].index;
 			if (!value[value_id]) {
 				debug_print(DEBUG_OUTPUT_LLVM, 1, "fill_value: value_id = 0x%x\n", value_id);
 				tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
@@ -664,7 +712,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			Buf1.clear();
 			*/
 
-			value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
+			tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value3.value_id]));
+			value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].index;
 			label = &external_entry_point->labels[value_id_dst];
 			tmp = label_to_string(label, buffer, 1023);
 			if (external_entry_point->labels[value_id_dst].tip2) {
@@ -690,15 +739,19 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			}
 			break;
 		case 2:  // Stack
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "LOAD Stack: value_id1 = 0x%lx->0x%lx, value_id2 = 0x%lx->0x%lx value_id3 = 0x%lx->0x%lx\n",
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "LOAD Stack: value_id1 = 0x%lx->0x%lx:0x%lx, value_id2 = 0x%lx->0x%lx:0x%lx value_id3 = 0x%lx->0x%lx:0x%lx\n",
 				inst_log1->value1.value_id,
-				external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
+				external_entry_point->label_redirect[inst_log1->value1.value_id].domain,
+				external_entry_point->label_redirect[inst_log1->value1.value_id].index,
 				inst_log1->value2.value_id,
-				external_entry_point->label_redirect[inst_log1->value2.value_id].redirect,
+				external_entry_point->label_redirect[inst_log1->value2.value_id].domain,
+				external_entry_point->label_redirect[inst_log1->value2.value_id].index,
 				inst_log1->value3.value_id,
-				external_entry_point->label_redirect[inst_log1->value3.value_id].redirect);
+				external_entry_point->label_redirect[inst_log1->value3.value_id].domain,
+				external_entry_point->label_redirect[inst_log1->value3.value_id].index);
 
-			value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
+			tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
+			value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
 			if (!value[value_id]) {
 				tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 				if (tmp) {
@@ -713,7 +766,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 				param_stack = 1;
 			}
 
-			value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].redirect;
+			tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value2.value_id]));
+			value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].index;
 			if (!value[value_id]) {
 				tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 				if (tmp) {
@@ -728,7 +782,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "SRC:\n%s\n", Buf1.c_str());
 			Buf1.clear();
 
-			value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
+			tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value3.value_id]));
+			value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].index;
 			label = &external_entry_point->labels[value_id_dst];
 			tmp = label_to_string(label, buffer, 1023);
 			if (external_entry_point->labels[value_id_dst].tip2) {
@@ -769,14 +824,18 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 //			/* Skip the 0x28 reg as it is the SP reg */
 //			break;
 //		}
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx, value_id2 = 0x%lx->0x%lx value_id3 = 0x%lx->0x%lx\n",
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "STORE: value_id1 = 0x%lx->0x%lx:0x%lx, value_id2 = 0x%lx->0x%lx:0x%lx value_id3 = 0x%lx->0x%lx:0x%lx\n",
 			inst_log1->value1.value_id,
-			external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].index,
 			inst_log1->value2.value_id,
-			external_entry_point->label_redirect[inst_log1->value2.value_id].redirect,
+			external_entry_point->label_redirect[inst_log1->value2.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value2.value_id].index,
 			inst_log1->value3.value_id,
-			external_entry_point->label_redirect[inst_log1->value3.value_id].redirect);
-		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
+			external_entry_point->label_redirect[inst_log1->value3.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value3.value_id].index);
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
 		if (value_id) {
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: srcA value_id 0x%x\n", inst, value_id);
 			if (!value[value_id]) {
@@ -793,7 +852,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		}
 		/* Note: The srcB here should be value3 as it is a STORE instruction */
 		/*       But it depends on whether the value3 is a constant or a calculated pointer */
-		value_id = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value3.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value3.value_id].index;
 		if (value_id) {
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: dstA value_id 0x%x\n", inst, value_id);
 			if (!value[value_id]) {
@@ -873,20 +933,24 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 //			/* Skip the 0x28 reg as it is the SP reg */
 //			break;
 //		}
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx, value_id2 = 0x%lx->0x%lx value_id3 = 0x%lx->0x%lx\n",
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "GEP: value_id1 = 0x%lx->0x%lx:0x%lx, value_id2 = 0x%lx->0x%lx:0x%lx value_id3 = 0x%lx->0x%lx:0x%lx\n",
 			inst_log1->value1.value_id,
-			external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].index,
 			inst_log1->value2.value_id,
-			external_entry_point->label_redirect[inst_log1->value2.value_id].redirect,
+			external_entry_point->label_redirect[inst_log1->value2.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value2.value_id].index,
 			inst_log1->value3.value_id,
-			external_entry_point->label_redirect[inst_log1->value3.value_id].redirect);
+			external_entry_point->label_redirect[inst_log1->value3.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value3.value_id].index);
 // Constant Definitions
 //  ConstantInt* const_int64_1 = ConstantInt::get(C, APInt(64, StringRef("10"), 10));
 //  // PointerType* const_ptr_int64_1 = PointerType::get(ConstantInt::get(C, APInt(64, StringRef("10"), 10)));
 //   Value* const_ptr_int64_1 = ConstantExpr::getIntToPtr(
 //                        const_int64_1 , PointerTy_1);
 //
-		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
 		if (!value[value_id]) {
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "fill_value: value_id = 0x%x\n", value_id);
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
@@ -897,7 +961,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		}
 		srcA = value[value_id];
 
-		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].redirect;
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value2.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].index;
 		if (!value[value_id]) {
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "fill_value: value_id = 0x%x\n", value_id);
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
@@ -964,12 +1029,15 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 
 	case 0x36:  // TRUNC
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: OPCODE = 0x%x:TRUNC\n", inst, inst_log1->instruction.opcode);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx, value_id3 = 0x%lx->0x%lx\n",
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx:0x%lx, value_id3 = 0x%lx->0x%lx:0x%lx\n",
 			inst_log1->value1.value_id,
-			external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].index,
 			inst_log1->value3.value_id,
-			external_entry_point->label_redirect[inst_log1->value3.value_id].redirect);
-		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
+			external_entry_point->label_redirect[inst_log1->value3.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value3.value_id].index);
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -985,7 +1053,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 		Buf1.clear();
 
-		value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value3.value_id]));
+		value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].index;
 		label = &external_entry_point->labels[value_id_dst];
 		tmp = label_to_string(label, buffer, 1023);
 		if (external_entry_point->labels[value_id_dst].tip2) {
@@ -1006,12 +1075,15 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 
 	case 0x37:  // ZEXT
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: OPCODE = 0x%x:ZEXT\n", inst, inst_log1->instruction.opcode);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx, value_id3 = 0x%lx->0x%lx\n",
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx:0x%lx, value_id3 = 0x%lx->0x%lx:0x%lx\n",
 			inst_log1->value1.value_id,
-			external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].index,
 			inst_log1->value3.value_id,
-			external_entry_point->label_redirect[inst_log1->value3.value_id].redirect);
-		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
+			external_entry_point->label_redirect[inst_log1->value3.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value3.value_id].index);
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -1020,7 +1092,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			}
 		}
 		srcA = value[value_id];
-		value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value3.value_id]));
+		value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].index;
 		label = &external_entry_point->labels[value_id_dst];
 		tmp = label_to_string(label, buffer, 1023);
 		if (external_entry_point->labels[value_id_dst].tip2) {
@@ -1035,12 +1108,15 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 
 	case 0x38:  // BITCAST
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: OPCODE = 0x%x:BITCAST\n", inst, inst_log1->instruction.opcode);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx, value_id3 = 0x%lx->0x%lx\n",
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "value_id1 = 0x%lx->0x%lx:0x%lx, value_id3 = 0x%lx->0x%lx:0x%lx\n",
 			inst_log1->value1.value_id,
-			external_entry_point->label_redirect[inst_log1->value1.value_id].redirect,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value1.value_id].index,
 			inst_log1->value3.value_id,
-			external_entry_point->label_redirect[inst_log1->value3.value_id].redirect);
-		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].redirect;
+			external_entry_point->label_redirect[inst_log1->value3.value_id].domain,
+			external_entry_point->label_redirect[inst_log1->value3.value_id].index);
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
+		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
 		if (!value[value_id]) {
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 			if (tmp) {
@@ -1049,7 +1125,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			}
 		}
 		srcA = value[value_id];
-		value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].redirect;
+		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value3.value_id]));
+		value_id_dst = external_entry_point->label_redirect[inst_log1->value3.value_id].index;
 		label = &external_entry_point->labels[value_id_dst];
 		tmp = label_to_string(label, buffer, 1023);
 		if (external_entry_point->labels[value_id_dst].tip2) {
@@ -1216,7 +1293,8 @@ int LLVM_ir_export::output(struct self_s *self)
 
 			/* Add globals */
 			for (m = 0; m < labels_size; m++) {
-				index = label_redirect[m].redirect;
+				//tmp = check_domain(&(label_redirect[m]));
+				index = label_redirect[m].index;
 				label = &labels[index];
 				if (labels[index].tip2) {
 					size_bits = tip2[labels[index].tip2].integer_size;
@@ -1289,7 +1367,8 @@ int LLVM_ir_export::output(struct self_s *self)
 				for (m = 0; m < external_entry_points[l].params_size; m++) {
 					uint64_t label_index;
 					tmp = external_entry_points[l].params[m];
-					label_index = external_entry_points[l].label_redirect[tmp].redirect;
+					check_domain(&(external_entry_points[l].label_redirect[tmp]));
+					label_index = external_entry_points[l].label_redirect[tmp].index;
 					//if (label_index == 3) {
 					///* EIP or param_stack0000 */
 					//}
@@ -1336,7 +1415,8 @@ int LLVM_ir_export::output(struct self_s *self)
 				for (m = 0; m < external_entry_points[l].params_size; m++) {
 					int label_index;
 					tmp = external_entry_points[l].params[m];
-					label_index = external_entry_points[l].label_redirect[tmp].redirect;
+					check_domain(&(external_entry_points[l].label_redirect[tmp]));
+					label_index = external_entry_points[l].label_redirect[tmp].index;
 					printf("Label 0x%x->0x%x:", tmp, label_index);
 					tmp = label_to_string(&external_entry_points[l].labels[label_index], buffer, 1023);
 					label = &external_entry_points[l].labels[label_index];
@@ -1403,7 +1483,8 @@ int LLVM_ir_export::output(struct self_s *self)
 			for (m = 0; m < external_entry_points[l].params_size; m++) {
 				int label_index;
 				tmp = external_entry_points[l].params[m];
-				label_index = external_entry_points[l].label_redirect[tmp].redirect;
+				check_domain(&(external_entry_points[l].label_redirect[tmp]));
+				label_index = external_entry_points[l].label_redirect[tmp].index;
 				tmp = label_to_string(&external_entry_points[l].labels[label_index], buffer, 1023);
 				printf("buffer=%s\n", buffer);
 				AI->setName(buffer);
@@ -1630,7 +1711,8 @@ int LLVM_ir_export::output(struct self_s *self)
 						debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: labels_redirect[value_id1]: value_id = 0. \n");
 						exit(1);
 					}
-					redirect_value_id = label_redirect[value_id1].redirect;
+					check_domain(&(label_redirect[value_id1]));
+					redirect_value_id = label_redirect[value_id1].index;
 					first_previous_node = nodes[node].phi[m].phi_node[0].first_prev_node;
 					debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM phi value_id1 = 0x%x, fpn = 0x%x\n", redirect_value_id, first_previous_node);
 					sprint_value(OS1, value[value_id]);
@@ -1665,7 +1747,8 @@ int LLVM_ir_export::output(struct self_s *self)
 							debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: labels_redirect[value_id]: value_id = 0. \n");
 							exit(1);
 						}
-						redirect_value_id = label_redirect[value_id].redirect;
+						check_domain(&(label_redirect[value_id]));
+						redirect_value_id = label_redirect[value_id].index;
 						first_previous_node = nodes[node].phi[m].phi_node[n].first_prev_node;
 						debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM:phi 0x%x:0x%x FPN=0x%x, SN=0x%x, value_id=0x%x, redirected_value_id=0x%x\n",
 							m, n,

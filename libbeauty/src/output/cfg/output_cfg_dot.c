@@ -50,7 +50,7 @@
 #include <rev.h>
 
 int output_cfg_dot(struct self_s *self,
-                         struct label_redirect_s *label_redirect, struct label_s *labels, int entry_point)
+                         struct label_redirect_s *label_redirect, struct label_s *labels, struct label_s *labels_global, int entry_point)
 {
 	struct instruction_s *instruction;
 	struct inst_log_entry_s *inst_log1;
@@ -182,7 +182,7 @@ int output_cfg_dot(struct self_s *self,
 				inst_log1->value1.value_id,
 				inst_log1->value2.value_id,
 				inst_log1->value3.value_id);
-			tmp = output_inst_in_c(self, process_state, fd, n, label_redirect, labels, "\\l");
+			tmp = output_inst_in_c(self, process_state, fd, n, label_redirect, labels, labels_global, "\\l");
 			//tmp = dprintf(fd, "\\l\n");
 			if (inst_log1->node_end || !(inst_log1->next_size)) {
 				block_end = 1;

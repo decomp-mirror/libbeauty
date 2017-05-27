@@ -228,7 +228,8 @@ struct tip2_s {
 /* renaming the variable within the log entries would take too long. */
 /* so use log entry value_id -> redirect -> label_s */
 struct label_redirect_s {
-	uint64_t redirect;
+	uint64_t domain;
+	uint64_t index;
 };
 
 struct label_s {

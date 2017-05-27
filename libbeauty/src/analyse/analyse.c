@@ -1771,7 +1771,8 @@ int register_label(struct external_entry_point_s *entry_point, int inst, int ope
 	int n;
 	int found;
 	struct label_s *label;
-	int label_offset;
+	uint64_t label_domain;
+	uint64_t label_index;
 	struct memory_s *value;
 	switch (operand) {
 	case 1:
@@ -1788,10 +1789,18 @@ int register_label(struct external_entry_point_s *entry_point, int inst, int ope
 		return 1;
 	}
 
-	label_offset = label_redirect[value_id].redirect;
-	label = &labels[label_offset];
+	label_domain = label_redirect[value_id].domain;
+	label_index = label_redirect[value_id].index;
+	if (1 == label_domain) {
+		label = &labels[label_index];
+	} else {
+		debug_print(DEBUG_ANALYSE, 1, "Label Domain unknown %lu\n", label_domain);
+		printf("Label Domain unknown %lu. Exiting.\n", label_domain);
+		exit(1);
+	}
+
 	//debug_print(DEBUG_ANALYSE, 1, "Registering label: value_id = 0x%"PRIx64", scope 0x%"PRIx64", type 0x%"PRIx64", value 0x%"PRIx64", size 0x%"PRIx64", pointer 0x%"PRIx64", signed 0x%"PRIx64", unsigned 0x%"PRIx64", label_offset 0x%x\n",
-	debug_print(DEBUG_ANALYSE, 1, "Registering label: value_id = 0x%"PRIx64", scope 0x%"PRIx64", type 0x%"PRIx64", value 0x%"PRIx64", label_offset 0x%x\n",
+	debug_print(DEBUG_ANALYSE, 1, "Registering label: value_id = 0x%"PRIx64", scope 0x%"PRIx64", type 0x%"PRIx64", value 0x%"PRIx64", label_index 0x%"PRIx64"\n",
 		value_id,
 		label->scope,
 		label->type,
@@ -1800,7 +1809,7 @@ int register_label(struct external_entry_point_s *entry_point, int inst, int ope
 		//label->lab_pointer,
 		//label->lab_signed,
 		//label->lab_unsigned,
-		label_offset);
+		label_index);
 	//int params_size;
 	//int *params;
 	//int *params_order;
@@ -1813,7 +1822,7 @@ int register_label(struct external_entry_point_s *entry_point, int inst, int ope
 		debug_print(DEBUG_ANALYSE, 1, "PARAM\n");
 		for(n = 0; n < entry_point->params_size; n++) {
 			debug_print(DEBUG_ANALYSE, 1, "looping 0x%x\n", n);
-			if (entry_point->params[n] == label_offset) {
+			if (entry_point->params[n] == label_index) {
 				debug_print(DEBUG_ANALYSE, 1, "Duplicate\n");
 				found = 1;
 				break;
@@ -1824,13 +1833,13 @@ int register_label(struct external_entry_point_s *entry_point, int inst, int ope
 		}
 		(entry_point->params_size)++;
 		entry_point->params = realloc(entry_point->params, entry_point->params_size * sizeof(int));
-		entry_point->params[entry_point->params_size - 1] = label_offset;
+		entry_point->params[entry_point->params_size - 1] = label_index;
 		break;
 	case 1:
 		debug_print(DEBUG_ANALYSE, 1, "LOCAL\n");
 		for(n = 0; n < entry_point->locals_size; n++) {
 			debug_print(DEBUG_ANALYSE, 1, "looping 0x%x\n", n);
-			if (entry_point->locals[n] == label_offset) {
+			if (entry_point->locals[n] == label_index) {
 				debug_print(DEBUG_ANALYSE, 1, "Duplicate\n");
 				found = 1;
 				break;
@@ -1841,7 +1850,7 @@ int register_label(struct external_entry_point_s *entry_point, int inst, int ope
 		}
 		(entry_point->locals_size)++;
 		entry_point->locals = realloc(entry_point->locals, entry_point->locals_size * sizeof(int));
-		entry_point->locals[entry_point->locals_size - 1] = label_offset;
+		entry_point->locals[entry_point->locals_size - 1] = label_index;
 		break;
 	case 3:
 		debug_print(DEBUG_ANALYSE, 1, "HEX VALUE\n");
