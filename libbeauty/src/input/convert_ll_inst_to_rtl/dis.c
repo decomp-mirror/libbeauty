@@ -606,6 +606,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		result = 0;
 		break;
 	case MOV:
+	case ZEXT:
 		copy_operand(&ll_inst->srcB, &ll_inst->srcA);
 		ll_inst->srcB.kind = KIND_EMPTY;
 		tmp  = convert_base(self, ll_inst, 0, dis_instructions);
