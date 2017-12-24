@@ -30,7 +30,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
-#define MAX_REG 0x1c0
+#define MAX_REG 0x1e0
 #define EXTERNAL_ENTRY_POINTS_MAX 1000
 
 struct reloc_table_s {

@@ -166,7 +166,8 @@ extern const char * opcode_table[];
 #define REG_TMP1 0x160
 #define REG_TMP2 0x180
 #define REG_TMP3 0x1a0
-#define MAX_REG 0x1c0
+#define REG_TMP4 0x1c0
+#define MAX_REG 0x1e0
 
 typedef struct reg_s reg_t;
 

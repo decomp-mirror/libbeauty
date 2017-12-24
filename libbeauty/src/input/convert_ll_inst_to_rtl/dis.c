@@ -221,6 +221,12 @@ struct operand_low_level_s operand_reg_tmp3 = {
 	.operand = {{.value = REG_TMP3, .size = 64, .offset = 0}},
 };
 
+struct operand_low_level_s operand_reg_tmp4 = {
+	.kind = KIND_REG,
+	.size = 64,
+	.operand = {{.value = REG_TMP4, .size = 64, .offset = 0}},
+};
+
 
 int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, int flags, struct dis_instructions_s *dis_instructions) {
 	int tmp;
@@ -242,6 +248,7 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 	struct operand_low_level_s *scale_operand;
 	struct operand_low_level_s operand_tmp;
 
+	debug_print(DEBUG_INPUT_DIS, 1, "convert_base entered\n");
 	debug_print(DEBUG_INPUT_DIS, 1, "disassemble_amd64:convert_base start inst_number = 0x%x\n", dis_instructions->instruction_number);
 	dis_instructions->instruction[dis_instructions->instruction_number].opcode = NOP; /* Un-supported OPCODE */
 	dis_instructions->instruction[dis_instructions->instruction_number].flags = 0; /* No flags effected */
@@ -259,6 +266,8 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 		dstA_ind = 1;
 	if (srcA_ind || srcB_ind || dstA_ind) 
 		indirect = 1;
+	debug_print(DEBUG_INPUT_DIS, 1, "disassemble_amd64:convert_base srcA_ind:%d srcB_ind:%d dstA_ind:%d ind:%d\n",
+                   srcA_ind, srcB_ind, dstA_ind, indirect);
 	final_opcode = ll_inst->opcode;
 
 	previous_operand = &operand_empty;
@@ -389,6 +398,8 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 		dis_instructions->instruction_number++;
 	} else {
 		/* Handle the indirect case */
+		debug_print(DEBUG_INPUT_DIS, 1, "srcA kind:%d, srcB kind:%d dstA kind:%d\n",
+                            srcA_operand->kind, srcB_operand->kind, dstA_operand->kind);
 		if (dstA_operand->kind == KIND_IND_SCALE) {
 			scale_operand = dstA_operand;
 			/* Let srcA and srcB override this */
@@ -544,7 +555,7 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 		convert_operand(self, ll_inst->address, srcB_operand, 0, &(instruction->srcB));
 		instruction->srcB.value_size = ll_inst->srcB.size;
 		if (ll_inst->dstA.kind == KIND_IND_SCALE) {
-			convert_operand(self, ll_inst->address, previous_operand, 0, &(instruction->dstA));
+			convert_operand(self, ll_inst->address, &operand_reg_tmp4, 0, &(instruction->dstA));
 			instruction->dstA.value_size = ll_inst->dstA.size;
 		} else {
 			convert_operand(self, ll_inst->address, dstA_operand, 0, &(instruction->dstA));
@@ -554,10 +565,10 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 			instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 			instruction->opcode = STORE;
 			instruction->flags = 0;
-			convert_operand(self, ll_inst->address, previous_operand, 0, &(instruction->srcA));
+			convert_operand(self, ll_inst->address, &operand_reg_tmp4, 0, &(instruction->srcA));
 			instruction->srcA.value_size = ll_inst->srcA.size;
-			convert_operand(self, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->srcB));
-			convert_operand(self, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
+			convert_operand(self, ll_inst->address, previous_operand, 0, &(instruction->srcB));
+			convert_operand(self, ll_inst->address, previous_operand, 0, &(instruction->dstA));
 			instruction->dstA.value_size = ll_inst->dstA.size;
 			if (ind_stack) {
 				instruction->dstA.indirect = IND_STACK;
@@ -568,6 +579,7 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 		}
 	}
 	result = 0;
+	debug_print(DEBUG_INPUT_DIS, 1, "convert_base exit\n");
 	return result;
 }
 
