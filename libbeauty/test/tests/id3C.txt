@@ -1,10 +1,13 @@
 # RUN: test_id %s | FileCheck %s
 
 # TEST CASE 0x3C
-# add    0x0,%edi   (from memory, not stack)
+# add    0x12345678,%edi   (from memory, not stack)
 # CHECK: getInstruction Size = 0x7
 # CHECK: result: len=49:// 0x0000:ADD  i0x0/64, i0x12345678/64, r0x160/64
-# CHECK: result: len=50:// 0x0001:LOAD  m[r0x160]/32, r0x160/64, r0x180/32
-# CHECK: result: len=44:// 0x0002:ADDf r0x40/32, r0x180/32, r0x40/32
-# CHECK: inst_size = 3
+# CHECK: result: len=37:// 0x0001:BITCAST  r0x160/0, r0x180/0
+# CHECK: result: len=50:// 0x0002:LOAD  m[r0x180]/32, r0x180/64, r0x1a0/32
+# CHECK: result: len=44:// 0x0003:ADDf r0x40/32, r0x1a0/32, r0x40/32
+# CHECK: inst_size = 4
 0x03 0x3c 0x25 0x78 0x56 0x34 0x12
+
+
