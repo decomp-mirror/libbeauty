@@ -140,7 +140,16 @@ FuncTy_0_args.push_back(IntegerType::get(module->getContext(), 32)); // Second a
  /*Linkage=*/GlobalValue::ExternalLinkage,
  /*Initializer=*/0,
  /*Name=*/"mem");
- gvar_ptr_mem->setAlignment(8);
+ //gvar_ptr_mem->setAlignment(8);
+
+ GlobalVariable* gvar_ptr_mem2 = new GlobalVariable(/*Module=*/*module,
+ /*Type=*/PointerTy_1,
+ /*isConstant=*/false,
+ /*Linkage=*/GlobalValue::ExternalLinkage,
+ /*Initializer=*/0,
+ /*Name=*/"mem2");
+ gvar_ptr_mem2->setAlignment(4);
+ 
  
  
  // Function Declarations
@@ -172,7 +181,8 @@ FuncTy_0_args.push_back(IntegerType::get(module->getContext(), 32)); // Second a
 // Value *gep_inst = GetElementPtrInst::Create(STy, ptr_fred2, const_int32_3, "gep1", label_4);
  //ret void
 // LoadInst* ptr_5 = builder->CreateLoad(gvar_ptr_mem, "ptr_5");
- Value* ptr_5 = builder->CreateAlignedLoad(gvar_ptr_mem, 8, "ptr_5");
+// Value* ptr_5 = builder->CreateAlignedLoad(gvar_ptr_mem, 8, "ptr_5");
+ Value* ptr_5 = builder->CreateLoad(gvar_ptr_mem, "ptr_5");
 //  ptr_5->setAlignment(8);
  Value* ptr_6 = builder->CreateGEP(ptr_1, ConstantInt::get(C, APInt(32, 2)), "ptr_6");
  Value* ptr_7 = builder->CreateGEP(const_ptr_int64_1, const_int64_2, "ptr_7");

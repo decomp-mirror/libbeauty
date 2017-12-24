@@ -1279,6 +1279,18 @@ int LLVM_ir_export::output(struct self_s *self)
 		}
 	}
 
+                        // Global Variables
+                        PointerType* PointerTy_1 = PointerType::get(IntegerType::get(mod->getContext(), 32), 0);
+                        GlobalVariable* gvar_ptr_mem = new GlobalVariable(/*Module=*/*mod,
+                        /*Type=*/PointerTy_1,
+                        /*isConstant=*/false,
+                        /*Linkage=*/GlobalValue::ExternalLinkage,
+                        /*Initializer=*/0,
+                        /*Name=*/"memjcd1");
+                        //gvar_ptr_mem->setAlignment(8);
+
+        mod->dump();
+
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 		if ((external_entry_points[l].valid != 0) &&
 			(external_entry_points[l].type == 1) && 
@@ -1291,7 +1303,6 @@ int LLVM_ir_export::output(struct self_s *self)
 			label_redirect = external_entry_points[l].label_redirect;
 			tip2 = external_entry_points[l].tip2;
 
-			/* Add globals */
 			for (m = 0; m < labels_size; m++) {
 				//tmp = check_domain(&(label_redirect[m]));
 				index = label_redirect[m].index;
@@ -1308,7 +1319,8 @@ int LLVM_ir_export::output(struct self_s *self)
 					GlobalVariable* gvar_int32_mem1 = new GlobalVariable(/*Module=*/*mod,
 						/*Type=*/IntegerType::get(mod->getContext(), size_bits),
 						/*isConstant=*/false,
-						/*Linkage=*/GlobalValue::InternalLinkage,
+						///*Linkage=*/GlobalValue::InternalLinkage,
+						/*Linkage=*/GlobalValue::ExternalLinkage,
 						/*Initializer=*/0, // has initializer, specified below
 						/*Name=*/"data0");
 					gvar_int32_mem1->setAlignment(size_bits >> 3);
@@ -1766,6 +1778,7 @@ int LLVM_ir_export::output(struct self_s *self)
 			}
 		}
 	}
+        mod->dump();
 #endif
 	/* FIXME: Work with more than one function */
 	function_name = external_entry_points[0].name;
