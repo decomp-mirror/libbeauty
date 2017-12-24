@@ -4,8 +4,8 @@
 # mov    %eax,-0x4(%rbp)
 # CHECK: getInstruction Size = 0x3
 # CHECK: result: len=43:// 0x0000:SUB  r0x30/64, i0x4/64, r0x160/64
-# CHECK: result: len=37:// 0x0001:BITCAST  r0x160/0, r0x180/0
-# CHECK: result: len=33:// 0x0002:MOV  r0x8/32, r0x1c0/32
+# CHECK: result: len=33:// 0x0001:MOV  r0x8/32, r0x1c0/32
+# CHECK: result: len=37:// 0x0002:BITCAST  r0x160/0, r0x180/0
 # CHECK: result: len=51:// 0x0003:STORE  r0x1c0/32, r0x180/64, s[r0x180]/32
 # CHECK: inst_size = 4
 0x89 0x45 0xfc

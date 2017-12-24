@@ -241,6 +241,7 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 	int imm_sign = 0;
 	int ind_stack = 0;
 	struct operand_low_level_s *previous_operand;
+	struct operand_low_level_s *scale_ptr_operand;
 	struct operand_low_level_s operand_imm;
 	struct operand_low_level_s *srcA_operand;
 	struct operand_low_level_s *srcB_operand;
@@ -271,10 +272,11 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 	final_opcode = ll_inst->opcode;
 
 	previous_operand = &operand_empty;
+	scale_ptr_operand = &operand_empty;
+	scale_operand = &operand_empty;
 	srcA_operand = &(ll_inst->srcA);
 	srcB_operand = &(ll_inst->srcB);
 	dstA_operand = &(ll_inst->dstA);
-	previous_operand = &operand_empty;
 	debug_print(DEBUG_INPUT_DIS, 1, "KIND operand: srcA=0x%x, srcB=0x%x, dstA=0x%x\n",
 		srcA_operand->kind,
 		srcB_operand->kind,
@@ -509,6 +511,7 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 			dis_instructions->instruction_number++;
 			previous_operand = &operand_reg_tmp1;
 		}
+                scale_ptr_operand = previous_operand;
 
 		if ((srcA_operand->kind == KIND_IND_SCALE) ||
 			(srcB_operand->kind == KIND_IND_SCALE)) {
@@ -516,7 +519,7 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 			instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 			instruction->opcode = BITCAST;
 			instruction->flags = 0;
-			convert_operand(self, ll_inst->address, previous_operand, 0, &(instruction->srcA));
+			convert_operand(self, ll_inst->address, scale_ptr_operand, 0, &(instruction->srcA));
 			instruction->srcA.value_size = 0; /* Don't know the size at this point */
 			convert_operand(self, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->dstA));
 			//instruction->dstA.value_size = ll_inst->srcA.size;
@@ -563,12 +566,22 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 		dis_instructions->instruction_number++;
 		if (ll_inst->dstA.kind == KIND_IND_SCALE) {
 			instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
+			instruction->opcode = BITCAST;
+			instruction->flags = 0;
+			convert_operand(self, ll_inst->address, scale_ptr_operand, 0, &(instruction->srcA));
+			instruction->srcA.value_size = 0; /* Don't know the size at this point */
+			convert_operand(self, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->dstA));
+			//instruction->dstA.value_size = ll_inst->srcA.size;
+			instruction->dstA.value_size = 0;
+			dis_instructions->instruction_number++;
+
+			instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 			instruction->opcode = STORE;
 			instruction->flags = 0;
 			convert_operand(self, ll_inst->address, &operand_reg_tmp4, 0, &(instruction->srcA));
 			instruction->srcA.value_size = ll_inst->srcA.size;
-			convert_operand(self, ll_inst->address, previous_operand, 0, &(instruction->srcB));
-			convert_operand(self, ll_inst->address, previous_operand, 0, &(instruction->dstA));
+			convert_operand(self, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->srcB));
+			convert_operand(self, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->dstA));
 			instruction->dstA.value_size = ll_inst->dstA.size;
 			if (ind_stack) {
 				instruction->dstA.indirect = IND_STACK;
