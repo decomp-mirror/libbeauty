@@ -5006,11 +5006,11 @@ int dump_labels_table(struct self_s *self, char *buffer)
 				//check_domain(&(external_entry_points[l].label_redirect[n]));
 				label_domain = external_entry_points[l].label_redirect[n].domain;
 				label_index = external_entry_points[l].label_redirect[n].index;
-				if (1 == label_domain) {
+				if (label_index && (1 == label_domain)) {
 					label = &(external_entry_points[l].labels[label_index]);
 					tip2 = &(external_entry_points[l].tip2[label_index]);
 					if (label->scope) {
-						printf("Label 0x%x->0x%x:", n, label_index);
+						printf("Label 0x%x->0x%lx:0x%lx:", n, label_domain, label_index);
 						tmp = label_to_string(label, buffer, 1023);
 						printf("%s/0x%lx,ps=0x%lx, lp=0x%lx, scope=0x%lx\n",
 							buffer,
@@ -5022,7 +5022,9 @@ int dump_labels_table(struct self_s *self, char *buffer)
 							label->scope);
 					}
 				} else {
-					printf("Label 0x%x->0x%lx:0x%lx", n, label_domain, label_index);
+				    if (1) {
+                                        printf("Label 0x%x->0x%lx:0x%lx\n", n, label_domain, label_index);
+                                    }
 				}
 
 			}
