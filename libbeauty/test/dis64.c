@@ -7005,7 +7005,8 @@ int main(int argc, char *argv[])
 			process_state = &external_entry_points[l].process_state;
 			memory_data = process_state->memory_data;
 			for (n = 0; n < 4; n++) {
-				debug_print(DEBUG_MAIN, 1, "memory_data:0x%x: 0x%"PRIx64"\n", n, memory_data[n].valid);
+				debug_print(DEBUG_MAIN, 1, "memory_data:0x%x: 0x%"PRIx64" bytes=%d\n",
+                                           n, memory_data[n].valid, memory_data[n].length);
 				if (memory_data[n].valid) {
 	
 					tmp = bf_relocated_data(handle_void, memory_data[n].start_address, 4);
@@ -7196,13 +7197,17 @@ int main(int argc, char *argv[])
 	}
 	debug_print(DEBUG_MAIN, 1, "PRINTING MEMORY_DATA\n");
 	for (n = 0; n < 4; n++) {
+            if (memory_data[n].valid) {
 		print_mem(memory_data, n);
 		debug_print(DEBUG_MAIN, 1, "\n");
+            }
 	}
 	debug_print(DEBUG_MAIN, 1, "PRINTING STACK_DATA\n");
 	for (n = 0; n < 10; n++) {
+            if (memory_stack[n].valid) {
 		print_mem(memory_stack, n);
 		debug_print(DEBUG_MAIN, 1, "\n");
+            }
 	}
 	for (n = 0; n < 100; n++) {
 		param_present[n] = 0;
