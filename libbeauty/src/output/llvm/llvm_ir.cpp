@@ -1309,6 +1309,9 @@ int LLVM_ir_export::output(struct self_s *self)
 				label = &labels[index];
 				if (labels[index].tip2) {
 					size_bits = tip2[labels[index].tip2].integer_size;
+                                        if (size_bits < 8) {
+                                            size_bits = 8;
+                                        }
 				} else {
 					size_bits = 8;
 				}
