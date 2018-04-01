@@ -1,7 +1,7 @@
 /* A very simple function to test pointers to memory stores. */
 
-static mem1 = 0x123;
-static *memory = &mem1;
+static int mem1 = 0x123;
+static int *memory = &mem1;
 
 int test19(int value1 );
 

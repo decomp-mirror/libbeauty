@@ -1,6 +1,6 @@
 /* A very simple function to test memory stores. */
 
-static mem1 = 0x123;
+static int mem1 = 0x123;
 
 int test10(int value1 );
 
