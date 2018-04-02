@@ -165,6 +165,8 @@ int DecodeAsmX86_64::setup() {
 				new_helper[n].srcA_size = decode_inst_helper[m].srcA_size;
 				new_helper[n].srcB_size = decode_inst_helper[m].srcB_size;
 				new_helper[n].dstA_size = decode_inst_helper[m].dstA_size;
+				new_helper[n].nop1 = decode_inst_helper[m].nop1;
+				new_helper[n].nop2 = decode_inst_helper[m].nop2;
 				break;
 			}
 		}
@@ -1270,6 +1272,8 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 					value, helper_reg_table[reg_index].reg_name, helper_reg_table[reg_index].size, helper_reg_table[reg_index].reg_number);
 			}
 			Operand = &Inst->getOperand(1);
+			debug_print(DEBUG_INPUT_DIS, 1, "SRC1.0 Operand: isValid = %d, isImm = %d, isReg = %d\n",
+                                    Operand->isValid(), Operand->isImm(), Operand->isReg());
 			if (Operand->isValid() &&
 				Operand->isImm() ) {
 				uint32_t value;
@@ -1293,7 +1297,7 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 				ll_inst->srcA.operand[0].value = helper_reg_table[reg_index].reg_number;
 				ll_inst->srcA.operand[0].size = helper_reg_table[reg_index].size;
 				ll_inst->srcA.operand[0].offset = 0;
-				debug_print(DEBUG_INPUT_DIS, 1, "SRC0.0 Reg: value = 0x%x, name = %s, size = 0x%x, reg_number = 0x%x\n",
+				debug_print(DEBUG_INPUT_DIS, 1, "SRC1.0 Reg: value = 0x%x, name = %s, size = 0x%x, reg_number = 0x%x\n",
 					value, helper_reg_table[reg_index].reg_name, helper_reg_table[reg_index].size, helper_reg_table[reg_index].reg_number);
 				if (RegCL.equals(Name.substr(Name.size() - 2))) {
 					ll_inst->srcB.kind = KIND_REG;
@@ -1301,7 +1305,12 @@ int llvm::DecodeAsmX86_64::DecodeInstruction(uint8_t *Bytes,
 					ll_inst->srcB.operand[0].size = 0x8;
 					ll_inst->srcB.operand[0].offset = 0;
 					debug_print(DEBUG_INPUT_DIS, 1, "SRC1.0 Reg: value = 0x10, name = CL, size = 8\n");
-				}
+				} else if (new_helper[opcode].nop1 == 1) {
+					ll_inst->srcB.kind = KIND_IMM;
+					ll_inst->srcB.operand[0].value = 0x1;
+					ll_inst->srcB.operand[0].size = 0x8;
+					ll_inst->srcB.operand[0].offset = 0;
+                                }
 			}
 			copy_operand(&(ll_inst->srcA), &(ll_inst->dstA));
 			debug_print(DEBUG_INPUT_DIS, 1, "DST0 = SRC0\n");
