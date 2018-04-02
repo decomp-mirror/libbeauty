@@ -1319,15 +1319,16 @@ int LLVM_ir_export::output(struct self_s *self)
 					debug_print(DEBUG_OUTPUT_LLVM, 1, "Adding GLOBAL: Label:0x%x: &data found. size=0x%lx, pointer=0x%lx\n",
 							m, size_bits,
 							tip2[labels[index].tip2].pointer);
-					GlobalVariable* gvar_int32_mem1 = new GlobalVariable(/*Module=*/*mod,
+					tmp = label_to_string(&(labels[index]), buffer, 1023);
+					GlobalVariable* gvar_mem1 = new GlobalVariable(/*Module=*/*mod,
 						/*Type=*/IntegerType::get(mod->getContext(), size_bits),
 						/*isConstant=*/false,
 						///*Linkage=*/GlobalValue::InternalLinkage,
 						/*Linkage=*/GlobalValue::ExternalLinkage,
 						/*Initializer=*/0, // has initializer, specified below
-						/*Name=*/"data0");
-					gvar_int32_mem1->setAlignment(size_bits >> 3);
-					value[m] = gvar_int32_mem1;
+						/*Name=*/buffer);
+					gvar_mem1->setAlignment(size_bits >> 3);
+					value[m] = gvar_mem1;
 				}
 			}
 		}
