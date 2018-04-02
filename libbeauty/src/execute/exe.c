@@ -797,6 +797,8 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 	int16_t tmp16s;
 	int32_t tmp32s;
 	int64_t tmp64s;
+	uint16_t tmp16u;
+	uint32_t tmp32u;
 	uint64_t tmp64u;
 	int tmp;
 	int n;
@@ -826,6 +828,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 	case NEG:
 	case NOT:
 	case TRUNC:
+        case ZEXT:
 		if ((instruction->srcA.value_size == 0) ||
 			(instruction->dstA.value_size == 0)) {
 			debug_print(DEBUG_EXE, 1, "ERROR: value_size == 0\n");
@@ -1069,6 +1072,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 					inst->value3.offset_value);
 		put_value_RTL_instruction(self, process_state, inst);
 		break;
+
 	case SEX:
 		debug_print(DEBUG_EXE, 1, "SEX dest length = %d %d\n", inst->value1.length, inst->value3.length);
 		/* Get value of srcA */
@@ -1156,6 +1160,93 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 					inst->value3.offset_value);
 		put_value_RTL_instruction(self, process_state, inst);
 		break;
+
+	case ZEXT:
+		debug_print(DEBUG_EXE, 1, "ZEXT dest length = %d %d\n", inst->value1.length, inst->value3.length);
+		/* Get value of srcA */
+		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcA), &(inst->value1), 0); 
+		/* Create result */
+		debug_print(DEBUG_EXE, 1, "ZEXT\n");
+		inst->value3.start_address = instruction->dstA.index;
+		inst->value3.length = instruction->dstA.value_size;
+		//inst->value3.length = inst->value1.length;
+		/* Special case for ZEXT instruction. */
+		/* FIXME: Stored value in reg store should be size modified */
+		value = search_store(process_state->memory_reg,
+				instruction->dstA.index,
+				instruction->dstA.value_size);
+		if (value) {
+			/* Only update it if is is found */
+			value->length = instruction->dstA.value_size;
+		}
+		debug_print(DEBUG_EXE, 1, "ZEXT dest length = %d %d\n", inst->value1.length, inst->value3.length);
+		inst->value3.init_value_type = inst->value1.init_value_type;
+		if (64 == inst->value3.length) {
+			tmp32u = inst->value1.init_value;
+			tmp64u = tmp32u;
+		} else if (32 == inst->value3.length) {
+			tmp16u = inst->value1.init_value;
+			tmp32u = tmp16u;
+			tmp64u = tmp32u;
+		} else {
+			debug_print(DEBUG_EXE, 1, "ZEXT length failure\n");
+			return 1;
+		}
+		inst->value3.init_value = tmp64u;
+		if (64 == inst->value3.length) {
+			tmp32u = inst->value1.offset_value;
+			tmp64u = tmp32u;
+		} else if (32 == inst->value3.length) {
+			tmp16u = inst->value1.offset_value;
+			tmp32u = tmp16u;
+			tmp64u = tmp32u;
+		} else {
+			debug_print(DEBUG_EXE, 1, "ZEXT length failure\n");
+			return 1;
+		}
+		inst->value3.offset_value = tmp64u;
+		inst->value3.value_type = inst->value1.value_type;
+		if (inst->instruction.dstA.indirect) {
+			inst->value3.indirect_init_value =
+				inst->value1.indirect_init_value;
+			inst->value3.indirect_offset_value =
+				inst->value1.indirect_offset_value;
+			inst->value3.value_id =
+				inst->value1.value_id;
+		}
+		inst->value3.ref_memory =
+			inst->value1.ref_memory;
+		inst->value3.ref_log =
+			inst->value1.ref_log;
+		/* Note: value_scope stays from the dst, not the src. */
+		/* FIXME Maybe Exception is the MOV instruction */
+		inst->value3.value_scope = inst->value1.value_scope;
+		/* MOV param to local */
+		/* When the destination is a param_reg,
+		 * Change it to a local_reg */
+		if ((inst->value3.value_scope == 1) &&
+			(STORE_REG == instruction->dstA.store) &&
+			(1 == inst->value1.value_scope) &&
+			(0 == instruction->dstA.indirect)) {
+			inst->value3.value_scope = 2;
+		}
+		/* Counter */
+		//if (inst->value3.value_scope == 2) {
+			/* Only value_id preserves the value2 values */
+		//inst->value3.value_id = inst->value2.value_id;
+		inst->value3.value_id = 0;
+		inst->value1.value_id = 0;
+		//}
+		/* 1 - Entry Used */
+		inst->value3.valid = 1;
+			debug_print(DEBUG_EXE, 1, "value=0x%"PRIx64"+0x%"PRIx64"=0x%"PRIx64"\n",
+				inst->value3.init_value,
+				inst->value3.offset_value,
+				inst->value3.init_value +
+					inst->value3.offset_value);
+		put_value_RTL_instruction(self, process_state, inst);
+		break;
+
 	case ADD:
 		/* Get value of srcA */
 		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcA), &(inst->value1), 0); 

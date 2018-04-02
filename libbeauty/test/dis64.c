@@ -863,6 +863,7 @@ int fill_node_used_register_table(struct self_s *self, int entry_point)
 			case SAL:
 			case SAR:
 			case SEX:
+			case ZEXT:
 			case ICMP:
 				if ((instruction->srcA.store == STORE_REG) &&
 					(instruction->srcA.indirect == IND_DIRECT)) {
@@ -2272,6 +2273,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 		case SAL:
 		case SAR:
 		case SEX:
+		case ZEXT:
 		case ICMP:
 			switch (instruction->srcA.store) {
 			case STORE_DIRECT:
@@ -3180,6 +3182,7 @@ int build_tip2_table(struct self_s *self, int entry_point, int node)
 		case SAL:
 		case SAR:
 		case SEX:
+		case ZEXT:
 		case ICMP:
 			value_id = inst_log1->value1.value_id;
 			check_domain(&(label_redirect[value_id]));
