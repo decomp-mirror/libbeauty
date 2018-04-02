@@ -5013,9 +5013,9 @@ int dump_labels_table(struct self_s *self, char *buffer)
 					label = &(external_entry_points[l].labels[label_index]);
 					tip2 = &(external_entry_points[l].tip2[label_index]);
 					if (label->scope) {
-						printf("Label 0x%x->0x%lx:0x%lx:", n, label_domain, label_index);
 						tmp = label_to_string(label, buffer, 1023);
-						printf("%s/0x%lx,ps=0x%lx, lp=0x%lx, scope=0x%lx\n",
+						debug_print(DEBUG_MAIN, 1, "Label 0x%x->0x%lx:0x%lx:%s/0x%lx,ps=0x%lx, lp=0x%lx, scope=0x%lx\n",
+							n, label_domain, label_index,
 							buffer,
 							tip2->integer_size,
 							/* FIXME:get correct pointer size */
@@ -5025,9 +5025,9 @@ int dump_labels_table(struct self_s *self, char *buffer)
 							label->scope);
 					}
 				} else {
-				    if (1) {
-                                        printf("Label 0x%x->0x%lx:0x%lx\n", n, label_domain, label_index);
-                                    }
+				    if (label_domain) {
+							debug_print(DEBUG_MAIN, 1, "Label 0x%x->0x%lx:0x%lx\n", n, label_domain, label_index);
+					}
 				}
 
 			}
