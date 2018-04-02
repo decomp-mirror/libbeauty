@@ -1,0 +1,9 @@
+# RUN: test_id %s | FileCheck %s
+
+# TEST CASE 0x43
+# xor    $0x1,%eax
+# CHECK: getInstruction Size = 0x3
+# CHECK: result: len=40:// 0x0000:XORf r0x8/32, i0x1/32, r0x8/32
+# CHECK: inst_size = 1
+0x83 0xf0 0x01
+
