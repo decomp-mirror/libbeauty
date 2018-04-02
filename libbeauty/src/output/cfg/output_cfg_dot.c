@@ -316,7 +316,7 @@ int output_cfg_dot_basic(struct self_s *self, struct control_flow_node_s *nodes,
 	return 0;
 }
 
-int output_cfg_dot_basic2(struct self_s *self, struct external_entry_point_s *external_entry_point)
+int output_cfg_dot_basic2(struct self_s *self, struct external_entry_point_s *external_entry_point, int index)
 {
 	char *filename;
 	int fd;
@@ -331,7 +331,7 @@ int output_cfg_dot_basic2(struct self_s *self, struct external_entry_point_s *ex
 	const char *name;
 
 	filename = calloc(1024, sizeof(char));
-	tmp = snprintf(filename, 1024, "./cfg/basic-%s.dot", external_entry_point->name);
+	tmp = snprintf(filename, 1024, "./cfg/basic-%04d-%s.dot", index, external_entry_point->name);
 
 	fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR);
 	if (!fd) {

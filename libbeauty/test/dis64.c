@@ -5542,7 +5542,7 @@ int main(int argc, char *argv[])
 
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 		if ((external_entry_points[l].valid) && (external_entry_points[l].type == 1)) {
-			tmp = output_cfg_dot_basic2(self, &external_entry_points[l]);
+			tmp = output_cfg_dot_basic2(self, &external_entry_points[l], l);
 		}
 	}
 	paths = calloc(paths_size, sizeof(struct path_s));
