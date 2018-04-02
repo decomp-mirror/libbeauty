@@ -107,6 +107,7 @@ Module* makeLLVMModule(LLVMContext &Context, char *output_filename) {
  if (PointerTy_1 == PointerTy_2) {
 	printf("Match\n");
  }
+ IntegerType* IntegerTy_1 = IntegerType::get(module->getContext(), 32);
  // Constant Definitions
  ConstantInt* const_int64_1 = ConstantInt::get(C, APInt(64, StringRef("10"), 10));
 // PointerType* const_ptr_int64_1 = PointerType::get(ConstantInt::get(C, APInt(64, StringRef("10"), 10)));
@@ -150,6 +151,16 @@ FuncTy_0_args.push_back(IntegerType::get(module->getContext(), 32)); // Second a
  /*Name=*/"mem2");
  gvar_ptr_mem2->setAlignment(4);
  
+ ConstantInt* int64_1 = ConstantInt::get(IntegerType::get(module->getContext(), 32), 0x123);
+ GlobalVariable* gvar_ptr_mem3 = new GlobalVariable(/*Module=*/*module,
+ /*Type=*/IntegerTy_1,
+ /*isConstant=*/false,
+ /*Linkage=*/GlobalValue::InternalLinkage,
+ /*Initializer=*/int64_1,
+ /*Name=*/"mem3");
+ gvar_ptr_mem3->setAlignment(4);
+// ConstantInt* int64_1 = ConstantInt::get(IntegerType::get(module->getContext(), 32), 0x123);
+// gvar_ptr_mem3->setInitializer(int64_1); 
  
  
  // Function Declarations
