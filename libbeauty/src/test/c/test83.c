@@ -4,7 +4,7 @@
 
 static uint8_t mem1 = 0x12;
 
-int test10a() {
+int test83() {
 	return mem1;
 }
 
