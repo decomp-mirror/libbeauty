@@ -7194,7 +7194,9 @@ int main(int argc, char *argv[])
 	tmp = llvm_export(self);
 
 	bf_test_close_file(handle_void);
+	debug_print(DEBUG_MAIN, 1, "PRINTING REG_DATA\n");
 	print_mem(memory_reg, 1);
+	debug_print(DEBUG_MAIN, 1, "PRINTING EXEC_BIN_DATA\n");
 	for (n = 0; n < inst_size; n++) {
 		debug_print(DEBUG_MAIN, 1, "0x%04x: %d\n", n, memory_used[n]);
 	}
