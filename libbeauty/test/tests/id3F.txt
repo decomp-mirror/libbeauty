@@ -3,7 +3,7 @@
 # TEST CASE 0x3F
 # and    $0xffffffdf,%esi
 # CHECK: getInstruction Size = 0x3
-# CHECK: result: len=48:// 0x0000:ANDf r0x38/32, i0xffffffdf/32, r0x38/32
+# CHECK: result: len=49:// 0x0000:ANDf r0x38/32, i0xffffffdf/32, r0x38/32
 # CHECK: inst_size = 1
 0x83 0xe6 0xdf
 
