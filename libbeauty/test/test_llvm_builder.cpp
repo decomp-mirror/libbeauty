@@ -159,9 +159,16 @@ FuncTy_0_args.push_back(IntegerType::get(module->getContext(), 32)); // Second a
  /*Initializer=*/int64_1,
  /*Name=*/"mem3");
  gvar_ptr_mem3->setAlignment(4);
-// ConstantInt* int64_1 = ConstantInt::get(IntegerType::get(module->getContext(), 32), 0x123);
+ int64_1 = ConstantInt::get(IntegerType::get(module->getContext(), 32), 0x100);
 // gvar_ptr_mem3->setInitializer(int64_1); 
  
+ GlobalVariable* gvar_ptr_mem4 = new GlobalVariable(/*Module=*/*module,
+ /*Type=*/IntegerTy_1,
+ /*isConstant=*/false,
+ /*Linkage=*/GlobalValue::InternalLinkage,
+ /*Initializer=*/int64_1,
+ /*Name=*/"mem4");
+ gvar_ptr_mem4->setAlignment(4);
  
  // Function Declarations
 
