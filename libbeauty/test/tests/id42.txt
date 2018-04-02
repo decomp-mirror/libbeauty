@@ -1,0 +1,9 @@
+# RUN: test_id %s | FileCheck %s
+
+# TEST CASE 0x42
+# shr    $0x8,%eax
+# CHECK: getInstruction Size = 0x3
+# CHECK: result: len=39:// 0x0000:SHRf r0x8/32, i0x8/8, r0x8/32
+# CHECK: inst_size = 1
+0xc1 0xe8 0x08
+
