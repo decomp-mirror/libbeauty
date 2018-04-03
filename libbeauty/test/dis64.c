@@ -7202,10 +7202,10 @@ int main(int argc, char *argv[])
 	}
 	debug_print(DEBUG_MAIN, 1, "PRINTING MEMORY_DATA\n");
 	for (n = 0; n < 4; n++) {
-            if (memory_data[n].valid) {
-		print_mem(memory_data, n);
-		debug_print(DEBUG_MAIN, 1, "\n");
-            }
+		if (memory_data[n].valid) {
+			print_mem(memory_data, n);
+			debug_print(DEBUG_MAIN, 1, "\n");
+		}
 	}
 	debug_print(DEBUG_MAIN, 1, "PRINTING STACK_DATA\n");
 	for (n = 0; n < 10; n++) {
