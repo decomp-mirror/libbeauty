@@ -903,8 +903,10 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			}
 		}
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: srcA_width = %d, srcB_width = %d\n", inst, srcA_width, srcB_width);
-		srcA_type->dump();
-		srcB_type->dump();
+		//srcA_type->dump();
+		srcA_type->print(llvm::errs());
+		//srcB_type->dump();
+		srcB_type->print(llvm::errs());
 		//std::cout << srcB->getName());
 		// If they are == a normal store will not work.
 		if ((srcA_type != srcB_type) &&
@@ -1279,17 +1281,18 @@ int LLVM_ir_export::output(struct self_s *self)
 		}
 	}
 
-                        // Global Variables
-                        PointerType* PointerTy_1 = PointerType::get(IntegerType::get(mod->getContext(), 32), 0);
-                        GlobalVariable* gvar_ptr_mem = new GlobalVariable(/*Module=*/*mod,
-                        /*Type=*/PointerTy_1,
-                        /*isConstant=*/false,
-                        /*Linkage=*/GlobalValue::ExternalLinkage,
-                        /*Initializer=*/0,
-                        /*Name=*/"memjcd1");
-                        //gvar_ptr_mem->setAlignment(8);
+	// Global Variables
+	PointerType* PointerTy_1 = PointerType::get(IntegerType::get(mod->getContext(), 32), 0);
+	GlobalVariable* gvar_ptr_mem = new GlobalVariable(/*Module=*/*mod,
+	/*Type=*/PointerTy_1,
+	/*isConstant=*/false,
+	/*Linkage=*/GlobalValue::ExternalLinkage,
+	/*Initializer=*/0,
+	/*Name=*/"memjcd1");
+	//gvar_ptr_mem->setAlignment(8);
 
-        mod->dump();
+	//mod->dump();
+	mod->print(llvm::errs(), nullptr);
 
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 		if ((external_entry_points[l].valid != 0) &&
@@ -1423,7 +1426,8 @@ int LLVM_ir_export::output(struct self_s *self)
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "Dump all the function args LLVM version\n");
 			unsigned Idx = 0;
 			for (Idx = 0; Idx < declaration[l].FuncTy_0_args.size(); Idx++) {
-				declaration[l].FuncTy_0_args[Idx]->dump();
+				//declaration[l].FuncTy_0_args[Idx]->dump();
+				declaration[l].FuncTy_0_args[Idx]->print(llvm::errs());
 			}
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "Dump all the function args Source version\n");
 			if (external_entry_points[l].params_size > 0) {
@@ -1782,7 +1786,8 @@ int LLVM_ir_export::output(struct self_s *self)
 			}
 		}
 	}
-        mod->dump();
+	//mod->dump();
+	mod->print(llvm::errs(), nullptr);
 #endif
 	/* FIXME: Work with more than one function */
 	function_name = external_entry_points[0].name;

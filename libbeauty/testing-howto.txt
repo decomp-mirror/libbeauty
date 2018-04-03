@@ -2,9 +2,9 @@ To run the tests, execute this in the base libbeauty directory where lib.site.cf
 You need to define the environmental variable LLVM_BASE.
 You need to define the environmental variable LIBBEAUTY_BASE.
 
-export LLVM_BASE=/usr/lib/llvm-4.0
+export LLVM_BASE=/usr/lib/llvm-5.0
 
 $LLVM_BASE/utils/lit/lit.py -s -v .
 or on ubuntu:
-/usr/lib/llvm-4.0/build/utils/lit/lit.py -s -v .
+/usr/lib/llvm-5.0/build/utils/lit/lit.py -s -v .
 

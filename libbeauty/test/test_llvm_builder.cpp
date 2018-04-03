@@ -102,8 +102,8 @@ Module* makeLLVMModule(LLVMContext &Context, char *output_filename) {
  std::vector<Type*>FuncTy_0_args;
  PointerType* PointerTy_1 = PointerType::get(IntegerType::get(module->getContext(), 32), 0);
  PointerType* PointerTy_2 = PointerType::get(IntegerType::get(module->getContext(), 8), 0);
- PointerTy_1->dump();
- PointerTy_2->dump();
+ PointerTy_1->print(llvm::errs());
+ PointerTy_2->print(llvm::errs());
  if (PointerTy_1 == PointerTy_2) {
 	printf("Match\n");
  }
