@@ -19,9 +19,9 @@
 
 //#include "llvm-c/Disassembler.h"
 #include <string>
-#include <llvm-3.8/llvm/ADT/OwningPtr.h>
-#include <llvm-3.8/llvm/ADT/SmallString.h>
-#include <llvm-3.8/llvm/Support/raw_ostream.h>
+#include <llvm/ADT/OwningPtr.h>
+#include <llvm/ADT/SmallString.h>
+#include <llvm/Support/raw_ostream.h>
 
 namespace llvm {
 class MCContext;
