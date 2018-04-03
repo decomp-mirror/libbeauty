@@ -2,7 +2,7 @@ Compilation and Installation instructions
 -----------------------------------------
 Authors: Arun Prakash Jana (engineerarun@gmail.com)
          James Courtier-Dutton
-Platform: Tested on Ubuntu 13.04
+Platform: Tested on Ubuntu 16.04
 Compiler: gcc or clang
 
 Prerequisites:
@@ -16,7 +16,7 @@ libiberty-dev
 zlib1g-dev
 libncurses5-dev
 llvm Git development branch source code - http://llvm.org/git/llvm.git
-libLLVM-4.0
+libLLVM-5.0
 
 Steps to install libbeauty:
 --------------------------
@@ -43,10 +43,10 @@ b) https://github.com/jcdutton/libbeauty/archive/master.zip
    $ cd libbeauty-master/libbeauty
 
 6. Set CC, CXX, CPP, CXXCPP environment variables if you wish to use clang/llvm to compile libbeauty:
-export CC=/usr/bin/clang-4.0
-export CPP=/usr/bin/clang++-4.0
-export CXXCPP="/usr/bin/clang++-4.0 -E"
-export CPP="/usr/bin/clang-4.0 -E"
+export CC=/usr/bin/clang-5.0
+export CPP=/usr/bin/clang++-5.0
+export CXXCPP="/usr/bin/clang++-5.0 -E"
+export CPP="/usr/bin/clang-5.0 -E"
 
 Otherwise gcc is the default.
 
