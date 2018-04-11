@@ -106,6 +106,7 @@ uint32_t print_reloc_table_entry(struct reloc_table_s *reloc_table_entry) {
 
 int convert_operand(struct self_s *self, uint64_t base_address, struct operand_low_level_s *ll_operand, int operand_number, struct operand_s *inst_operand) {
 	struct reloc_table_s *reloc_table_entry;
+	uint64_t reloc_index;
 	int tmp;
 
 	debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: kind = 0x%x\n", ll_operand->kind);
@@ -142,10 +143,22 @@ int convert_operand(struct self_s *self, uint64_t base_address, struct operand_l
 			tmp = bf_relocated_code(self->handle_void, 0,
 				base_address + ll_operand->operand[operand_number].offset,
 				ll_operand->operand[operand_number].size >> 3,
+				&reloc_index,
 				&reloc_table_entry);
 			if (!tmp) {
-				debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocate found area=0x%lx, value = 0x%lx\n",
-					reloc_table_entry->relocated_area, reloc_table_entry->symbol_value);
+				debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocate found index=0x%lx, type=0x%x, address=0x%lx, size=0x%lx, addend=0x%lx, external_function_index=0x%lx, section_index=0x%lx, relocation_area=0x%lx, value = 0x%lx, section_name=%s, symbol_name=%s\n",
+					reloc_index,
+					reloc_table_entry->type,
+					reloc_table_entry->address,
+					reloc_table_entry->size,
+					reloc_table_entry->addend,
+					reloc_table_entry->external_functions_index,
+					reloc_table_entry->section_index,
+					reloc_table_entry->relocated_area,
+					reloc_table_entry->symbol_value,
+					reloc_table_entry->section_name,
+					reloc_table_entry->symbol_name);
+
 				inst_operand->relocated = 2;
 				inst_operand->relocated_area = reloc_table_entry->relocated_area;
 				inst_operand->relocated_index = reloc_table_entry->symbol_value;

@@ -81,6 +81,7 @@ int rmb(void *handle_void, struct dis_instructions_s *dis_instructions, uint8_t 
 	struct instruction_s *instruction;
 	int	tmp;
 	struct reloc_table_s *reloc_table_entry;
+	uint64_t reloc_index;
 	/* Does not always start at zero.
 	 * e.g. 0xff 0x71 0xfd pushl -0x4(%ecx)
 	 * inserts an RTL dis_instructions before calling here
@@ -167,7 +168,7 @@ int rmb(void *handle_void, struct dis_instructions_s *dis_instructions, uint8_t 
 				instruction->srcA.indirect = IND_DIRECT;
 				instruction->srcA.index = getdword(base_address, offset + dis_instructions->bytes_used); // Means get from rest of instruction
 				instruction->srcA.relocated = 0;
-				tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_table_entry);
+				tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_index, &reloc_table_entry);
 				if (!tmp) {
 					instruction->srcA.relocated = 1;
 				}
@@ -227,7 +228,7 @@ int rmb(void *handle_void, struct dis_instructions_s *dis_instructions, uint8_t 
 		instruction->srcA.indirect_size = 4;
 		instruction->srcA.index = getdword(base_address, offset + dis_instructions->bytes_used); // Means get from rest of instruction
 		instruction->srcA.relocated = 0;
-		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_table_entry);
+		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_index, &reloc_table_entry);
 		if (!tmp) {
 			instruction->srcA.relocated = 1;
 		}
@@ -294,7 +295,7 @@ int rmb(void *handle_void, struct dis_instructions_s *dis_instructions, uint8_t 
 			instruction->srcA.value_size = 4;
 			instruction->srcA.index = getdword(base_address, offset + dis_instructions->bytes_used); // Means get from rest of instruction
 			instruction->srcA.relocated = 0;
-			tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_table_entry);
+			tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_index, &reloc_table_entry);
 			if (!tmp) {
 				instruction->srcA.relocated = 1;
 			}
@@ -374,6 +375,7 @@ void dis_Ex_Ix(void *handle_void, int opcode, struct dis_instructions_s *dis_ins
 	int half;
 	int tmp;
 	struct reloc_table_s *reloc_table_entry;
+	uint64_t reloc_index;
 	struct instruction_s *instruction;
 
 	half = rmb(handle, dis_instructions, base_address, offset, reg);
@@ -387,7 +389,7 @@ void dis_Ex_Ix(void *handle_void, int opcode, struct dis_instructions_s *dis_ins
 		// Means get from rest of instruction
 		instruction->srcA.index = getdword(base_address, offset + dis_instructions->bytes_used);
 		instruction->srcA.relocated = 0;
-		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_table_entry);
+		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_index, &reloc_table_entry);
 		if (!tmp) {
 			instruction->srcA.relocated = 1;
 		}
@@ -416,6 +418,7 @@ int disassemble(struct self_s *self, struct dis_instructions_s *dis_instructions
 	int8_t relative = 0;
 	int tmp;
 	struct reloc_table_s *reloc_table_entry;
+	uint64_t reloc_index;
 	struct instruction_s *instruction;
 	void *handle_void = self->handle_void;
 
@@ -451,7 +454,7 @@ int disassemble(struct self_s *self, struct dis_instructions_s *dis_instructions
 		instruction->srcA.indirect_size = 4;
 		instruction->srcA.index = getdword(base_address, offset + dis_instructions->bytes_used); // Means get from rest of instruction
 		instruction->srcA.relocated = 0;
-		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_table_entry);
+		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_index, &reloc_table_entry);
 		if (!tmp) {
 			instruction->srcA.relocated = 1;
 		}
@@ -572,7 +575,7 @@ int disassemble(struct self_s *self, struct dis_instructions_s *dis_instructions
 		instruction->srcA.indirect_size = 4;
 		instruction->srcA.index = getdword(base_address, offset + dis_instructions->bytes_used); // Means get from rest of instruction
 		instruction->srcA.relocated = 0;
-		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_table_entry);
+		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_index, &reloc_table_entry);
 		if (!tmp) {
 			instruction->srcA.relocated = 1;
 		}
@@ -789,7 +792,7 @@ int disassemble(struct self_s *self, struct dis_instructions_s *dis_instructions
 		/* FIXME: This may sometimes be a word and not dword */
 		instruction->srcA.index = getdword(base_address, offset + dis_instructions->bytes_used); // Means get from rest of instruction
 		instruction->srcA.relocated = 0;
-		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_table_entry);
+		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_index, &reloc_table_entry);
 		if (!tmp) {
 			instruction->srcA.relocated = 1;
 		}
@@ -962,7 +965,7 @@ int disassemble(struct self_s *self, struct dis_instructions_s *dis_instructions
 		instruction->srcA.indirect = IND_MEM;
 		instruction->srcA.indirect_size = 4;
 		instruction->srcA.index = getdword(base_address, offset + dis_instructions->bytes_used); // Means get from rest of instruction
-		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_table_entry);
+		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_index, &reloc_table_entry);
 		if (!tmp) {
 			instruction->srcA.relocated = 1;
 		}
@@ -993,7 +996,7 @@ int disassemble(struct self_s *self, struct dis_instructions_s *dis_instructions
 		instruction->dstA.indirect_size = 4;
 		instruction->dstA.index = getdword(base_address, offset + dis_instructions->bytes_used); // Means get from rest of instruction
 		instruction->dstA.relocated = 0;
-		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_table_entry);
+		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_index, &reloc_table_entry);
 		if (!tmp) {
 			instruction->dstA.relocated = 1;
 		}
@@ -1031,7 +1034,7 @@ int disassemble(struct self_s *self, struct dis_instructions_s *dis_instructions
 		instruction->srcA.indirect_size = 4;
 		// Means get from rest of instruction
 		instruction->srcA.index = getdword(base_address, offset + dis_instructions->bytes_used);
-		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_table_entry);
+		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_index, &reloc_table_entry);
 		if (!tmp) {
 			instruction->srcA.relocated = 1;
 		}
@@ -1295,7 +1298,7 @@ int disassemble(struct self_s *self, struct dis_instructions_s *dis_instructions
 		instruction->srcA.indirect_size = 4;
 		// Means get from rest of instruction
 		instruction->srcA.index = getdword(base_address, offset + dis_instructions->bytes_used);
-		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_table_entry);
+		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_index, &reloc_table_entry);
 		if (!tmp) {
 			printf("CALL RELOCATED 0x%04"PRIx64"\n", reloc_table_entry->external_functions_index);
 			instruction->srcA.relocated = 1;
@@ -1322,7 +1325,7 @@ int disassemble(struct self_s *self, struct dis_instructions_s *dis_instructions
 		instruction->srcA.indirect_size = 4;
 		// Means get from rest of instruction
 		instruction->srcA.index = getdword(base_address, offset + dis_instructions->bytes_used);
-		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_table_entry);
+		tmp = bf_relocated_code(handle_void, base_address, offset + dis_instructions->bytes_used, 4, &reloc_index, &reloc_table_entry);
 		if (!tmp) {
 			printf("RELOCATED 0x%04"PRIx64"\n", offset + dis_instructions->bytes_used);
 			instruction->srcA.relocated = 1;

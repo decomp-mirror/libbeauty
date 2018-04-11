@@ -3245,6 +3245,11 @@ int build_tip2_table(struct self_s *self, int entry_point, int node)
 			ret = 0;
 			break;
 
+		case CALL:
+			/* FIXME: No info yet. */
+			ret = 0;
+			break;
+
 		default:
 			debug_print(DEBUG_ANALYSE_TIP, 1, "build_tip_table failed for Inst:0x%x:0x%04x, OP 0x%x\n",
 				entry_point, inst, instruction->opcode);

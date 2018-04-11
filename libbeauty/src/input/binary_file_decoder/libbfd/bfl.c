@@ -228,13 +228,14 @@ int bf_get_reloc_table_size_code_section(void *handle_void, uint64_t *size)
 	return 1;
 }
 
-uint32_t bf_relocated_code(void *handle_void, uint8_t *base_address, uint64_t offset, uint64_t size, struct reloc_table_s **reloc_table_entry)
+uint32_t bf_relocated_code(void *handle_void, uint8_t *base_address, uint64_t offset, uint64_t size, uint64_t *reloc_index, struct reloc_table_s **reloc_table_entry)
 {
 	int n;
 	struct rev_eng *handle = (struct rev_eng*) handle_void;
 	for (n = 0; n < handle->reloc_table_code_sz; n++) {
 		if (handle->reloc_table_code[n].address == offset) {
 			*reloc_table_entry = &(handle->reloc_table_code[n]);
+			*reloc_index = n;
 			return 0;
 		}
 	}
