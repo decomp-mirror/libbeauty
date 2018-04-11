@@ -158,10 +158,14 @@ int convert_operand(struct self_s *self, uint64_t base_address, struct operand_l
 					reloc_table_entry->symbol_value,
 					reloc_table_entry->section_name,
 					reloc_table_entry->symbol_name);
-
-				inst_operand->relocated = 2;
-				inst_operand->relocated_area = reloc_table_entry->relocated_area;
-				inst_operand->relocated_index = reloc_table_entry->symbol_value;
+				if (reloc_table_entry->type == 2) {
+					inst_operand->relocated = 3; /* An external function / variable */
+					inst_operand->relocated_index = reloc_index;
+				} else {
+					inst_operand->relocated = 2;
+					inst_operand->relocated_area = reloc_table_entry->relocated_area;
+					inst_operand->relocated_index = reloc_table_entry->symbol_value;
+				}
 			}
 		}
 		break;

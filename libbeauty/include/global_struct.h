@@ -434,6 +434,7 @@ struct operand_s {
 	int store;
 	/* 0 = not relocated.
 	 * 1 = relocated. (if the immeadiate value is in the relocation table)
+	 * 2 = external function / variable
 	 */
 	int relocated;
 	/* The section to point to. e.g. .rodata
