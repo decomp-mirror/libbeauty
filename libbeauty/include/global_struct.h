@@ -33,6 +33,38 @@
 #define MAX_REG 0x1e0
 #define EXTERNAL_ENTRY_POINTS_MAX 1000
 
+struct external_function_s {
+    char *function_name;
+    int return_type;   // E.g. i32
+    int fields_size;   // How many fields there are.
+    int field_type[];  // The actual fields types.
+};
+
+struct simple_field_type_s {
+    int pointer1;   // Pointer to another type or not.  0 = not a pointer. Any non-zero value points to the other struct.
+    int struct1;    // 0 if a simple type, non-zero points to the structured type.
+    int char1;      // 0 if not a char, 1 if a char.  (for display purposes only).
+    int integer1;   // 0 if not an int. 1 if an int or uint.
+    int float1;     // 0 if not a float. 1 if a float. (maybe other values if different float types.)
+    int signed1;    // 0 if unknown, 1 if int, 2 if uint.
+    int bits;      // number of bits.
+    int array_size;     // 0 if not an array. 1,2,3 etc. for array size. -1 = unknown arrach size.
+    int variable;  // 0 if no a ...,   1 if a ... type.
+    int variable_def; // 0 if this field does not define the ... fields. 1 if this field does.
+                      // This will check that this is therefore a char pointer type pointing to a zero terminated UTF-8 string.
+                      // The aim here is to be able to turn a variable length params into a fixed length by looking at the string.
+};
+
+struct struct_types_s {
+	int simple_type; // fields types.
+	int struct_type; // struct types. All struct within struct.
+};
+
+struct struct_type_s {
+    int types_size;   // Number of elements
+    struct struct_types_s types[];
+};
+
 struct reloc_table_s {
 	int		type;
 	uint64_t	address;
@@ -527,6 +559,14 @@ struct self_s {
 	int *flag_dependency;
 	int *flag_dependency_opcode;
 	int *flag_result_users;
+	int simple_field_types_size;
+	struct simple_field_type_s *simple_field_types;
+	int struct_types_size;
+	struct struct_types_s *struct_types;
+	int struct_type_size;
+	struct struct_type_s *struct_type;
+	int external_functions_size;
+	struct external_function_s *external_functions;
 };
 
 #endif /* GLOBAL_STRUCT_H */
