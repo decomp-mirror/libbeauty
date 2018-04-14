@@ -45,7 +45,7 @@ dnl ------------------------------------
 
 AM_CPPFLAGS="-I\$(top_srcdir)/include -I/usr/include/llvm-5.0 -I/usr/include/llvm-c-5.0"
 
-CXXFLAGS="-O0 -Wall -g3 -std=c++11"
+CXXFLAGS="-O0 -Wall -g3 -std=c++11 -fPIC"
 DEBUG_CXXFLAGS="-g3 -Wall"
 
 if test "$CXX" = "cxx"; then
