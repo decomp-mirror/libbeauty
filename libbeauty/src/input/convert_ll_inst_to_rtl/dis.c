@@ -27,6 +27,7 @@
 */
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <rev.h>
 #include <instruction_low_level.h>
 
@@ -104,6 +105,27 @@ uint32_t print_reloc_table_entry(struct reloc_table_s *reloc_table_entry) {
 	return 0;
 }
 
+int lookup_external_function(struct self_s *self, const char *symbol_name, int *result)
+{
+	int tmp = 0;
+	int len1, len2;
+	int n;
+
+	for(n = 1; n < self->external_functions_size; n++) {
+		len1 = strlen(symbol_name);
+		len2 = strlen(self->external_functions[n].function_name);
+		if (len1 == len2) {
+			tmp = strncmp(symbol_name, self->external_functions[n].function_name, len2);
+			if (!tmp) {
+				*result = n;
+				tmp = 0;
+				break;
+			}
+		}
+	}
+	return tmp;
+}
+
 int convert_operand(struct self_s *self, uint64_t base_address, struct operand_low_level_s *ll_operand, int operand_number, struct operand_s *inst_operand) {
 	struct reloc_table_s *reloc_table_entry;
 	uint64_t reloc_index;
@@ -159,8 +181,19 @@ int convert_operand(struct self_s *self, uint64_t base_address, struct operand_l
 					reloc_table_entry->section_name,
 					reloc_table_entry->symbol_name);
 				if (reloc_table_entry->type == 2) {
+					int result = 0;
 					inst_operand->relocated = 3; /* An external function / variable */
 					inst_operand->relocated_index = reloc_index;
+					tmp = lookup_external_function(self, reloc_table_entry->symbol_name, &result);
+					if (!tmp) {
+						inst_operand->relocated_area = result;
+						debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocated 3 found function %s at entry %d\n",
+									reloc_table_entry->symbol_name,
+									result);
+					} else {
+					debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocated 3 failed to find function %s\n", reloc_table_entry->symbol_name);
+					exit(1);
+					}
 				} else {
 					inst_operand->relocated = 2;
 					inst_operand->relocated_area = reloc_table_entry->relocated_area;
