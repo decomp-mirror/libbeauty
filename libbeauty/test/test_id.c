@@ -984,7 +984,7 @@ int main(int argc, char *argv[])
 					string1.len = 0;
 					string1.string[0] = 0;
 					write_inst(self, &string1, &(dis_instructions.instruction[m]), m, NULL);
-					printf("result: len=%zd:%s\n", string1.len, string1.string);
+					printf("result: len=%d:%s\n", string1.len, string1.string);
 #if 0
 					if (test_data[l].inst_size == dis_instructions.instruction_number) {
 						tmp = printf("test data: len=%zd:%s\n", strlen(test_data[l].inst[m]), test_data[l].inst[m]);
