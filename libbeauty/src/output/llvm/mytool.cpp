@@ -32,15 +32,11 @@ using namespace llvm;
 
 // Example pass: just dumps the insns for every block.
 namespace {
-  struct MYTool : public BasicBlockPass {
+  struct MYTool : public ModulePass {
     static char ID;
-    MYTool() : BasicBlockPass(ID) {}
-    virtual bool runOnBasicBlock(BasicBlock &BB) {
-      BasicBlock::iterator i;
+    MYTool() : ModulePass(ID) {}
+    virtual bool runOnModule(Module &M) {
       errs() << "Basic JCD Block\n";
-      for( i=BB.begin(); i!=BB.end(); i++ ) {
-        errs() << "  " << i->getOpcodeName() << "\n";
-      }
       return false;
     }
   };

@@ -1816,8 +1816,10 @@ int LLVM_ir_export::output(struct self_s *self)
 	PB.registerFunctionAnalyses(FAM);
 	PB.registerLoopAnalyses(LAM);
 	PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+	//OS2 << PB;
 
 	ModulePassManager MPM(DebugPM);
+	//MAM.add(new MYTool());
 
 	/* True is is fails */
 	if (verifyModule(*mod, &OS2)) {
