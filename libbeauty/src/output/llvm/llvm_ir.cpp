@@ -1837,6 +1837,7 @@ int LLVM_ir_export::output(struct self_s *self)
 		exit(1);
 	}
 
+//	PassPipeline = "print,module(function(dse),cgscc(function-attrs)),print,deadargelim,print";
 	PassPipeline = "print,module(function(dse),cgscc(function-attrs)),print";
 	if (!PB.parsePassPipeline(MPM, PassPipeline, 0,
 		DebugPM)) {

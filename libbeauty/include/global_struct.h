@@ -37,7 +37,7 @@ struct external_function_s {
     char *function_name;
     int return_type;   // E.g. i32
     int fields_size;   // How many fields there are.
-    int field_type[];  // The actual fields types.
+    int *field_type;  // The actual fields types.
 };
 
 struct simple_field_type_s {

@@ -325,6 +325,36 @@ int print_dis_instructions(struct self_s *self)
 	return 0;
 }
 
+
+	int external_functions_init(struct self_s *self)
+{
+	self->external_functions_size = 2;
+	self->external_functions =
+		calloc(2, sizeof(struct external_function_s));
+	self->external_functions[1].function_name = "printf";
+	self->external_functions[1].return_type = 1;
+	self->external_functions[1].fields_size = 2;
+	self->external_functions[1].field_type =
+		calloc(2, sizeof(int));
+	self->external_functions[1].field_type[0] = 3; // char *
+	self->external_functions[1].field_type[1] = 4; // ... 
+	self->simple_field_types_size = 5;
+	self->simple_field_types =
+		calloc(5, sizeof(struct simple_field_type_s));
+	self->simple_field_types[1].integer1 = 1;
+	self->simple_field_types[1].bits = 32;
+	self->simple_field_types[2].char1 = 1;
+	self->simple_field_types[2].bits = 8;
+	self->simple_field_types[3].pointer1 = 2;
+	self->simple_field_types[3].variable_def = 1;
+	self->simple_field_types[4].variable = 1;
+	self->struct_types_size = 0;
+	self->struct_type_size = 0;
+
+	return 0;
+}
+
+
 int ram_init(struct memory_s *memory_data)
 {
 	return 0;
@@ -5339,6 +5369,9 @@ int main(int argc, char *argv[])
 
 	dis_instructions.bytes_used = 0;
 	inst_exe = &inst_log_entry[0];
+
+	tmp = external_functions_init(self);
+	if (tmp) return 1;
 
 	tmp = external_entry_points_init(external_entry_points, handle_void);
 	if (tmp) return 1;
