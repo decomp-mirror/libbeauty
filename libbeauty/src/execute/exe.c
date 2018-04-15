@@ -1972,58 +1972,64 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		 * value3 = value3
 		 */
 		/* Get value of srcA */
-		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcA), &(inst->value1), 0);
-		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcB), &(inst->value2), 1);
-		value = search_store(memory_reg,
-				REG_IP,
-				4);
-		debug_print(DEBUG_EXE, 1, "EXE CALL 0x%"PRIx64"+%"PRIx64"\n",
-			value->offset_value, inst->value1.init_value);
-		/* Make init_value +  offset_value = abs value */
-		inst->value1.offset_value = inst->value1.init_value;
-		inst->value1.init_value = value->offset_value;
-
-		/* Link the call destination to a valid external_entry_point if possible */
-		if (instruction->srcA.relocated == 2) {
-			for (n = 0; n < EXTERNAL_ENTRY_POINTS_MAX; n++) {
-				struct external_entry_point_s *external_entry_points = self->external_entry_points;
-				if ((external_entry_points[n].valid != 0) &&
-					(external_entry_points[n].type == 1) &&
-					(external_entry_points[n].value == instruction->srcA.relocated_index)) {
-					//debug_print(DEBUG_OUTPUT, 1, "found external relocated 0x%x\n", n);
-					instruction->srcA.index = n;
-					instruction->srcA.relocated = 1;
-					break;
+		//ret = get_value_RTL_instruction(self, process_state, &(instruction->srcA), &(inst->value1), 0);
+		//ret = get_value_RTL_instruction(self, process_state, &(instruction->srcB), &(inst->value2), 1);
+		//value = search_store(memory_reg,
+		//		REG_IP,
+		//		4);
+		//debug_print(DEBUG_EXE, 1, "EXE CALL 0x%"PRIx64"+%"PRIx64"\n",
+		//	value->offset_value, inst->value1.init_value);
+		///* Make init_value +  offset_value = abs value */
+		//inst->value1.offset_value = inst->value1.init_value;
+		//inst->value1.init_value = value->offset_value;
+		switch (instruction->srcA.relocated) {
+			case 2:
+				/* Link the call destination to a valid external_entry_point if possible */
+				for (n = 0; n < EXTERNAL_ENTRY_POINTS_MAX; n++) {
+					struct external_entry_point_s *external_entry_points = self->external_entry_points;
+					if ((external_entry_points[n].valid != 0) &&
+						(external_entry_points[n].type == 1) &&
+						(external_entry_points[n].value == instruction->srcA.relocated_index)) {
+							//debug_print(DEBUG_OUTPUT, 1, "found external relocated 0x%x\n", n);
+							instruction->srcA.index = n;
+							instruction->srcA.relocated = 1;
+							break;
+					}
 				}
-			}
+				break;
+			case 0:
+				/* Link the call destination to a valid external_entry_point if possible */
+				if (instruction->srcA.indirect == IND_DIRECT) {
+					debug_print(DEBUG_OUTPUT, 1, "CALL: SCANNING for call_offset\n");
+					for (n = 0; n < EXTERNAL_ENTRY_POINTS_MAX; n++) {
+						struct external_entry_point_s *external_entry_points = self->external_entry_points;
+						uint64_t call_offset = inst->value1.init_value + inst->value1.offset_value;
+						if ((external_entry_points[n].valid != 0) &&
+							(external_entry_points[n].type == 1) &&
+							(external_entry_points[n].value == call_offset)) {
+							debug_print(DEBUG_OUTPUT, 1, "found call_offset entry_point = 0x%x\n", n);
+							instruction->srcA.index = n;
+							instruction->srcA.relocated = 1;
+							break;
+						}
+						if ((external_entry_points[n].valid != 0) &&
+							(external_entry_points[n].type == 2) &&
+							(external_entry_points[n].value == call_offset)) {
+							debug_print(DEBUG_OUTPUT, 1, "found call_offset entry_point = 0x%x\n", n);
+							instruction->srcA.index = n;
+							instruction->srcA.relocated = 1;
+							break;
+						}
+					}
+				}
+				break;
+			case 3:
+				debug_print(DEBUG_OUTPUT, 1, "CALL: External\n");
+				/* FIXME: First expand printf format string to create a new specific printf
+				 */
 		}
-		/* Link the call destination to a valid external_entry_point if possible */
-		if ((instruction->srcA.relocated == 0) &&
-			(instruction->srcA.indirect == IND_DIRECT)) {
-			debug_print(DEBUG_OUTPUT, 1, "CALL: SCANNING for call_offset\n");
-			for (n = 0; n < EXTERNAL_ENTRY_POINTS_MAX; n++) {
-				struct external_entry_point_s *external_entry_points = self->external_entry_points;
-				uint64_t call_offset = inst->value1.init_value + inst->value1.offset_value;
-				if ((external_entry_points[n].valid != 0) &&
-					(external_entry_points[n].type == 1) &&
-					(external_entry_points[n].value == call_offset)) {
-					debug_print(DEBUG_OUTPUT, 1, "found call_offset entry_point = 0x%x\n", n);
-					instruction->srcA.index = n;
-					instruction->srcA.relocated = 1;
-					break;
-				}
-				if ((external_entry_points[n].valid != 0) &&
-					(external_entry_points[n].type == 2) &&
-					(external_entry_points[n].value == call_offset)) {
-					debug_print(DEBUG_OUTPUT, 1, "found call_offset entry_point = 0x%x\n", n);
-					instruction->srcA.index = n;
-					instruction->srcA.relocated = 1;
-					break;
-				}
-			}
-		}
- 
-		/* FIXME: Currently this is a NOP. Need lenght to come from entry_point */
+#if 1 
+		/* FIXME: Currently this is a NOP. Need length to come from entry_point */
 		/* Get value of dstA */
 		inst->value3.start_address = instruction->dstA.index;
 		/* FIXME: get length from entry_point */
@@ -2045,6 +2051,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		inst->value1.valid = 1;
 		inst->value3.valid = 1;
 		put_value_RTL_instruction(self, process_state, inst);
+#endif
 		break;
 
 	case TRUNC:

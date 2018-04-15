@@ -107,7 +107,8 @@ uint32_t print_reloc_table_entry(struct reloc_table_s *reloc_table_entry) {
 
 int lookup_external_function(struct self_s *self, const char *symbol_name, int *result)
 {
-	int tmp = 0;
+	int found = 1; // 1 = not-found, 0 = found.
+	int tmp;
 	int len1, len2;
 	int n;
 
@@ -118,12 +119,12 @@ int lookup_external_function(struct self_s *self, const char *symbol_name, int *
 			tmp = strncmp(symbol_name, self->external_functions[n].function_name, len2);
 			if (!tmp) {
 				*result = n;
-				tmp = 0;
+				found = 0;
 				break;
 			}
 		}
 	}
-	return tmp;
+	return found;
 }
 
 int convert_operand(struct self_s *self, uint64_t base_address, struct operand_low_level_s *ll_operand, int operand_number, struct operand_s *inst_operand) {
@@ -191,8 +192,8 @@ int convert_operand(struct self_s *self, uint64_t base_address, struct operand_l
 									reloc_table_entry->symbol_name,
 									result);
 					} else {
-					debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocated 3 failed to find function %s\n", reloc_table_entry->symbol_name);
-					exit(1);
+						debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocated 3 failed to find function %s\n", reloc_table_entry->symbol_name);
+						exit(1);
 					}
 				} else {
 					inst_operand->relocated = 2;

@@ -329,9 +329,9 @@ int print_dis_instructions(struct self_s *self)
 /* Eventually this will be built from standard C .h or C++ .hpp files */
 	int external_functions_init(struct self_s *self)
 {
-	self->external_functions_size = 2;
+	self->external_functions_size = 3;
 	self->external_functions =
-		calloc(2, sizeof(struct external_function_s));
+		calloc(3, sizeof(struct external_function_s));
 	self->external_functions[1].function_name = "printf";
 	self->external_functions[1].return_type = 1;
 	self->external_functions[1].fields_size = 2;
@@ -339,6 +339,14 @@ int print_dis_instructions(struct self_s *self)
 		calloc(2, sizeof(int));
 	self->external_functions[1].field_type[0] = 3; // char *
 	self->external_functions[1].field_type[1] = 4; // ... 
+
+	self->external_functions[2].function_name = "putchar";
+	self->external_functions[2].return_type = 1;
+	self->external_functions[2].fields_size = 1;
+	self->external_functions[2].field_type =
+		calloc(1, sizeof(int));
+	self->external_functions[2].field_type[0] = 1; // int
+
 	self->simple_field_types_size = 6;
 	self->simple_field_types =
 		calloc(6, sizeof(struct simple_field_type_s));

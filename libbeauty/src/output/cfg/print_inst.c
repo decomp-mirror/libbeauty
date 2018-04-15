@@ -522,7 +522,7 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 				tmp = string_cat(string, buffer, strlen(buffer));
 				break;
 			default:
-				tmp = snprintf(buffer, 1023, " CALL FAILED index=0x%"PRIx64"",
+				tmp = snprintf(buffer, 1023, " CALL internal FAILED1 index=0x%"PRIx64"",
 					instruction->srcA.index);
 				tmp = string_cat(string, buffer, strlen(buffer));
 				break;
@@ -543,7 +543,7 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 			tmp = string_cat(string, buffer, strlen(buffer));
 			break;
 		default:
-			tmp = snprintf(buffer, 1023, " CALL FAILED index=0x%"PRIx64", relocated=%d",
+			tmp = snprintf(buffer, 1023, " CALL internal FAILED2 index=0x%"PRIx64", relocated=%d",
 				instruction->srcA.index,
 				instruction->srcA.relocated);
 			tmp = string_cat(string, buffer, strlen(buffer));
