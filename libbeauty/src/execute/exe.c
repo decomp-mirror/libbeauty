@@ -2024,9 +2024,17 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 				}
 				break;
 			case 3:
-				debug_print(DEBUG_OUTPUT, 1, "CALL: External\n");
+				debug_print(DEBUG_OUTPUT, 1, "CALL:External: relocated = 0x%x\n", instruction->srcA.relocated);
+				debug_print(DEBUG_OUTPUT, 1, "Not implemented yet\n");
+				exit(1);
+				break;
 				/* FIXME: First expand printf format string to create a new specific printf
 				 */
+			default:
+				debug_print(DEBUG_OUTPUT, 1, "CALL:unknown: relocated = 0x%x\n", instruction->srcA.relocated);
+				debug_print(DEBUG_OUTPUT, 1, "Not implemented yet\n");
+				exit(1);
+				break;
 		}
 #if 1 
 		/* FIXME: Currently this is a NOP. Need length to come from entry_point */

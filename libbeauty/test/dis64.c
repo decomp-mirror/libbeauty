@@ -2687,7 +2687,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 int check_domain(struct label_redirect_s *label_redirect)
 {
 	if (1 != label_redirect->domain) {
-		debug_print(DEBUG_MAIN, 1, "check_domain failed\n", label_redirect->domain);
+		debug_print(DEBUG_MAIN, 1, "check_domain failed 0x%x\n", label_redirect->domain);
 		printf("check_domain failed\n");
 		assert(0);
 		exit(1);
@@ -5110,62 +5110,73 @@ int call_params_to_locals(struct self_s *self, int entry_point, int node)
 		instruction =  &inst_log1->instruction;
 		switch (instruction->opcode) {
 		case CALL:
-			//debug_print(DEBUG_MAIN, 1, "PRINTING INST CALL\n");
-			//tmp = print_inst(self, instruction, n, labels);
-			if (instruction->srcA.relocated != 1) {
-				break;
-			}
-			external_entry_point_callee = &external_entry_points[instruction->srcA.index];
-			labels_callee = external_entry_point_callee->labels;
-			call = inst_log1->extension;
-			call->params_reg_size = external_entry_point_callee->params_reg_ordered_size;
-			/* FIXME: use struct in sizeof bit here */
-			call->params_reg = calloc(call->params_reg_size, sizeof(int *));
-			if (!call) {
-				debug_print(DEBUG_MAIN, 1, "ERROR: PARAM failed for inst:0x%x, CALL. Out of memory\n", inst);
-				return 1;
-			}
-			debug_print(DEBUG_MAIN, 1, "PARAM:call size=%x\n", call->params_reg_size);
-			for (m = 0; m < call->params_reg_size; m++) {
-				label = &labels_callee[external_entry_point_callee->params_reg_ordered[m]];
-				/* param_regXXX */
-				if ((2 == label->scope) &&
-					(1 == label->type)) {
-					call->params_reg[m] = call->reg_tracker[label->value];
-					debug_print(DEBUG_MAIN, 1, "PARAM: param_reg 0x%lx --> call_params 0x%x\n", label->value, call->params_reg[m]);
-					if (!(call->reg_tracker[label->value])) {
-						printf("ERROR:%s:%d invalid param at node 0x%x, inst 0x%x\n", __FUNCTION__, __LINE__, node, inst);
-						exit(1);
+			switch (instruction->srcA.relocated) {
+			case 1:
+				debug_print(DEBUG_MAIN, 1, "relocated = %d\n", instruction->srcA.relocated);
+				//debug_print(DEBUG_MAIN, 1, "PRINTING INST CALL\n");
+				//tmp = print_inst(self, instruction, n, labels);
+				//if (instruction->srcA.relocated != 1) {
+				//	break;
+				//}
+				external_entry_point_callee = &external_entry_points[instruction->srcA.index];
+				labels_callee = external_entry_point_callee->labels;
+				call = inst_log1->extension;
+				call->params_reg_size = external_entry_point_callee->params_reg_ordered_size;
+				/* FIXME: use struct in sizeof bit here */
+				call->params_reg = calloc(call->params_reg_size, sizeof(int *));
+				if (!call) {
+					debug_print(DEBUG_MAIN, 1, "ERROR: PARAM failed for inst:0x%x, CALL. Out of memory\n", inst);
+					return 1;
+				}
+				debug_print(DEBUG_MAIN, 1, "PARAM:call size=%x\n", call->params_reg_size);
+				for (m = 0; m < call->params_reg_size; m++) {
+					label = &labels_callee[external_entry_point_callee->params_reg_ordered[m]];
+					/* param_regXXX */
+					if ((2 == label->scope) &&
+						(1 == label->type)) {
+						call->params_reg[m] = call->reg_tracker[label->value];
+						debug_print(DEBUG_MAIN, 1, "PARAM: param_reg 0x%lx --> call_params 0x%x\n", label->value, call->params_reg[m]);
+						if (!(call->reg_tracker[label->value])) {
+							printf("ERROR:%s:%d invalid param at node 0x%x, inst 0x%x\n", __FUNCTION__, __LINE__, node, inst);
+							exit(1);
+						}
 					}
 				}
-			}
-			params_stack_size = 0;
-			for (m = 0; m < external_entry_point_callee->params_size; m++) {
-				label = &labels_callee[external_entry_point_callee->params[m]];
-				/* param_stackXXX */
-				if ((2 == label->scope) &&
-					(2 == label->type)) {
-					params_stack_size++;
-					/* SP value held in value2 */
-					debug_print(DEBUG_MAIN, 1, "PARAM: Searching for SP(0x%"PRIx64":0x%"PRIx64") + label->value(0x%"PRIx64") - 8\n", inst_log1->value2.init_value, inst_log1->value2.offset_value, label->value);
-				}
-			}
-			call->params_stack = calloc(params_stack_size, sizeof(uint64_t));
-			call->params_stack_size = params_stack_size;
-			params_stack_size = 0;
-			for (m = 0; m < external_entry_point_callee->params_size; m++) {
-				label = &labels_callee[external_entry_point_callee->params[m]];
-				/* param_regXXX */
-				if ((2 == label->scope) &&
-					(2 == label->type)) {
+				params_stack_size = 0;
+				for (m = 0; m < external_entry_point_callee->params_size; m++) {
+					label = &labels_callee[external_entry_point_callee->params[m]];
 					/* param_stackXXX */
-					/* SP value held in value2 */
-					call->params_stack[params_stack_size] = inst_log1->value2.offset_value + label->value - 8;
-					debug_print(DEBUG_MAIN, 1, "PARAM: Found SP(0x%"PRIx64":0x%"PRIx64") + label->value(0x%"PRIx64") - 8, params_stack = 0x%lx\n", inst_log1->value2.init_value, inst_log1->value2.offset_value, label->value, call->params_stack[params_stack_size]);
-					params_stack_size++;
+					if ((2 == label->scope) &&
+						(2 == label->type)) {
+						params_stack_size++;
+						/* SP value held in value2 */
+						debug_print(DEBUG_MAIN, 1, "PARAM: Searching for SP(0x%"PRIx64":0x%"PRIx64") + label->value(0x%"PRIx64") - 8\n", inst_log1->value2.init_value, inst_log1->value2.offset_value, label->value);
+					}
 				}
+				call->params_stack = calloc(params_stack_size, sizeof(uint64_t));
+				call->params_stack_size = params_stack_size;
+				params_stack_size = 0;
+				for (m = 0; m < external_entry_point_callee->params_size; m++) {
+					label = &labels_callee[external_entry_point_callee->params[m]];
+					/* param_regXXX */
+					if ((2 == label->scope) &&
+						(2 == label->type)) {
+						/* param_stackXXX */
+						/* SP value held in value2 */
+						call->params_stack[params_stack_size] = inst_log1->value2.offset_value + label->value - 8;
+						debug_print(DEBUG_MAIN, 1, "PARAM: Found SP(0x%"PRIx64":0x%"PRIx64") + label->value(0x%"PRIx64") - 8, params_stack = 0x%lx\n", inst_log1->value2.init_value, inst_log1->value2.offset_value, label->value, call->params_stack[params_stack_size]);
+						params_stack_size++;
+					}
+				}
+				break;
+			case 3:
+				debug_print(DEBUG_MAIN, 1, "relocated = %d\n", instruction->srcA.relocated);
+				debug_print(DEBUG_MAIN, 1, "Not handled yet\n");
+				exit(3);
+			default:
+				debug_print(DEBUG_MAIN, 1, "relocated = %d\n", instruction->srcA.relocated);
+				break;
 			}
-			break;
 
 		default:
 			break;
