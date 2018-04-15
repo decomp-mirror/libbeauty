@@ -37,25 +37,28 @@ int main(int argc, char**argv) {
   output_filename2 = (char*)calloc(512, 1);
   snprintf(output_filename2, 500, "test_llvm_builder_error.txt");
   Module* Mod = makeLLVMModule(Context, output_filename);
+  raw_fd_ostream OS(output_filename, error_code, sys::fs::OpenFlags::F_None);
+  WriteBitcodeToFile(Mod, OS);
+  std::cout << "Written to file\n";
 // Verify Module
   //raw_fd_ostream OS(output_filename, error_code, 0);
   raw_fd_ostream OS2(output_filename2, error_code, sys::fs::OpenFlags::F_None);
-  if (verifyModule(*Mod, &OS2)) {
-    printf(": Error constructing function!\n");
-    return 1;
-  }
+  //if (verifyModule(*Mod, &OS2)) {
+  //  printf(": Error constructing function!\n");
+  //  return 1;
+  //}
 // Output Module Bitcode to file
   //raw_fd_ostream OS(output_filename, error_code, 0);
-  raw_fd_ostream OS(output_filename, error_code, sys::fs::OpenFlags::F_None);
 
-  if (error_code) {
+  //if (error_code) {
   // *ErrorMessage = strdup(error_code.message().c_str());
-    return 0;
-  }
-  WriteBitcodeToFile(Mod, OS);
+  //  return 0;
+  //}
+  //WriteBitcodeToFile(Mod, OS);
 
   TargetMachine* TM = nullptr;
-  StringRef PassPipeline = "cgscc(function-attrs),print";
+  //StringRef PassPipeline = "cgscc(function-attrs),print";
+  StringRef PassPipeline = "print";
 //  StringRef PassPipeline = "function(print)";
   PassBuilder PB(TM);
 
@@ -83,6 +86,10 @@ int main(int argc, char**argv) {
 
   MPM.run(*Mod, MAM);
 
+  if (verifyModule(*Mod, &OS2)) {
+    printf(": Error constructing function!\n");
+    return 1;
+  }
 
 //  verifyModule(*Mod, PrintMessageAction);
 //  PassManager PM;
@@ -206,6 +213,21 @@ FuncTy_0_args.push_back(IntegerType::get(module->getContext(), 32)); // Second a
  Value* ptr_7 = builder->CreateGEP(const_ptr_int64_1, const_int64_2, "ptr_7");
  Value* int_6 = builder->CreateAlignedLoad(ptr_6, 8, "int_6");
  Value* int_7 = builder->CreateAlignedLoad(ptr_7, 8, "int_7");
+
+ std::vector<Type*>FuncTy_puts_args;
+ FuncTy_puts_args.push_back(IntegerType::get(module->getContext(), 32));
+ FuncTy_puts_args.push_back(IntegerType::get(module->getContext(), 32));
+ auto CalleeTy = FunctionType::get(IntegerType::get(module->getContext(), 32),
+								   FuncTy_puts_args,
+                                    /*isVarArg=*/false);
+ auto Callee =
+     Function::Create(CalleeTy, Function::ExternalLinkage, "puts", module);
+ Value* Args[2];
+ Args[0] = int_6;
+ Args[1] = int_6;
+ Value *FCall = builder->CreateCall(Callee, Args);
+ std::cout << "\nFCall\n" << FCall << "\n";
+ Args[1] = int_7; // Output only includes int_6,int_6
 
 //  GetElementPtrInst* ptr_6 = GetElementPtrInst::Create(IntegerType::get(mod->getContext(), 32), ptr_5, {
 //   const_int64_3
