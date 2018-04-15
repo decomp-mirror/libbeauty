@@ -226,6 +226,11 @@ FuncTy_0_args.push_back(IntegerType::get(module->getContext(), 32)); // Second a
  Args[0] = int_6;
  Args[1] = int_6;
  Value *FCall = builder->CreateCall(Callee, Args);
+
+ std::vector<Value*>args2;
+ args2.push_back(int_6);
+ args2.push_back(int_7);
+ Value *FCall2 = builder->CreateCall(Callee, args2);
  std::cout << "\nFCall\n" << FCall << "\n";
  Args[1] = int_7; // Output only includes int_6,int_6
 
