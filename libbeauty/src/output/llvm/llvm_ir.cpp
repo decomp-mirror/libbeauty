@@ -468,9 +468,10 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		break;
 	case 0x12:  // CALL
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: OPCODE = 0x%x:CALL\n", inst, inst_log1->instruction.opcode);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "Not yet handled\n");
-		exit(1);
-		{
+		switch (inst_log1->instruction.srcA.relocated) {
+		case 1: {
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "Not yet handled\n");
+			exit(1);
 			struct extension_call_s *call_info = static_cast<struct extension_call_s *> (inst_log1->extension);
 			std::vector<Value*> vector_params;
 			int function_to_call = 0;
@@ -519,6 +520,53 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			sprint_value(OS1, dstA);
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 			Buf1.clear();
+			break;
+			}
+		case 3: { // For external call()
+			int function = inst_log1->instruction.srcA.relocated_area; 
+			struct extension_call_s *call_info = static_cast<struct extension_call_s *> (inst_log1->extension);
+			std::vector<Value*> vector_params;
+			for (n = 0; n < call_info->params_reg_size; n++) {
+				int reg_value = call_info->reg_tracker[call_info->params_reg[n]]; 
+				value_id = external_entry_point->label_redirect[reg_value].index;
+				debug_print(DEBUG_OUTPUT_LLVM, 1, "call_info_params = 0x%x->0x%x, %p\n", call_info->params_reg[n], value_id, value[value_id]);
+				if (!value_id) {
+					debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: invalid call_info_param\n");
+					exit(1);
+				}
+				vector_params.push_back(value[value_id]);
+			}
+			std::vector<Type*>FuncTy_puts_args;
+			for (n = 0; n < self->external_functions[function].fields_size; n++) {
+				int field_type = self->external_functions[function].field_type[n];
+				if (self->simple_field_types[field_type].integer1 == 1) {
+					FuncTy_puts_args.push_back(IntegerType::get(mod->getContext(), self->simple_field_types[field_type].bits));
+				}
+			}
+			//FuncTy_puts_args.push_back(IntegerType::get(mod->getContext(), 32));
+			auto CalleeTy = FunctionType::get(IntegerType::get(mod->getContext(), 32),
+				FuncTy_puts_args,
+				/*isVarArg=*/false);
+			auto Callee =
+				Function::Create(CalleeTy, Function::ExternalLinkage, self->external_functions[function].function_name, mod);
+			CallInst* call_inst = builder->CreateCall(Callee, vector_params);
+			call_inst->setCallingConv(CallingConv::C);
+			call_inst->setTailCall(false);
+			dstA = call_inst;
+			value[inst_log1->value3.value_id] = dstA;
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: dstA %p\n", inst, dstA);
+			sprint_value(OS1, dstA);
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+			Buf1.clear();
+			//debug_print(DEBUG_OUTPUT_LLVM, 1, "Relocated 3 Not yet handled\n");
+			//exit(1);
+			break;
+			}
+		default: {
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "Relocated %d Not yet handled\n", inst_log1->instruction.srcA.relocated);
+			exit(1);
+			break;
+			}
 		}
 		break;
 	case 0x1e:  // RET
@@ -1792,7 +1840,12 @@ int LLVM_ir_export::output(struct self_s *self)
 	mod->print(llvm::errs(), nullptr);
 #endif
 	/* FIXME: Work with more than one function */
-	function_name = external_entry_points[0].name;
+	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+		 if (external_entry_points[l].type == 1) {
+			 function_name = external_entry_points[l].name;
+			 break;
+		 }
+	}
 	debug_print(DEBUG_OUTPUT_LLVM, 1, "output_filename: %s\n", function_name);
 	snprintf(output_filename, 500, "./llvm/%s.bc", function_name);
 	std::string ErrorInfo;

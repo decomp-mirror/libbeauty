@@ -329,6 +329,16 @@ int print_dis_instructions(struct self_s *self)
 /* Eventually this will be built from standard C .h or C++ .hpp files */
 	int external_functions_init(struct self_s *self)
 {
+	/* RDI, RSI, RDX, RCX, R8, R9, ... */
+	self->external_function_reg_order_size = 6;
+	self->external_function_reg_order =
+		calloc(6, sizeof(int));
+	self->external_function_reg_order[0] = REG_DI;
+	self->external_function_reg_order[1] = REG_SI;
+	self->external_function_reg_order[2] = REG_DX;
+	self->external_function_reg_order[3] = REG_CX;
+	self->external_function_reg_order[4] = REG_08;
+	self->external_function_reg_order[5] = REG_09;
 	self->external_functions_size = 3;
 	self->external_functions =
 		calloc(3, sizeof(struct external_function_s));
@@ -2570,7 +2580,11 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 			 * This is so forward references to as yet unprocessed functions
 			 * are handled correctly.
 			 */
-			inst_log1->extension = calloc(1, sizeof(struct extension_call_s));
+			if (!(inst_log1->extension)) {
+				debug_print(DEBUG_MAIN, 1, "CALL no extension set\n");
+				exit(1);
+			}
+			//inst_log1->extension = calloc(1, sizeof(struct extension_call_s));
 			call = inst_log1->extension;
 			for (m = 0; m < MAX_REG; m++) {
 				call->reg_tracker[m] = reg_tracker[m];
@@ -2583,6 +2597,9 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 						call->reg_tracker[m]);
 				}
 			}
+			debug_print(DEBUG_MAIN, 1, "first reg 0x%x = 0x%x value\n", call->params_reg[0], call->reg_tracker[call->params_reg[0]]);
+			//debug_print(DEBUG_MAIN, 1, "CALL exiting\n");
+			//exit(1);
 			/* Used to update the reg_tracker while stepping through the assign src */
 			switch (instruction->dstA.store) {
 			case STORE_DIRECT:
@@ -2687,7 +2704,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 int check_domain(struct label_redirect_s *label_redirect)
 {
 	if (1 != label_redirect->domain) {
-		debug_print(DEBUG_MAIN, 1, "check_domain failed 0x%x\n", label_redirect->domain);
+		debug_print(DEBUG_MAIN, 1, "check_domain failed 0x%lx\n", label_redirect->domain);
 		printf("check_domain failed\n");
 		assert(0);
 		exit(1);
@@ -5118,6 +5135,9 @@ int call_params_to_locals(struct self_s *self, int entry_point, int node)
 				//if (instruction->srcA.relocated != 1) {
 				//	break;
 				//}
+				debug_print(DEBUG_MAIN, 1, "not yet handled\n");
+				exit(1);
+
 				external_entry_point_callee = &external_entry_points[instruction->srcA.index];
 				labels_callee = external_entry_point_callee->labels;
 				call = inst_log1->extension;
@@ -5171,8 +5191,7 @@ int call_params_to_locals(struct self_s *self, int entry_point, int node)
 				break;
 			case 3:
 				debug_print(DEBUG_MAIN, 1, "relocated = %d\n", instruction->srcA.relocated);
-				debug_print(DEBUG_MAIN, 1, "Not handled yet\n");
-				exit(3);
+				break;
 			default:
 				debug_print(DEBUG_MAIN, 1, "relocated = %d\n", instruction->srcA.relocated);
 				break;

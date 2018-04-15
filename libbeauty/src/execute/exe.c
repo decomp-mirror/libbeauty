@@ -802,6 +802,8 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 	uint64_t tmp64u;
 	int tmp;
 	int n;
+	struct extension_call_s *call;
+	struct external_function_s *external_function;
 
 	//memory_text = process_state->memory_text;
 	//memory_stack = process_state->memory_stack;
@@ -2025,8 +2027,20 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 				break;
 			case 3:
 				debug_print(DEBUG_OUTPUT, 1, "CALL:External: relocated = 0x%x\n", instruction->srcA.relocated);
-				debug_print(DEBUG_OUTPUT, 1, "Not implemented yet\n");
-				exit(1);
+				if (!inst->extension) {
+					inst->extension = calloc(1, sizeof(struct extension_call_s));
+				} else {
+					debug_print(DEBUG_OUTPUT, 1, "extension already allocated. Why? Exiting\n");
+					exit(1);
+				}
+				call = inst->extension;
+				external_function = &(self->external_functions[instruction->srcA.relocated_area]);
+				call->params_reg_size = external_function->fields_size;
+				call->params_reg = calloc(external_function->fields_size, sizeof(int));
+				for(n = 0; n < external_function->fields_size; n++) {
+					call->params_reg[n] = self->external_function_reg_order[n];
+				}
+				debug_print(DEBUG_OUTPUT, 1, "call->params_reg_size = %d\n", call->params_reg_size);
 				break;
 				/* FIXME: First expand printf format string to create a new specific printf
 				 */

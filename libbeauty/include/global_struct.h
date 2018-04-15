@@ -513,9 +513,11 @@ struct instruction_s {
 } ;
 
 struct extension_call_s {
+	/* The labels for each REG. */
 	int reg_tracker[MAX_REG];
 	/* params passed by register */
 	int params_reg_size;
+	/* The REG for each parameter passed */
 	int *params_reg;
 	/* stack_offset at the call. Use to calculate the param_stack values */
 	uint64_t stack_offset;
@@ -567,6 +569,8 @@ struct self_s {
 	struct struct_type_s *struct_type;
 	int external_functions_size;
 	struct external_function_s *external_functions;
+	int external_function_reg_order_size;
+	int *external_function_reg_order;
 };
 
 #endif /* GLOBAL_STRUCT_H */
