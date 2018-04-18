@@ -5343,8 +5343,11 @@ int main(int argc, char *argv[])
 	self->section_number_mapping = section_number_mapping;
 	self->data_size = data_size;
 	self->data = data;
-	self->rodata_size = data_size;
-	self->rodata = data;
+	self->rodata_size = rodata_size;
+	self->rodata = rodata;
+	self->handle_void = handle_void;
+	printf("rodata_size=0x%lx\n", rodata_size);
+	printf("handle_void = %p\n", handle_void);
 	self->inst_log_entry = inst_log_entry;
 	self->relocations = relocations;
 	self->external_entry_points = external_entry_points;

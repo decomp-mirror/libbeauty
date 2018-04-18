@@ -943,6 +943,7 @@ int bf_print_symtab(void *handle_void)
 		debug_print(DEBUG_MAIN, 1, "type:0x%02x\n", handle->symtab[l]->flags);
 		debug_print(DEBUG_MAIN, 1, "name:%s\n", handle->symtab[l]->name);
 		debug_print(DEBUG_MAIN, 1, "value=0x%02"PRIx64"\n", handle->symtab[l]->value);
+		debug_print(DEBUG_MAIN, 1, "udata=0x%02"PRIx64"\n", handle->symtab[l]->udata);
 		debug_print(DEBUG_MAIN, 1, "section=%p\n", handle->symtab[l]->section);
 		debug_print(DEBUG_MAIN, 1, "section name=%s\n", handle->symtab[l]->section->name);
 		debug_print(DEBUG_MAIN, 1, "section flags=0x%02x\n", handle->symtab[l]->section->flags);
