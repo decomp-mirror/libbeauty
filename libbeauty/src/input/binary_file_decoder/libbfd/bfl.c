@@ -199,6 +199,17 @@ int bf_get_content_size(void *handle_void, int index, uint64_t *content_size)
 	*content_size = (uint64_t) bfd_section_size (handle->bfd, section) / opb;
 	return 0;
 }
+
+
+int bf_get_section_alignment(void *handle_void, int index, int *alignment)
+{
+	struct rev_eng *handle = (struct rev_eng*) handle_void;
+	asection          *section;
+	section = handle->section[index];
+	*alignment = bfd_get_section_alignment (handle->bfd, section);
+	return 0;
+}
+
 int bf_section_is_alloc(void *handle_void, int index)
 {
 	struct rev_eng *handle = (struct rev_eng*) handle_void;
