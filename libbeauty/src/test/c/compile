@@ -76,3 +76,4 @@ gcc -c -g -O0 -o test81.o test81.c
 gcc -c -g -O0 -o test82.o test82.c
 clang-5.0 -c -g -O0 -o test83.o test83.c
 clang-5.0 -c -g -O0 -o test84.o test84.c
+clang-5.0 -c -g -O0 -o test85.o test85.c
