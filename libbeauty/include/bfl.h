@@ -33,6 +33,7 @@ int bf_copy_section_contents(void *handle_void, int index, uint8_t *data, uint64
 int bf_get_section_id(void *handle_void, int index, int *section_id);
 int bf_get_section_name(void *handle_void, int index, char **section_name);
 int bf_get_content_size(void *handle_void, int index, uint64_t *content_size);
+int bf_get_section_alignment(void *handle_void, int index, int *alignment);
 int bf_section_is_alloc(void *handle_void, int index);
 int bf_section_is_load(void *handle_void, int index);
 int bf_section_is_reloc(void *handle_void, int index);
