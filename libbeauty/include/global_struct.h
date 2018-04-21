@@ -547,6 +547,7 @@ struct section_s {
 	uint64_t section_virtual_memory_address; /* 0 = Not defined */
 	uint64_t content_size;
 	uint8_t *content;
+	int alignment;
 	int alloc;
 	int load;
 	int reloc;

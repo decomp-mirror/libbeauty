@@ -5231,6 +5231,7 @@ int main(int argc, char *argv[])
 	int fd;
 	int tmp;
 	int err;
+	int found;
 	const char *file = "test.obj";
 //	size_t inst_size = 0;
 //	uint64_t reloc_size = 0;
@@ -5266,6 +5267,7 @@ int main(int argc, char *argv[])
 	int reloc_table_size;
 	LLVMDecodeAsmX86_64Ref decode_asm;
 	char *buffer = NULL;
+	int section_code_index;
 
 	buffer = calloc(1,1024);
 	setLogLevel();
@@ -5308,7 +5310,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	self->sections = calloc(self->sections_size, sizeof(struct section_s));
-	for(n = 0; n < self->sections_size; n++) {
+	for (n = 0; n < self->sections_size; n++) {
 		bf_get_section_id(handle_void, n, &(self->sections[n].section_id));
 		bf_get_section_name(handle_void, n, &(self->sections[n].section_name));
 		bf_get_content_size(handle_void, n, &(self->sections[n].content_size));
@@ -5320,6 +5322,7 @@ int main(int argc, char *argv[])
 				exit(1);
 			}
 		}
+		bf_get_section_alignment(handle_void, n, &(self->sections[n].alignment));
 		self->sections[n].alloc = bf_section_is_alloc(handle_void, n);
 		self->sections[n].load = bf_section_is_load(handle_void, n);
 		self->sections[n].reloc = bf_section_is_reloc(handle_void, n);
@@ -5327,10 +5330,11 @@ int main(int argc, char *argv[])
 		self->sections[n].code = bf_section_is_code(handle_void, n);
 		self->sections[n].data = bf_section_is_data(handle_void, n);
 	}
-	for(n = 0; n < self->sections_size; n++) {
+	for (n = 0; n < self->sections_size; n++) {
 		debug_print(DEBUG_MAIN, 1, "id           = 0x%x\n", self->sections[n].section_id);
 		debug_print(DEBUG_MAIN, 1, "name         = %s\n", self->sections[n].section_name);
 		debug_print(DEBUG_MAIN, 1, "content_size = 0x%lx\n", self->sections[n].content_size);
+		debug_print(DEBUG_MAIN, 1, "alignment    = %d\n", self->sections[n].alignment);
 		debug_print(DEBUG_MAIN, 1, "alloc        = %d\n", self->sections[n].alloc);
 		debug_print(DEBUG_MAIN, 1, "load         = %d\n", self->sections[n].load);
 		debug_print(DEBUG_MAIN, 1, "reloc        = %d\n", self->sections[n].reloc);
@@ -5340,17 +5344,30 @@ int main(int argc, char *argv[])
 	}
 
 	debug_print(DEBUG_MAIN, 1, "Setup ok\n");
-	inst_size = bf_get_code_size(handle_void);
-	inst = malloc(inst_size);
+	section_code_index = 0;
+	found = 0;
+	for (n = 0; n < self->sections_size; n++) {
+		if (self->sections[n].code) {
+			section_code_index = n;
+			found++;
+		}
+	}
+	if (found != 1) {
+		debug_print(DEBUG_MAIN, 1, "Error: Found %d CODE sections, not sure which to use.\n", found);
+		exit(1);
+	}
+
+	inst_size = self->sections[section_code_index].content_size;
+	inst = self->sections[section_code_index].content;
+	//inst = malloc(inst_size);
 	/* valgrind does not know about bf_copy_data_section */
-	memset(inst, 0, inst_size);
-	bf_copy_code_section(handle_void, inst, inst_size);
+	//memset(inst, 0, inst_size);
+	//bf_copy_code_section(handle_void, inst, inst_size);
 	debug_print(DEBUG_MAIN, 1, "dis:.text Data at %p, size=0x%"PRIx64"\n", inst, inst_size);
 	for (n = 0; n < inst_size; n++) {
 		printf("0x%02x", inst[n]);
 	}
 	printf("\n");
-
 	data_size = bf_get_data_size(handle_void);
 	data = malloc(data_size);
 	/* valgrind does not know about bf_copy_data_section */
