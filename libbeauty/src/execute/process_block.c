@@ -100,15 +100,19 @@ int process_block(struct self_s *self, struct process_state_s *process_state, ui
 	uint8_t *inst3;
 	uint64_t inst3_size;
 
+	debug_print(DEBUG_EXE, 1, "process_block entry\n");
 	//memory_text = process_state->memory_text;
 	//memory_stack = process_state->memory_stack;
 	memory_reg = process_state->memory_reg;
 	//memory_data = process_state->memory_data;
 	memory_used = process_state->memory_used;
 
+	if (self->sections[memory_reg[2].section_index].section_id != memory_reg[2].section_id) {
+		debug_print(DEBUG_EXE, 1, "section_id mismatch\n");
+		exit(1);
+	}
 	inst3 = self->sections[memory_reg[2].section_index].content;
 	inst3_size = self->sections[memory_reg[2].section_index].content_size;
-	debug_print(DEBUG_EXE, 1, "process_block entry\n");
 	debug_print(DEBUG_EXE, 1, "inst_log=%"PRId64"\n", inst_log);
 	debug_print(DEBUG_EXE, 1, "dis:Data at %p, size=0x%"PRIx64"\n", inst3, inst3_size);
 	for (offset = 0; ;) {
