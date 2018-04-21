@@ -388,6 +388,9 @@ struct external_entry_point_s {
  * but if the method works, fast algorithms will be used. */
 
 struct memory_s {
+	/* The section that this register or memory is pointing to */
+	uint64_t section_id;
+	uint64_t section_index;
 	/* Start address of multibyte access. */
 	uint64_t start_address;
 	/* Number of bytes accessed at one time */
@@ -449,10 +452,16 @@ struct memory_s {
 struct entry_point_s {
 	int used;
 	/* FIXME: Is this enough, or will full register backup be required */
+	uint64_t esp_section_id;
+	uint64_t esp_section_index;
 	uint64_t esp_init_value;
 	uint64_t esp_offset_value;
+	uint64_t ebp_section_id;
+	uint64_t ebp_section_index;
 	uint64_t ebp_init_value;
 	uint64_t ebp_offset_value;
+	uint64_t eip_section_id;
+	uint64_t eip_section_index;
 	uint64_t eip_init_value;
 	uint64_t eip_offset_value;
 	uint64_t previous_instuction;

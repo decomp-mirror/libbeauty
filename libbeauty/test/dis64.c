@@ -79,8 +79,6 @@ void stack_trace()
 #define EIP_START 0x40000000
 
 struct dis_instructions_s dis_instructions;
-uint8_t *inst;
-size_t inst_size = 0;
 uint8_t *data;
 size_t data_size = 0;
 uint8_t *rodata;
@@ -383,6 +381,8 @@ int ram_init(struct memory_s *memory_data)
 int reg_init(struct memory_s *memory_reg)
 {
 	/* esp */
+	memory_reg[0].section_id = 0;
+	memory_reg[0].section_index = 0;
 	memory_reg[0].start_address = REG_SP;
 	/* 4 bytes */
 	memory_reg[0].length = 8;
@@ -419,6 +419,8 @@ int reg_init(struct memory_s *memory_reg)
 	memory_reg[0].valid = 1;
 
 	/* ebp */
+	memory_reg[1].section_id = 0;
+	memory_reg[1].section_index = 0;
 	memory_reg[1].start_address = REG_BP;
 	/* 4 bytes */
 	memory_reg[1].length = 8;
@@ -454,6 +456,8 @@ int reg_init(struct memory_s *memory_reg)
 	memory_reg[1].valid = 1;
 
 	/* eip */
+	memory_reg[2].section_id = 0;
+	memory_reg[2].section_index = 0;
 	memory_reg[2].start_address = REG_IP;
 	/* 4 bytes */
 	memory_reg[2].length = 8;
@@ -630,6 +634,8 @@ int external_entry_points_init(struct external_entry_point_s *external_entry_poi
 			stack_init(memory_stack);
 			/* Set EIP entry point equal to symbol table entry point */
 			//memory_reg[2].init_value = EIP_START;
+			memory_reg[2].section_id = external_entry_points[n].section_id;
+			memory_reg[2].section_index = external_entry_points[n].section_index;
 			memory_reg[2].offset_value = external_entry_points[n].value;
 
 			print_mem(memory_reg, 1);
@@ -5332,6 +5338,7 @@ int main(int argc, char *argv[])
 	}
 	for (n = 0; n < self->sections_size; n++) {
 		debug_print(DEBUG_MAIN, 1, "id           = 0x%x\n", self->sections[n].section_id);
+		debug_print(DEBUG_MAIN, 1, "index        = 0x%x\n", n);
 		debug_print(DEBUG_MAIN, 1, "name         = %s\n", self->sections[n].section_name);
 		debug_print(DEBUG_MAIN, 1, "content_size = 0x%lx\n", self->sections[n].content_size);
 		debug_print(DEBUG_MAIN, 1, "alignment    = %d\n", self->sections[n].alignment);
@@ -5357,15 +5364,15 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	inst_size = self->sections[section_code_index].content_size;
-	inst = self->sections[section_code_index].content;
 	//inst = malloc(inst_size);
 	/* valgrind does not know about bf_copy_data_section */
 	//memset(inst, 0, inst_size);
 	//bf_copy_code_section(handle_void, inst, inst_size);
-	debug_print(DEBUG_MAIN, 1, "dis:.text Data at %p, size=0x%"PRIx64"\n", inst, inst_size);
-	for (n = 0; n < inst_size; n++) {
-		printf("0x%02x", inst[n]);
+	debug_print(DEBUG_MAIN, 1, "dis:.text Data at %p, size=0x%"PRIx64"\n",
+				self->sections[section_code_index].content,
+				self->sections[section_code_index].content_size);
+	for (n = 0; n < self->sections[section_code_index].content_size; n++) {
+		printf("0x%02x", self->sections[section_code_index].content[n]);
 	}
 	printf("\n");
 	data_size = bf_get_data_size(handle_void);
@@ -5461,7 +5468,7 @@ int main(int argc, char *argv[])
 	}
 #endif	
 	debug_print(DEBUG_MAIN, 1, "handle=%p\n", handle_void);
-	tmp = bf_disassemble_init(handle_void, inst_size, inst);
+	tmp = bf_disassemble_init(handle_void, self->sections[section_code_index].content_size, self->sections[section_code_index].content);
 	//tmp = bf_disassembler_set_options(handle_void, "att");
 
 	dis_instructions.bytes_used = 0;
@@ -5533,10 +5540,16 @@ int main(int argc, char *argv[])
 			//memory_reg[2].offset_value = 0;
 			//inst_log_prev = 0;
 			entry_point[0].used = 1;
+			entry_point[0].esp_section_id = memory_reg[0].section_id;
+			entry_point[0].esp_section_index = memory_reg[0].section_index;
 			entry_point[0].esp_init_value = memory_reg[0].init_value;
 			entry_point[0].esp_offset_value = memory_reg[0].offset_value;
+			entry_point[0].ebp_section_id = memory_reg[1].section_id;
+			entry_point[0].ebp_section_index = memory_reg[1].section_index;
 			entry_point[0].ebp_init_value = memory_reg[1].init_value;
 			entry_point[0].ebp_offset_value = memory_reg[1].offset_value;
+			entry_point[0].eip_section_id = memory_reg[2].section_id;
+			entry_point[0].eip_section_index = memory_reg[2].section_index;
 			entry_point[0].eip_init_value = memory_reg[2].init_value;
 			entry_point[0].eip_offset_value = memory_reg[2].offset_value;
 			entry_point[0].previous_instuction = 0;
@@ -5550,17 +5563,28 @@ int main(int argc, char *argv[])
 					/* Update EIP */
 					//debug_print(DEBUG_MAIN, 1, "entry:%d\n",n);
 					if (entry_point[n].used) {
+						memory_reg[0].section_id = entry_point[n].esp_section_id;
+						memory_reg[0].section_index = entry_point[n].esp_section_index;
 						memory_reg[0].init_value = entry_point[n].esp_init_value;
 						memory_reg[0].offset_value = entry_point[n].esp_offset_value;
+						memory_reg[1].section_id = entry_point[n].ebp_section_id;
+						memory_reg[1].section_index = entry_point[n].ebp_section_index;
 						memory_reg[1].init_value = entry_point[n].ebp_init_value;
 						memory_reg[1].offset_value = entry_point[n].ebp_offset_value;
+						memory_reg[2].section_id = entry_point[n].eip_section_id;
+						memory_reg[2].section_index = entry_point[n].eip_section_index;
 						memory_reg[2].init_value = entry_point[n].eip_init_value;
 						memory_reg[2].offset_value = entry_point[n].eip_offset_value;
 						inst_log_prev = entry_point[n].previous_instuction;
 						not_finished = 1;
-						debug_print(DEBUG_MAIN, 1, "LOGS: EIPinit   = 0x%"PRIx64"\n", memory_reg[2].init_value);
-						debug_print(DEBUG_MAIN, 1, "LOGS: EIPoffset = 0x%"PRIx64"\n", memory_reg[2].offset_value);
-						err = process_block(self, process_state, inst_log_prev, inst_size);
+						debug_print(DEBUG_MAIN, 1, "LOGS: EIPsection_id    = 0x%"PRIx64"\n", memory_reg[2].section_id);
+						debug_print(DEBUG_MAIN, 1, "LOGS: EIPsection_index = 0x%"PRIx64"\n", memory_reg[2].section_index);
+						debug_print(DEBUG_MAIN, 1, "LOGS: EIPinit          = 0x%"PRIx64"\n", memory_reg[2].init_value);
+						debug_print(DEBUG_MAIN, 1, "LOGS: EIPoffset        = 0x%"PRIx64"\n", memory_reg[2].offset_value);
+						err = process_block(self,
+											process_state,
+											inst_log_prev,
+											self->sections[external_entry_points[l].section_index].content_size);
 						/* clear the entry after calling process_block */
 						if (err) {
 							printf("process_block failed\n");
@@ -7332,7 +7356,7 @@ int main(int argc, char *argv[])
 	debug_print(DEBUG_MAIN, 1, "PRINTING REG_DATA\n");
 	print_mem(memory_reg, 1);
 	debug_print(DEBUG_MAIN, 1, "PRINTING EXEC_BIN_DATA\n");
-	for (n = 0; n < inst_size; n++) {
+	for (n = 0; n < self->sections[section_code_index].content_size; n++) {
 		debug_print(DEBUG_MAIN, 1, "0x%04x: %d\n", n, memory_used[n]);
 	}
 	debug_print(DEBUG_MAIN, 1, "PRINTING MEMORY_DATA\n");

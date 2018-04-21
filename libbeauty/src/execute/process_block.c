@@ -97,6 +97,8 @@ int process_block(struct self_s *self, struct process_state_s *process_state, ui
 	struct entry_point_s *entry = self->entry_point;
 	uint64_t list_length = self->entry_point_list_length;
 	void *handle_void = self->handle_void;
+	uint8_t *inst3;
+	uint64_t inst3_size;
 
 	//memory_text = process_state->memory_text;
 	//memory_stack = process_state->memory_stack;
@@ -104,9 +106,11 @@ int process_block(struct self_s *self, struct process_state_s *process_state, ui
 	//memory_data = process_state->memory_data;
 	memory_used = process_state->memory_used;
 
+	inst3 = self->sections[memory_reg[2].section_index].content;
+	inst3_size = self->sections[memory_reg[2].section_index].content_size;
 	debug_print(DEBUG_EXE, 1, "process_block entry\n");
 	debug_print(DEBUG_EXE, 1, "inst_log=%"PRId64"\n", inst_log);
-	debug_print(DEBUG_EXE, 1, "dis:Data at %p, size=0x%"PRIx64"\n", inst, inst_size);
+	debug_print(DEBUG_EXE, 1, "dis:Data at %p, size=0x%"PRIx64"\n", inst3, inst3_size);
 	for (offset = 0; ;) {
 	//for (offset = 0; offset < inst_size;
 			//offset += dis_instructions.bytes_used) {
@@ -122,7 +126,7 @@ int process_block(struct self_s *self, struct process_state_s *process_state, ui
 		debug_print(DEBUG_EXE, 1, "eip=0x%"PRIx64", offset=0x%"PRIx64"\n",
 			memory_reg[2].offset_value, offset);
 		/* the calling program must define this function. This is a callback. */
-		result = disassemble(self, &dis_instructions, inst, inst_size, offset);
+		result = disassemble(self, &dis_instructions, inst3, inst3_size, offset);
 		debug_print(DEBUG_EXE, 1, "bytes used = %d\n", dis_instructions.bytes_used);
 		debug_print(DEBUG_EXE, 1, "eip=0x%"PRIx64", offset=0x%"PRIx64"\n",
 			memory_reg[2].offset_value, offset);
@@ -131,7 +135,7 @@ int process_block(struct self_s *self, struct process_state_s *process_state, ui
 			debug_print(DEBUG_EXE, 1, "Memory not used yet\n");
 			for (n = 0; n < dis_instructions.bytes_used; n++) {
 				memory_used[offset + n] = -n;
-				debug_print(DEBUG_EXE, 1, " 0x%02x\n", inst[offset + n]);
+				debug_print(DEBUG_EXE, 1, " 0x%02x\n", inst3[offset + n]);
 			}
 			debug_print(DEBUG_EXE, 1, "\n");
 			memory_used[offset] = inst_log;
