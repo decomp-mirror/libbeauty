@@ -5373,7 +5373,6 @@ int main(int argc, char *argv[])
 		}
 
 	}
-	exit(1);
 
 	debug_print(DEBUG_MAIN, 1, "Setup ok\n");
 	section_code_index = 0;
