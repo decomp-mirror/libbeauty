@@ -186,8 +186,7 @@ int bf_get_section_name(void *handle_void, int index, char **section_name)
 	printf("%s\n", name);
 	length = strlen(name);
 	printf("%d\n", length);
-	*section_name = (char*) malloc(length + 1);
-	strncpy(*section_name, name, length);
+	*section_name = strdup(name);
 	return 0;
 }
 int bf_get_content_size(void *handle_void, int index, uint64_t *content_size)
