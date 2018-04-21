@@ -5335,8 +5335,20 @@ int main(int argc, char *argv[])
 		self->sections[n].read_only = bf_section_is_readonly(handle_void, n);
 		self->sections[n].code = bf_section_is_code(handle_void, n);
 		self->sections[n].data = bf_section_is_data(handle_void, n);
+		bf_get_reloc_table_section_size(handle_void, n, &(self->sections[n].reloc_size));
+		debug_print(DEBUG_MAIN, 1, "section[%d].reloc_size = 0x%lx\n", n, self->sections[n].reloc_size);
+		if ((self->sections[n].reloc_size) > 0) {
+			self->sections[n].reloc_entry = calloc(self->sections[n].reloc_size, sizeof(struct reloc_s));
+		    tmp = bf_get_reloc_table_section(handle_void, n, self->sections[n].reloc_entry);
+			if (tmp) {
+				debug_print(DEBUG_MAIN, 1, "Error section reloc load failed\n");
+				exit(1);
+			}
+		}
 	}
+
 	for (n = 0; n < self->sections_size; n++) {
+		int m;
 		debug_print(DEBUG_MAIN, 1, "id           = 0x%x\n", self->sections[n].section_id);
 		debug_print(DEBUG_MAIN, 1, "index        = 0x%x\n", n);
 		debug_print(DEBUG_MAIN, 1, "name         = %s\n", self->sections[n].section_name);
@@ -5348,7 +5360,20 @@ int main(int argc, char *argv[])
 		debug_print(DEBUG_MAIN, 1, "read_only    = %d\n", self->sections[n].read_only);
 		debug_print(DEBUG_MAIN, 1, "code         = %d\n", self->sections[n].code);
 		debug_print(DEBUG_MAIN, 1, "data         = %d\n", self->sections[n].data);
+		for (m = 0; m < self->sections[n].reloc_size; m++) {
+			struct reloc_s *reloc = &(self->sections[n].reloc_entry[m]);
+			debug_print(DEBUG_MAIN, 1, "rel[%d].type         = 0x%x\n", m, reloc->type);
+			debug_print(DEBUG_MAIN, 1, "rel[%d].offset       = 0x%lx\n", m, reloc->offset);
+			debug_print(DEBUG_MAIN, 1, "rel[%d].offset_size  = 0x%lx\n", m, reloc->offset_size);
+			debug_print(DEBUG_MAIN, 1, "rel[%d].id           = 0x%x\n", m, reloc->section_id);
+			debug_print(DEBUG_MAIN, 1, "rel[%d].index        = 0x%x\n", m, reloc->section_index);
+			debug_print(DEBUG_MAIN, 1, "rel[%d].name         = %s\n", m, reloc->name);
+			debug_print(DEBUG_MAIN, 1, "rel[%d].value_int    = 0x%lx\n", m, reloc->value_int);
+			debug_print(DEBUG_MAIN, 1, "rel[%d].value_uint   = 0x%lx\n", m, reloc->value_uint);
+		}
+
 	}
+	exit(1);
 
 	debug_print(DEBUG_MAIN, 1, "Setup ok\n");
 	section_code_index = 0;

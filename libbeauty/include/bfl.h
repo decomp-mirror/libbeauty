@@ -50,6 +50,8 @@ int64_t bf_get_data_size(void *handle_void);
 int bf_copy_data_section(void *handle_void, uint8_t *data, uint64_t data_size);
 int64_t bf_get_rodata_size(void *handle_void);
 int bf_copy_rodata_section(void *handle_void, uint8_t *data, uint64_t data_size);
+int bf_get_reloc_table_section_size(void *handle_void, int index, uint64_t *size);
+int bf_get_reloc_table_section(void *handle_void, int index, struct reloc_s *reloc);
 int bf_get_reloc_table_code_section(void *handle_void);
 int bf_get_reloc_table_data_section(void *handle_void);
 int bf_get_reloc_table_rodata_section(void *handle_void);

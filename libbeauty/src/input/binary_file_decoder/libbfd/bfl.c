@@ -491,6 +491,79 @@ struct reloc_table_s * bf_get_reloc_table_code(void *handle_void)
 	return ret->reloc_table_code;
 }
 
+int bf_get_reloc_table_section_size(void *handle_void, int index, uint64_t *size)
+{
+	struct rev_eng *handle = (struct rev_eng*) handle_void;
+	asection	*section;
+	bfd_size_type	datasize;
+	uint64_t reloc_size;
+	arelent		**relpp;
+	section = handle->section[index];
+	datasize = bfd_get_reloc_upper_bound(handle->bfd, section);
+	relpp = malloc (datasize);
+	reloc_size = bfd_canonicalize_reloc(handle->bfd, section, relpp, handle->symtab);
+	*size = reloc_size;
+	free(relpp);
+	return 0;
+}
+
+int bf_get_reloc_table_section(void *handle_void, int index, struct reloc_s *reloc_table)
+{
+	struct rev_eng *handle = (struct rev_eng*) handle_void;
+	asection	*section;
+	bfd_size_type	datasize;
+	uint64_t reloc_size;
+	arelent		**relpp;
+	arelent		*rel;
+	int n;
+	asection	*sym_sec;
+	const char *sym_name;
+	uint64_t sym_val;
+
+	section = handle->section[index];
+	datasize = bfd_get_reloc_upper_bound(handle->bfd, section);
+	relpp = malloc (datasize);
+	reloc_size = bfd_canonicalize_reloc(handle->bfd, section, relpp, handle->symtab);
+	for (n = 0; n < reloc_size; n++) {
+		rel = relpp[n];
+		debug_print(DEBUG_INPUT_BFD, 1, "Record\n");
+		debug_print(DEBUG_INPUT_BFD, 1, "rel:addr = 0x%"PRIx64"\n", rel->address);
+		debug_print(DEBUG_INPUT_BFD, 1, "rel:size = 0x%"PRIx64"\n", (uint64_t) bfd_get_reloc_size (rel->howto));
+		if (rel->howto == NULL) {
+			printf (" howto *unknown*\n");
+		} else if (rel->howto->name) {
+			printf (" howto->name %-16s\n", rel->howto->name);
+			printf (" howto->type %-16d\n", rel->howto->type);
+		} else {
+			printf (" howto->type %-16d\n", rel->howto->type);
+		}
+
+		debug_print(DEBUG_INPUT_BFD, 1, "p1 %p\n",&rel->sym_ptr_ptr);
+		debug_print(DEBUG_INPUT_BFD, 1, "p2 %p\n",rel->sym_ptr_ptr);
+		reloc_table[n].type = 1; /* Only one type so far */
+		reloc_table[n].offset = rel->address;
+		reloc_table[n].offset_size = (uint64_t) bfd_get_reloc_size (rel->howto);
+		if (rel->sym_ptr_ptr == NULL) {
+			continue;
+		}
+		
+		sym_name = bfd_asymbol_name(*rel->sym_ptr_ptr);
+		sym_val = bfd_asymbol_value(*rel->sym_ptr_ptr);
+		sym_sec = bfd_get_section(*rel->sym_ptr_ptr);
+		reloc_table[n].section_index = sym_sec->index;
+		reloc_table[n].section_id = sym_sec->id;
+		//reloc_table[n].section_name = strdup(sym_sec->name);
+		reloc_table[n].name = strdup(sym_name);
+		/* FIXME, for uint or int */
+		reloc_table[n].value_uint = sym_val;
+	}
+
+	free(relpp);
+	return 0;
+}
+
+
+
 int bf_get_reloc_table_code_section(void *handle_void)
 {
 	/* FIXME: search for .text section instead of selecting 0 */
@@ -547,6 +620,7 @@ int bf_get_reloc_table_code_section(void *handle_void)
 		sym_val = bfd_asymbol_value(*rel->sym_ptr_ptr);
 		sym_sec = bfd_get_section(*rel->sym_ptr_ptr);
 		ret->reloc_table_code[n].section_index = sym_sec->index;
+		ret->reloc_table_code[n].section_id = sym_sec->id;
 		ret->reloc_table_code[n].relocated_area = ret->section_number_mapping[sym_sec->index];
 		ret->reloc_table_code[n].section_name = sym_sec->name;
 		ret->reloc_table_code[n].symbol_name = sym_name;

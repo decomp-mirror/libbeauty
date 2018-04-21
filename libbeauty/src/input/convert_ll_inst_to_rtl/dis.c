@@ -169,13 +169,14 @@ int convert_operand(struct self_s *self, uint64_t base_address, struct operand_l
 				&reloc_index,
 				&reloc_table_entry);
 			if (!tmp) {
-				debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocate found index=0x%lx, type=0x%x, address=0x%lx, size=0x%lx, addend=0x%lx, external_function_index=0x%lx, section_index=0x%lx, relocation_area=0x%lx, value = 0x%lx, section_name=%s, symbol_name=%s\n",
+				debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocate found index=0x%lx, type=0x%x, address=0x%lx, size=0x%lx, addend=0x%lx, external_function_index=0x%lx, section_id=0x%lx, section_index=0x%lx, relocation_area=0x%lx, value = 0x%lx, section_name=%s, symbol_name=%s\n",
 					reloc_index,
 					reloc_table_entry->type,
 					reloc_table_entry->address,
 					reloc_table_entry->size,
 					reloc_table_entry->addend,
 					reloc_table_entry->external_functions_index,
+					reloc_table_entry->section_id,
 					reloc_table_entry->section_index,
 					reloc_table_entry->relocated_area,
 					reloc_table_entry->symbol_value,

@@ -71,6 +71,7 @@ struct reloc_table_s {
 	uint64_t	size;
 	uint64_t	addend;
 	uint64_t	external_functions_index;
+	uint64_t	section_id;
 	uint64_t	section_index;
 	uint64_t	relocated_area;
 	uint64_t	symbol_value;
@@ -550,6 +551,23 @@ struct inst_log_entry_s {
 	void *extension;		/* Instruction specific extention */
 };
 
+struct reloc_s {
+	/* The type is > 0 if valid. */
+	/* Type is also used to determine an algorithm for mixing the relocation entry with the existing bytes. */
+	int type;
+	/* Offset within the parent section */
+	uint64_t offset;
+	uint64_t offset_size;
+	/* The section_id and section_index of the destination or child */
+	int section_id;
+	int section_index;
+	char *name;
+	/* The destination or child offset to use.
+	   Use whichever value is non-zero */
+	int64_t value_int;
+	uint64_t value_uint;
+};
+
 struct section_s {
 	int section_id;
 	char *section_name;
@@ -567,6 +585,8 @@ struct section_s {
 	int malloc;
 	int memory_size;
 	struct memory_s *memory;
+	uint64_t reloc_size;
+	struct reloc_s *reloc_entry;
 };
 
 struct self_s {
