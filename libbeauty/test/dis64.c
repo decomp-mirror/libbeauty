@@ -5301,6 +5301,43 @@ int main(int argc, char *argv[])
 	bf_init_section_number_mapping(handle_void, &section_number_mapping);
 
 	bf_print_sectiontab(handle_void);
+	tmp = bf_get_sections_size(handle_void, &(self->sections_size));
+	debug_print(DEBUG_MAIN, 1, "self->sections_size = 0x%lx\n", self->sections_size);
+	if (tmp) {
+		debug_print(DEBUG_MAIN, 1, "Error getting sections_size\n");
+		exit(1);
+	}
+	self->sections = calloc(self->sections_size, sizeof(struct section_s));
+	for(n = 0; n < self->sections_size; n++) {
+		bf_get_section_id(handle_void, n, &(self->sections[n].section_id));
+		bf_get_section_name(handle_void, n, &(self->sections[n].section_name));
+		bf_get_content_size(handle_void, n, &(self->sections[n].content_size));
+		if ((self->sections[n].content_size) > 0) {
+			self->sections[n].content = malloc(self->sections[n].content_size);
+			tmp = bf_copy_section_contents(handle_void, n, self->sections[n].content, self->sections[n].content_size);
+			if (tmp) {
+				debug_print(DEBUG_MAIN, 1, "Error section content load failed\n");
+				exit(1);
+			}
+		}
+		self->sections[n].alloc = bf_section_is_alloc(handle_void, n);
+		self->sections[n].load = bf_section_is_load(handle_void, n);
+		self->sections[n].reloc = bf_section_is_reloc(handle_void, n);
+		self->sections[n].read_only = bf_section_is_readonly(handle_void, n);
+		self->sections[n].code = bf_section_is_code(handle_void, n);
+		self->sections[n].data = bf_section_is_data(handle_void, n);
+	}
+	for(n = 0; n < self->sections_size; n++) {
+		debug_print(DEBUG_MAIN, 1, "id           = 0x%x\n", self->sections[n].section_id);
+		debug_print(DEBUG_MAIN, 1, "name         = %s\n", self->sections[n].section_name);
+		debug_print(DEBUG_MAIN, 1, "content_size = 0x%lx\n", self->sections[n].content_size);
+		debug_print(DEBUG_MAIN, 1, "alloc        = %d\n", self->sections[n].alloc);
+		debug_print(DEBUG_MAIN, 1, "load         = %d\n", self->sections[n].load);
+		debug_print(DEBUG_MAIN, 1, "reloc        = %d\n", self->sections[n].reloc);
+		debug_print(DEBUG_MAIN, 1, "read_only    = %d\n", self->sections[n].read_only);
+		debug_print(DEBUG_MAIN, 1, "code         = %d\n", self->sections[n].code);
+		debug_print(DEBUG_MAIN, 1, "data         = %d\n", self->sections[n].data);
+	}
 
 	debug_print(DEBUG_MAIN, 1, "Setup ok\n");
 	inst_size = bf_get_code_size(handle_void);

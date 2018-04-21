@@ -541,6 +541,24 @@ struct inst_log_entry_s {
 	void *extension;		/* Instruction specific extention */
 };
 
+struct section_s {
+	int section_id;
+	char *section_name;
+	uint64_t section_virtual_memory_address; /* 0 = Not defined */
+	uint64_t content_size;
+	uint8_t *content;
+	int alloc;
+	int load;
+	int reloc;
+	int read_only;
+	int code;
+	int data;
+	int unknown;
+	int malloc;
+	int memory_size;
+	struct memory_s *memory;
+};
+
 struct self_s {
 	int *section_number_mapping;
 	void *handle_void;
@@ -571,6 +589,8 @@ struct self_s {
 	struct external_function_s *external_functions;
 	int external_function_reg_order_size;
 	int *external_function_reg_order;
+	uint64_t sections_size;
+	struct section_s *sections;
 };
 
 #endif /* GLOBAL_STRUCT_H */

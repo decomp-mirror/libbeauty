@@ -28,6 +28,19 @@
 const char *bfd_err(void);
 
 void *bf_test_open_file(const char *fn);
+int bf_get_sections_size(void *handle_void, uint64_t *sections_size);
+int bf_copy_section_contents(void *handle_void, int index, uint8_t *data, uint64_t data_size);
+int bf_get_section_id(void *handle_void, int index, int *section_id);
+int bf_get_section_name(void *handle_void, int index, char **section_name);
+int bf_get_content_size(void *handle_void, int index, uint64_t *content_size);
+int bf_section_is_alloc(void *handle_void, int index);
+int bf_section_is_load(void *handle_void, int index);
+int bf_section_is_reloc(void *handle_void, int index);
+int bf_section_is_readonly(void *handle_void, int index);
+int bf_section_is_code(void *handle_void, int index);
+int bf_section_is_data(void *handle_void, int index);
+int bf_section_is_debug(void *handle_void, int index);
+
 int bf_get_arch_mach(void *handle_void, uint32_t *arch, uint64_t *mach);
 void bf_test_close_file(void *handle_void);
 int64_t bf_get_code_size(void *handle_void);

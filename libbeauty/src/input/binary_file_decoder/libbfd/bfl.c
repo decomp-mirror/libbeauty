@@ -159,6 +159,95 @@ int bf_find_section(void *handle_void, char *name, int name_len, int *section_nu
 	return found;
 }
 
+int bf_get_sections_size(void *handle_void, uint64_t *sections_size)
+{
+	struct rev_eng *handle = (struct rev_eng*) handle_void;
+	*sections_size = handle->section_sz;
+	return 0;
+}
+
+int bf_get_section_id(void *handle_void, int index, int *section_id)
+{
+	struct rev_eng *handle = (struct rev_eng*) handle_void;
+	asection          *section;
+	section = handle->section[index];
+	*section_id = section->id;
+	return 0;
+}
+
+int bf_get_section_name(void *handle_void, int index, char **section_name)
+{
+	struct rev_eng *handle = (struct rev_eng*) handle_void;
+	asection          *section;
+	const char *name;
+	int length;
+	section = handle->section[index];
+	name = bfd_get_section_name(handle->bfd, section);
+	printf("%s\n", name);
+	length = strlen(name);
+	printf("%d\n", length);
+	*section_name = (char*) malloc(length + 1);
+	strncpy(*section_name, name, length);
+	return 0;
+}
+int bf_get_content_size(void *handle_void, int index, uint64_t *content_size)
+{
+	struct rev_eng *handle = (struct rev_eng*) handle_void;
+	asection          *section;
+	section = handle->section[index];
+	unsigned int       opb = bfd_octets_per_byte(handle->bfd);
+	*content_size = (uint64_t) bfd_section_size (handle->bfd, section) / opb;
+	return 0;
+}
+int bf_section_is_alloc(void *handle_void, int index)
+{
+	struct rev_eng *handle = (struct rev_eng*) handle_void;
+	asection          *section;
+	section = handle->section[index];
+	return (section->flags & SEC_ALLOC) ? 1 : 0;
+}
+int bf_section_is_load(void *handle_void, int index)
+{
+	struct rev_eng *handle = (struct rev_eng*) handle_void;
+	asection          *section;
+	section = handle->section[index];
+	return (section->flags & SEC_LOAD) ? 1 : 0;
+}
+int bf_section_is_reloc(void *handle_void, int index)
+{
+	struct rev_eng *handle = (struct rev_eng*) handle_void;
+	asection          *section;
+	section = handle->section[index];
+	return (section->flags & SEC_RELOC) ? 1 : 0;
+}
+int bf_section_is_readonly(void *handle_void, int index)
+{
+	struct rev_eng *handle = (struct rev_eng*) handle_void;
+	asection          *section;
+	section = handle->section[index];
+	return (section->flags & SEC_READONLY) ? 1 : 0;
+}
+int bf_section_is_code(void *handle_void, int index)
+{
+	struct rev_eng *handle = (struct rev_eng*) handle_void;
+	asection          *section;
+	section = handle->section[index];
+	return (section->flags & SEC_CODE) ? 1 : 0;
+}
+int bf_section_is_data(void *handle_void, int index)
+{
+	struct rev_eng *handle = (struct rev_eng*) handle_void;
+	asection          *section;
+	section = handle->section[index];
+	return (section->flags & SEC_DATA) ? 1 : 0;
+}
+int bf_section_is_debug(void *handle_void, int index)
+{
+	struct rev_eng *handle = (struct rev_eng*) handle_void;
+	asection          *section;
+	section = handle->section[index];
+	return (section->flags & SEC_DEBUGGING) ? 1 : 0;
+}
 
 int64_t bf_get_code_size(void *handle_void)
 {
@@ -744,6 +833,23 @@ int bf_copy_data_section(void *handle_void, uint8_t *data, uint64_t data_size)
 	return result;
 }
 
+int bf_copy_section_contents(void *handle_void, int index, uint8_t *data, uint64_t data_size)
+{
+	struct rev_eng *handle = (struct rev_eng*) handle_void;
+	asection	*section;
+	section = handle->section[index];
+	unsigned int       opb = bfd_octets_per_byte(handle->bfd);
+	uint64_t content_size = (uint64_t) bfd_section_size (handle->bfd, section) / opb;
+
+	if (content_size != data_size) {
+		debug_print(DEBUG_INPUT_BFD, 1, "Copy section data size mismatch\n");
+		return 1;
+	}
+	bfd_get_section_contents(handle->bfd, section, data, 0, data_size);
+	return 0;
+}
+
+
 int bf_copy_rodata_section(void *handle_void, uint8_t *data, uint64_t data_size)
 {
 	struct rev_eng *ret = (struct rev_eng*) handle_void;
@@ -943,7 +1049,7 @@ int bf_print_symtab(void *handle_void)
 		debug_print(DEBUG_MAIN, 1, "type:0x%02x\n", handle->symtab[l]->flags);
 		debug_print(DEBUG_MAIN, 1, "name:%s\n", handle->symtab[l]->name);
 		debug_print(DEBUG_MAIN, 1, "value=0x%02"PRIx64"\n", handle->symtab[l]->value);
-		debug_print(DEBUG_MAIN, 1, "udata=0x%02"PRIx64"\n", handle->symtab[l]->udata);
+		//debug_print(DEBUG_MAIN, 1, "udata=0x%02"PRIx64"\n", handle->symtab[l]->udata);
 		debug_print(DEBUG_MAIN, 1, "section=%p\n", handle->symtab[l]->section);
 		debug_print(DEBUG_MAIN, 1, "section name=%s\n", handle->symtab[l]->section->name);
 		debug_print(DEBUG_MAIN, 1, "section flags=0x%02x\n", handle->symtab[l]->section->flags);
