@@ -405,3 +405,108 @@ int output_cfg_dot_basic2(struct self_s *self, struct external_entry_point_s *ex
 	return 0;
 }
 
+int output_cfg_dot_simple(struct self_s *self, struct external_entry_point_s *external_entry_point, int index)
+{
+	char *filename;
+	int fd;
+	int node;
+	int nodes_size = external_entry_point->nodes_size;
+	struct control_flow_node_s *nodes = external_entry_point->nodes;
+	int tmp;
+	int n;
+	int node_size_limited;
+	const char *font = "graph.font";
+	const char *color;
+	const char *name;
+
+	filename = calloc(1024, sizeof(char));
+	tmp = snprintf(filename, 1024, "./cfg/simple-%04d-%s.dot", index, external_entry_point->name);
+
+	fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR);
+	if (!fd) {
+		debug_print(DEBUG_MAIN, 1, "Failed to open file %s, error=%d\n", filename, fd);
+		return 1;
+	}
+	debug_print(DEBUG_OUTPUT, 1, ".dot fd=%d\n", fd);
+	debug_print(DEBUG_OUTPUT, 1, "writing out dot to file:%s\n", filename);
+	debug_print(DEBUG_OUTPUT, 1, "params_size = 0x%x\n", external_entry_point->params_size);
+	tmp = dprintf(fd, "digraph code {\n"
+		"\tgraph [bgcolor=white];\n"
+		"\tnode [color=lightgray, style=filled shape=box"
+		" fontname=\"%s\" fontsize=\"8\"];\n", font);
+	node_size_limited = nodes_size;
+
+	for (node = 1; node < nodes_size; node++) {
+		if (!nodes[node].valid) {
+			/* Only output nodes that are valid */
+			continue;
+		}
+		if (node == 1) {
+			name = external_entry_point->name;
+		} else {
+			name = "";
+		}
+		tmp = dprintf(fd, " \"Node:0x%08x\" ["
+                                        "URL=\"Node:0x%08x\" color=\"%s\", label=\"Node:0x%08x:%s\\l",
+                                        node,
+					node, "lightgray", node, name);
+		if (external_entry_point->params_size > 0) {
+			char buffer[1024];
+			tmp = dprintf(fd, "(");
+			for (n = 0; n < external_entry_point->params_size; n++) {
+				//int label_index;
+				//label_index = external_entry_point->params[n];
+				//tmp = label_to_string(&external_entry_points[entry_point].labels[label_index], buffer, 1023);
+				//dprintf(fd, "%s", buffer);
+				if (n + 1 < external_entry_point->params_size) {
+					tmp = dprintf(fd, ", ");
+				}
+			}
+			tmp = dprintf(fd, ")");
+		}
+		tmp = dprintf(fd, "\\l");
+		tmp = dprintf(fd, "type = 0x%x\\l",
+				external_entry_point->nodes[node].type);
+		if (external_entry_point->nodes[node].if_tail) {
+			tmp = dprintf(fd, "if_tail = 0x%x\\l",
+				external_entry_point->nodes[node].if_tail);
+		}
+		tmp = dprintf(fd, "\"];\n");
+
+		for (n = 0; n < external_entry_point->nodes[node].next_size; n++) {
+			char *label;
+			if (nodes[node].next_size < 2) {
+				if (1 == nodes[node].link_next[n].is_loop_edge) {
+					color = "gold";
+				} else {
+					color = "blue";
+				}
+				tmp = dprintf(fd, "\"Node:0x%08x\" -> \"Node:0x%08x\" [color=\"%s\"];\n",
+					node, nodes[node].link_next[n].node, color);
+			} else if (nodes[node].next_size == 2) {
+				if (1 == nodes[node].link_next[n].is_loop_edge) {
+					color = "gold";
+				} else if (0 == n) {
+					color = "red";
+				} else {
+					color = "green";
+				}
+				if (0 == n) {
+					label = "false";
+				} else {
+					label = "true";
+				}
+				tmp = dprintf(fd, "\"Node:0x%08x\" -> \"Node:0x%08x\" [color=\"%s\" label=\"%s\"];\n",
+					node, nodes[node].link_next[n].node, color, label);
+			} else {
+				/* next_size > 2 */
+				tmp = dprintf(fd, "\"Node:0x%08x\" -> \"Node:0x%08x\" [color=\"%s\" label=\"0x%x\"];\n",
+					node, nodes[node].link_next[n].node, color, n);
+			}
+		}
+	}
+	tmp = dprintf(fd, "}\n");
+	close(fd);
+	return 0;
+}
+

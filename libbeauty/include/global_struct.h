@@ -330,7 +330,7 @@ struct control_flow_node_s {
 struct external_entry_point_s {
 	int valid;
 	int type; /* 1: Internal, 2: External */
-	int section_offset;
+	int symtab_index;
 	int section_id;
 	int section_index;
 	uint64_t value; /* pointer to original .text entry point */

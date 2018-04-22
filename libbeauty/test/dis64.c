@@ -1646,7 +1646,7 @@ int print_entry_point_node_members(struct self_s *self, struct external_entry_po
 {
 	int n;
 
-	printf("Members of function %s\n", external_entry_point->name);
+	printf("0x%x node Members of function %s\n", external_entry_point->member_nodes_size, external_entry_point->name);
 	for (n = 0; n < external_entry_point->member_nodes_size; n++) {
 		printf("0x%x ", external_entry_point->member_nodes[n]);
 	}
@@ -5126,6 +5126,8 @@ int call_params_to_locals(struct self_s *self, int entry_point, int node)
 	struct label_s *label;
 	int found = 0;
 	debug_print(DEBUG_MAIN, 1, "PARAMS: entry_point = 0x%x, node = 0x%x\n", entry_point, node);
+	debug_print(DEBUG_MAIN, 1, "not yet handled\n");
+	exit(1);
 
 	inst = nodes[node].inst_start;
 	do {
@@ -5462,12 +5464,12 @@ int main(int argc, char *argv[])
 	}
 	debug_print(DEBUG_MAIN, 1, "\n");
 
+#if 0
 	bf_get_reloc_table_code_section(handle_void);
 	
-#if 0
 	tmp = bf_print_reloc_table_code_section(handle_void);
-#endif
 	bf_get_reloc_table_data_section(handle_void);
+#endif
 #if 0
 	for (n = 0; n < handle->reloc_table_data_sz; n++) {
 		debug_print(DEBUG_MAIN, 1, "reloc_table_data:addr = 0x%"PRIx64", size = 0x%"PRIx64", value = 0x%"PRIx64", section_index = 0x%"PRIx64", section_name=%s, symbol_name=%s\n",
@@ -5479,8 +5481,8 @@ int main(int argc, char *argv[])
 			handle->reloc_table_data[n].symbol_name);
 	}
 #endif
-	bf_get_reloc_table_rodata_section(handle_void);
 #if 0
+	bf_get_reloc_table_rodata_section(handle_void);
 	for (n = 0; n < handle->reloc_table_rodata_sz; n++) {
 		debug_print(DEBUG_MAIN, 1, "reloc_table_rodata:addr = 0x%"PRIx64", size = 0x%"PRIx64", value = 0x%"PRIx64", section_index = 0x%"PRIx64", section_name=%s, symbol_name=%s\n",
 			handle->reloc_table_rodata[n].address,
@@ -5517,21 +5519,22 @@ int main(int argc, char *argv[])
 	debug_print(DEBUG_MAIN, 1, "List of functions\n");
 	for (n = 0; n < EXTERNAL_ENTRY_POINTS_MAX; n++) {
 		if (external_entry_points[n].valid != 0) {
-		debug_print(DEBUG_MAIN, 1, "%d: type = %d, sect_offset = %d, sect_id = %d, sect_index = %d, &%s() = 0x%04"PRIx64"\n",
+		debug_print(DEBUG_MAIN, 1, "%d: type = %d, symtab_index = %d, sect_id = 0x%x, sect_index = 0x%x, &%s() = 0x%04"PRIx64"\n",
 			n,
 			external_entry_points[n].type,
-			external_entry_points[n].section_offset,
+			external_entry_points[n].symtab_index,
 			external_entry_points[n].section_id,
 			external_entry_points[n].section_index,
 			external_entry_points[n].name,
 			external_entry_points[n].value);
 		}
 	}
-
+#if 0
 	tmp = bf_link_reloc_table_code_to_external_entry_point(handle_void, external_entry_points);
 	if (tmp) return 1;
+#endif
 
-#if 1
+#if 0
 	reloc_table_size = bf_get_reloc_table_code_size(handle_void);
 	reloc_table = bf_get_reloc_table_code(handle_void);
 	for (n = 0; n < reloc_table_size; n++) {
@@ -5551,7 +5554,7 @@ int main(int argc, char *argv[])
 			struct process_state_s *process_state;
 			struct entry_point_s *entry_point = self->entry_point;
 			
-			debug_print(DEBUG_MAIN, 1, "Start function block: %s:0x%"PRIx64"\n", external_entry_points[l].name, external_entry_points[l].value);	
+			debug_print(DEBUG_MAIN, 1, "Start function block: 0x%x:%s:0x%"PRIx64"\n", l, external_entry_points[l].name, external_entry_points[l].value);
 			process_state = &external_entry_points[l].process_state;
 			memory_text = process_state->memory_text;
 			memory_stack = process_state->memory_stack;
@@ -6051,6 +6054,14 @@ int main(int argc, char *argv[])
 			tmp = fill_phi_node_list(self, external_entry_points[l].nodes, external_entry_points[l].nodes_size);
 		}
 	}
+
+	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+		if ((external_entry_points[l].valid) && (external_entry_points[l].type == 1)) {
+			tmp = output_cfg_dot_simple(self, &external_entry_points[l], l);
+		}
+	}
+	debug_print(DEBUG_MAIN, 1, "Exiting before assigning labels\n");
+	exit(1);
 	/************************************************************
 	 * This section deals with starting true SSA.
 	 * This bit sets the valid_id to 0 for both dst and src.

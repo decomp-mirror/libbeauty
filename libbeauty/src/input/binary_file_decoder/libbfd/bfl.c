@@ -855,15 +855,16 @@ int external_entry_points_init_bfl(struct external_entry_point_s *external_entry
 			} else {
 				external_entry_points[n].type = 2;
 			}
-			external_entry_points[n].section_offset = l;
+			external_entry_points[n].symtab_index = l;
 			external_entry_points[n].section_id = 
 				handle->symtab[l]->section->id;
 			external_entry_points[n].section_index = 
 				handle->symtab[l]->section->index;
 			external_entry_points[n].value = handle->symtab[l]->value;
-			length = strlen(handle->symtab[l]->name);
-			external_entry_points[n].name = malloc(length+1);
-			strncpy(external_entry_points[n].name, handle->symtab[l]->name, length+1);
+			external_entry_points[n].name = strdup(handle->symtab[l]->name);
+			//length = strlen(handle->symtab[l]->name);
+			//external_entry_points[n].name = malloc(length+1);
+			//strncpy(external_entry_points[n].name, handle->symtab[l]->name, length+1);
 			n++;
 		}
 
