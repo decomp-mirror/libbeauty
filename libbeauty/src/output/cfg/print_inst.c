@@ -456,6 +456,7 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 			}
 		}
 #endif
+#if 1
 		switch (instruction->srcA.relocated) {
 		case 1:
 			switch (instruction->srcA.indirect) {
@@ -467,50 +468,14 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 				tmp_state = 0;
 				l = instruction->srcA.index;
 				for (n = 0; n < external_entry_points[l].reg_params_size; n++) {
-					struct label_s *label;
-					uint64_t size;
-					label = &labels[external_entry_points[l].param_reg_label[reg_params_order[n]]];
-					debug_print(DEBUG_OUTPUT, 1, "reg_params_order = 0x%x, label->value = 0x%"PRIx64"\n", reg_params_order[n], label->value);
-					if ((label->scope == 2) &&
-						(label->type == 1)) {
-						if (tmp_state > 0) {
-							snprintf(buffer, 1023, ", ");
-							tmp = string_cat(string, buffer, strlen(buffer));
-						}
-						size = 0;
-						if (label->tip2) {
-							size = external_entry_points[l].tip2[label->tip2].integer_size;
-						}
-						snprintf(buffer, 1023, "int%"PRId64"_t ",
-							size);
-						tmp = string_cat(string, buffer, strlen(buffer));
-						tmp = label_to_string(label, buffer, 1023);
-						//tmp = snprintf(buffer, 1023, "%s", buffer);
-						tmp = string_cat(string, buffer, strlen(buffer));
-						tmp_state++;
-					}
-				}
-				for (n = 0; n < external_entry_points[l].reg_params_size; n++) {
-					struct label_s *label;
-					uint64_t size;
-					label = &labels[external_entry_points[l].param_reg_label[reg_params_order[n]]];
-					if ((label->scope == 2) &&
-						(label->type == 1)) {
-						continue;
-					}
+					int reg = external_entry_points[l].param_reg_label[reg_params_order[n]];
+					debug_print(DEBUG_OUTPUT, 1, "reg_params_order = 0x%x\n", reg_params_order[n]);
 					if (tmp_state > 0) {
 						snprintf(buffer, 1023, ", ");
 						tmp = string_cat(string, buffer, strlen(buffer));
 					}
-					size = 0;
-					if (label->tip2) {
-						size = external_entry_points[l].tip2[label->tip2].integer_size;
-					}
-					snprintf(buffer, 1023, "int%"PRId64"_t ",
-						size);
-					tmp = string_cat(string, buffer, strlen(buffer));
-					tmp = label_to_string(label, buffer, 1023);
-					//tmp = snprintf(buffer, 1023, "%s", buffer);
+					snprintf(buffer, 1023, "r0x%x",
+							reg);
 					tmp = string_cat(string, buffer, strlen(buffer));
 					tmp_state++;
 				}
@@ -551,6 +516,7 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 			tmp = string_cat(string, buffer, strlen(buffer));
 			break;
 		}
+#endif
 		ret = 0;
 		break;
 	case NOP:

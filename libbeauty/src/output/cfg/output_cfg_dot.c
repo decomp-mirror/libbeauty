@@ -407,17 +407,24 @@ int output_cfg_dot_basic2(struct self_s *self, struct external_entry_point_s *ex
 
 int output_cfg_dot_simple(struct self_s *self, struct external_entry_point_s *external_entry_point, int index)
 {
+	struct instruction_s *instruction;
+	struct inst_log_entry_s *inst_log1;
+	struct inst_log_entry_s *inst_log_entry = self->inst_log_entry;
+	struct process_state_s *process_state = &(external_entry_point->process_state);
+	struct control_flow_node_s *nodes = external_entry_point->nodes;
 	char *filename;
 	int fd;
 	int node;
-	int nodes_size = external_entry_point->nodes_size;
-	struct control_flow_node_s *nodes = external_entry_point->nodes;
 	int tmp;
 	int n;
+	int m;
+	int block_end;
 	int node_size_limited;
+	int nodes_size = external_entry_point->nodes_size;
 	const char *font = "graph.font";
 	const char *color;
 	const char *name;
+	struct string_s string1;
 
 	filename = calloc(1024, sizeof(char));
 	tmp = snprintf(filename, 1024, "./cfg/simple-%04d-%s.dot", index, external_entry_point->name);
@@ -430,6 +437,9 @@ int output_cfg_dot_simple(struct self_s *self, struct external_entry_point_s *ex
 	debug_print(DEBUG_OUTPUT, 1, ".dot fd=%d\n", fd);
 	debug_print(DEBUG_OUTPUT, 1, "writing out dot to file:%s\n", filename);
 	debug_print(DEBUG_OUTPUT, 1, "params_size = 0x%x\n", external_entry_point->params_size);
+	debug_print(DEBUG_OUTPUT, 1, "params_reg_ordered_size = 0x%x\n", external_entry_point->params_reg_ordered_size);
+	debug_print(DEBUG_OUTPUT, 1, "params_stack_ordered_size = 0x%x\n", external_entry_point->params_stack_ordered_size);
+	debug_print(DEBUG_OUTPUT, 1, "reg_params_size = 0x%x\n", external_entry_point->reg_params_size);
 	tmp = dprintf(fd, "digraph code {\n"
 		"\tgraph [bgcolor=white];\n"
 		"\tnode [color=lightgray, style=filled shape=box"
@@ -447,9 +457,9 @@ int output_cfg_dot_simple(struct self_s *self, struct external_entry_point_s *ex
 			name = "";
 		}
 		tmp = dprintf(fd, " \"Node:0x%08x\" ["
-                                        "URL=\"Node:0x%08x\" color=\"%s\", label=\"Node:0x%08x:%s\\l",
+                                        "color=\"%s\", label=\"Node:0x%08x:%s\\l",
                                         node,
-					node, "lightgray", node, name);
+					"lightgray", node, name);
 		if (external_entry_point->params_size > 0) {
 			char buffer[1024];
 			tmp = dprintf(fd, "(");
@@ -471,9 +481,57 @@ int output_cfg_dot_simple(struct self_s *self, struct external_entry_point_s *ex
 			tmp = dprintf(fd, "if_tail = 0x%x\\l",
 				external_entry_point->nodes[node].if_tail);
 		}
-		tmp = dprintf(fd, "\"];\n");
+		//tmp = dprintf(fd, "\"];\n");
 
-		for (n = 0; n < external_entry_point->nodes[node].next_size; n++) {
+		if (nodes[node].phi_size) {
+			for (n = 0; n < nodes[node].phi_size; n++) {
+				tmp = dprintf(fd, "phi[%d] = REG0x%x:0x%x ",
+					n, nodes[node].phi[n].reg, nodes[node].phi[n].value_id);
+				for (m = 0; m < nodes[node].phi[n].phi_node_size; m++) {
+					//tmp = get_value_id_from_node_reg(self, nodes[node].entry_point, nodes[node].phi[n].phi_node[m].node, nodes[node].phi[n].reg, &value_id);
+					tmp = dprintf(fd, "FPN:0x%x:SN:0x%x:L:0x%x, ",
+						nodes[node].phi[n].phi_node[m].first_prev_node,
+						nodes[node].phi[n].phi_node[m].node,
+						nodes[node].phi[n].phi_node[m].value_id);
+				}
+#if 0
+				for (m = 0; m < nodes[node].path_size; m++) {
+					tmp = dprintf(fd, "P0x%x:FPN:0x%x:SN:0x%x, ",
+						nodes[node].phi[n].path_node[m].path,
+						nodes[node].phi[n].path_node[m].first_prev_node,
+						nodes[node].phi[n].path_node[m].node);
+				}
+				for (m = 0; m < nodes[node].looped_path_size; m++) {
+					tmp = dprintf(fd, "LP0x%x:FPN:0x%x:SN:0x%x, ",
+						nodes[node].phi[n].looped_path_node[m].path,
+						nodes[node].phi[n].looped_path_node[m].first_prev_node,
+						nodes[node].phi[n].looped_path_node[m].node);
+				}
+#endif
+				tmp = dprintf(fd, "\\l");
+			}
+		}
+		n = nodes[node].inst_start;
+		block_end = 0;
+		//tmp = dprintf(fd, "[\";\n");
+		do {
+			inst_log1 =  &inst_log_entry[n];
+			instruction =  &inst_log1->instruction;
+			string1.len = 0;
+			string1.max = 1023;
+			string1.string[0] = 0;
+			tmp = write_inst(self, &string1, instruction, n, NULL);
+			tmp = dprintf(fd, "%s", string1.string);
+			tmp = dprintf(fd, "\\l");
+
+			if (inst_log1->node_end || !(inst_log1->next_size)) {
+				block_end = 1;
+			} else {
+				n = inst_log1->next[0];
+			}
+		} while (!block_end);
+		tmp = dprintf(fd, "\"];\n");
+		for (n = 0; n < nodes[node].next_size; n++) {
 			char *label;
 			if (nodes[node].next_size < 2) {
 				if (1 == nodes[node].link_next[n].is_loop_edge) {
