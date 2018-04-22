@@ -192,6 +192,9 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 					exit(1);
 				}
 			}
+			sprint_value(OS1, value[value_id]);
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
+			Buf1.clear();
 		}
 		break;
 	case 2:  // ADD

@@ -2012,6 +2012,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 							debug_print(DEBUG_OUTPUT, 1, "found call_offset entry_point = 0x%x\n", n);
 							instruction->srcA.index = n;
 							instruction->srcA.relocated = 1;
+							print_inst(self, instruction, 0xffff, NULL);
 							break;
 						}
 						if ((external_entry_points[n].valid != 0) &&
@@ -2020,6 +2021,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 							debug_print(DEBUG_OUTPUT, 1, "found call_offset entry_point = 0x%x\n", n);
 							instruction->srcA.index = n;
 							instruction->srcA.relocated = 1;
+							print_inst(self, instruction, 0xffff, NULL);
 							break;
 						}
 					}

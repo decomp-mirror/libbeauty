@@ -535,6 +535,7 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 			}
 			break;
 			}
+			break;
 		case 3:
 			tmp = snprintf(buffer, 1023, " CALL external %s(), index=0x%"PRIx64", relocated=%d",
 				self->external_functions[instruction->srcA.relocated_external_function].function_name,
