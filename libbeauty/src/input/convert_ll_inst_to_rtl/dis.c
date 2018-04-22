@@ -30,6 +30,7 @@
 #include <string.h>
 #include <rev.h>
 #include <instruction_low_level.h>
+#include <convert_ll_inst_to_rtl.h>
 
 
 const char * dis_opcode_table[] = {
@@ -127,8 +128,21 @@ int lookup_external_function(struct self_s *self, const char *symbol_name, int *
 	return found;
 }
 
-int convert_operand(struct self_s *self, uint64_t base_address, struct operand_low_level_s *ll_operand, int operand_number, struct operand_s *inst_operand) {
-	struct reloc_table_s *reloc_table_entry;
+int search_relocation_table(struct self_s *self, uint64_t section_id, uint64_t section_index, uint8_t *base_address, uint64_t offset, uint64_t size, uint64_t *reloc_index)
+{
+	int n;
+	struct reloc_s *reloc = self->sections[section_index].reloc_entry;
+	for (n = 0; n < self->sections[section_index].reloc_size; n++) {
+		if (reloc[n].offset == offset) {
+			*reloc_index = n;
+			return 0;
+		}
+	}
+	return 1;
+}
+
+int convert_operand(struct self_s *self, int section_id, int section_index, uint64_t base_address, struct operand_low_level_s *ll_operand, int operand_number, struct operand_s *inst_operand) {
+	struct reloc_s *reloc_table_entry;
 	uint64_t reloc_index;
 	int tmp;
 
@@ -162,7 +176,58 @@ int convert_operand(struct self_s *self, uint64_t base_address, struct operand_l
 			base_address,
 			ll_operand->operand[operand_number].offset,
 			ll_operand->operand[operand_number].size);
-		if (self->handle_void) {
+		reloc_index = 0;
+		debug_print(DEBUG_INPUT_DIS, 1, "sections = 0x%lx reloc_size = 0x%lx\n",
+				self->sections_size, self->sections[section_index].reloc_size);
+		if (self->sections_size && self->sections[section_index].reloc_size) {
+			debug_print(DEBUG_INPUT_DIS, 1, "sections = 0x%lx reloc_size = 0x%lx\n",
+				self->sections_size, self->sections[section_index].reloc_size);
+			tmp = search_relocation_table(self, section_id, section_index, 0,
+				base_address + ll_operand->operand[operand_number].offset,
+				ll_operand->operand[operand_number].size >> 3,
+				&reloc_index);
+			debug_print(DEBUG_INPUT_DIS, 1, "tmp = %d, reloc_index = 0x%lx\n",
+						tmp, reloc_index);
+			reloc_table_entry = &(self->sections[section_index].reloc_entry[reloc_index]);
+			if (!tmp) {
+				debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocate found index=0x%lx, type=0x%x, offset=0x%lx, size=0x%lx, section_id=0x%lx, section_index=0x%lx,name=%s, value_int = 0x%lx, value_uint = 0x%lx\n",
+					reloc_index,
+					reloc_table_entry->type,
+					reloc_table_entry->offset,
+					reloc_table_entry->offset_size,
+					reloc_table_entry->section_id,
+					reloc_table_entry->section_index,
+					reloc_table_entry->name,
+					reloc_table_entry->value_int,
+					reloc_table_entry->value_uint);
+				if (self->sections[reloc_table_entry->section_index].section_id != reloc_table_entry->section_id) {
+					int result = 0;
+					inst_operand->relocated = 3; /* An external function / variable */
+					inst_operand->relocated_section_id = reloc_table_entry->section_id;
+					inst_operand->relocated_section_index = reloc_table_entry->section_index;
+					inst_operand->relocated_index = reloc_index;
+					tmp = lookup_external_function(self, reloc_table_entry->name, &result);
+					if (!tmp) {
+						inst_operand->relocated_external_function = result;
+						debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocated 3 found function %s at entry %d\n",
+									reloc_table_entry->name,
+									result);
+					} else {
+						debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocated 3 failed to find function %s\n", reloc_table_entry->name);
+						exit(1);
+					}
+				} else {
+					inst_operand->relocated = 2; /* Internal function / variable */
+					//inst_operand->relocated_area = reloc_table_entry->relocated_area;
+					inst_operand->relocated_section_id = reloc_table_entry->section_id;
+					inst_operand->relocated_section_index = reloc_table_entry->section_index;
+					inst_operand->relocated_index = reloc_index;
+				}
+				//exit(1);
+			}
+		}
+		break;
+#if 0
 			tmp = bf_relocated_code(self->handle_void, 0,
 				base_address + ll_operand->operand[operand_number].offset,
 				ll_operand->operand[operand_number].size >> 3,
@@ -204,6 +269,7 @@ int convert_operand(struct self_s *self, uint64_t base_address, struct operand_l
 			}
 		}
 		break;
+#endif
 	case KIND_SCALE:
 	case KIND_IND_SCALE:
 		switch (operand_number) {
@@ -280,7 +346,7 @@ struct operand_low_level_s operand_reg_tmp4 = {
 };
 
 
-int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, int flags, struct dis_instructions_s *dis_instructions) {
+int convert_base(struct self_s *self, int section_id, int section_index, struct instruction_low_level_s *ll_inst, int flags, struct dis_instructions_s *dis_instructions) {
 	int tmp;
 	struct instruction_s *instruction;
 	int n;
@@ -368,10 +434,10 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 				instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 				instruction->opcode = IMUL;
 				instruction->flags = 0;
-				convert_operand(self, ll_inst->address, scale_operand, 2, &(instruction->srcA));
-				convert_operand(self, ll_inst->address, scale_operand, 1, &(instruction->srcB));
+				convert_operand(self, section_id, section_index, ll_inst->address, scale_operand, 2, &(instruction->srcA));
+				convert_operand(self, section_id, section_index, ll_inst->address, scale_operand, 1, &(instruction->srcB));
 				instruction->srcB.value_size = instruction->srcA.value_size;
-				convert_operand(self, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
+				convert_operand(self, section_id, section_index, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
 				dis_instructions->instruction_number++;
 				previous_operand = &operand_reg_tmp1;
 			}
@@ -403,9 +469,9 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 				operand_imm.operand[0].size = scale_operand->operand[3].size;
 				operand_imm.operand[0].offset = scale_operand->operand[3].offset;
 				instruction->flags = 0;
-				convert_operand(self, ll_inst->address, previous_operand, 0, &(instruction->srcA));
-				convert_operand(self, ll_inst->address, &operand_imm, 0, &(instruction->srcB));
-				convert_operand(self, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
+				convert_operand(self, section_id, section_index, ll_inst->address, previous_operand, 0, &(instruction->srcA));
+				convert_operand(self, section_id, section_index, ll_inst->address, &operand_imm, 0, &(instruction->srcB));
+				convert_operand(self, section_id, section_index, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
 				dis_instructions->instruction_number++;
 				previous_operand = &operand_reg_tmp1;
 			}
@@ -413,9 +479,9 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 				instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 				instruction->opcode = MOV;
 				instruction->flags = 0;
-				convert_operand(self, ll_inst->address, scale_operand, 0, &(instruction->srcA));
-				convert_operand(self, ll_inst->address, &operand_empty, 0, &(instruction->srcB));
-				convert_operand(self, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
+				convert_operand(self, section_id, section_index, ll_inst->address, scale_operand, 0, &(instruction->srcA));
+				convert_operand(self, section_id, section_index, ll_inst->address, &operand_empty, 0, &(instruction->srcB));
+				convert_operand(self, section_id, section_index, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
 				dis_instructions->instruction_number++;
 				previous_operand = &operand_reg_tmp1;
 				srcA_operand = &operand_reg_tmp1;
@@ -427,9 +493,9 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 					instruction->opcode = ADD;
 				}
 				instruction->flags = 0;
-				convert_operand(self, ll_inst->address, scale_operand, 0, &(instruction->srcA));
-				convert_operand(self, ll_inst->address, previous_operand, 0, &(instruction->srcB));
-				convert_operand(self, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
+				convert_operand(self, section_id, section_index, ll_inst->address, scale_operand, 0, &(instruction->srcA));
+				convert_operand(self, section_id, section_index, ll_inst->address, previous_operand, 0, &(instruction->srcB));
+				convert_operand(self, section_id, section_index, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
 				dis_instructions->instruction_number++;
 				previous_operand = &operand_reg_tmp1;
 				srcA_operand = &operand_reg_tmp1;
@@ -446,9 +512,9 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 		instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 		instruction->opcode = final_opcode;
 		instruction->flags = flags;
-		convert_operand(self, ll_inst->address, srcA_operand, 0, &(instruction->srcA));
-		convert_operand(self, ll_inst->address, srcB_operand, 0, &(instruction->srcB));
-		convert_operand(self, ll_inst->address, dstA_operand, 0, &(instruction->dstA));
+		convert_operand(self, section_id, section_index, ll_inst->address, srcA_operand, 0, &(instruction->srcA));
+		convert_operand(self, section_id, section_index, ll_inst->address, srcB_operand, 0, &(instruction->srcB));
+		convert_operand(self, section_id, section_index, ll_inst->address, dstA_operand, 0, &(instruction->dstA));
 		dis_instructions->instruction_number++;
 	} else {
 		/* Handle the indirect case */
@@ -483,11 +549,11 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 			instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 			instruction->opcode = IMUL;
 			instruction->flags = 0;
-			convert_operand(self, ll_inst->address, scale_operand, 2, &(instruction->srcA));
-			convert_operand(self, ll_inst->address, scale_operand, 1, &(instruction->srcB));
+			convert_operand(self, section_id, section_index, ll_inst->address, scale_operand, 2, &(instruction->srcA));
+			convert_operand(self, section_id, section_index, ll_inst->address, scale_operand, 1, &(instruction->srcB));
 			/* Make the constant multiplier equal in width to the dstA */
 			instruction->srcB.value_size = operand_reg_tmp1.size;
-			convert_operand(self, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
+			convert_operand(self, section_id, section_index, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
 			dis_instructions->instruction_number++;
 			previous_operand = &operand_reg_tmp1;
 		} else {
@@ -507,9 +573,9 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 			instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 			instruction->opcode = ADD;
 			instruction->flags = 0;
-			convert_operand(self, ll_inst->address, previous_operand, 0, &(instruction->srcA));
-			convert_operand(self, ll_inst->address, scale_operand, 0, &(instruction->srcB));
-			convert_operand(self, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
+			convert_operand(self, section_id, section_index, ll_inst->address, previous_operand, 0, &(instruction->srcA));
+			convert_operand(self, section_id, section_index, ll_inst->address, scale_operand, 0, &(instruction->srcB));
+			convert_operand(self, section_id, section_index, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
 			dis_instructions->instruction_number++;
 			previous_operand = &operand_reg_tmp1;
 		}
@@ -530,15 +596,15 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 			operand_imm.operand[0].value = 0;
 			operand_imm.operand[0].size = 0;
 			operand_imm.operand[0].offset = 0;
-			convert_operand(self, ll_inst->address, &operand_imm, 0, &(instruction->srcA));
+			convert_operand(self, section_id, section_index, ll_inst->address, &operand_imm, 0, &(instruction->srcA));
 			operand_imm.kind = KIND_IMM;
 			operand_imm.size = 64;
 			operand_imm.operand[0].value = value;
 			operand_imm.operand[0].size = scale_operand->operand[3].size;
 			operand_imm.operand[0].offset = scale_operand->operand[3].offset;
 			instruction->flags = 0;
-			convert_operand(self, ll_inst->address, &operand_imm, 0, &(instruction->srcB));
-			convert_operand(self, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
+			convert_operand(self, section_id, section_index, ll_inst->address, &operand_imm, 0, &(instruction->srcB));
+			convert_operand(self, section_id, section_index, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
 			dis_instructions->instruction_number++;
 			previous_operand = &operand_reg_tmp1;
 		} else if (previous_operand != &operand_empty) {
@@ -557,9 +623,9 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 			operand_imm.operand[0].size = scale_operand->operand[3].size;
 			operand_imm.operand[0].offset = scale_operand->operand[3].offset;
 			instruction->flags = 0;
-			convert_operand(self, ll_inst->address, previous_operand, 0, &(instruction->srcA));
-			convert_operand(self, ll_inst->address, &operand_imm, 0, &(instruction->srcB));
-			convert_operand(self, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
+			convert_operand(self, section_id, section_index, ll_inst->address, previous_operand, 0, &(instruction->srcA));
+			convert_operand(self, section_id, section_index, ll_inst->address, &operand_imm, 0, &(instruction->srcB));
+			convert_operand(self, section_id, section_index, ll_inst->address, &operand_reg_tmp1, 0, &(instruction->dstA));
 			dis_instructions->instruction_number++;
 			previous_operand = &operand_reg_tmp1;
 		}
@@ -571,9 +637,9 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 			instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 			instruction->opcode = BITCAST;
 			instruction->flags = 0;
-			convert_operand(self, ll_inst->address, scale_ptr_operand, 0, &(instruction->srcA));
+			convert_operand(self, section_id, section_index, ll_inst->address, scale_ptr_operand, 0, &(instruction->srcA));
 			instruction->srcA.value_size = 0; /* Don't know the size at this point */
-			convert_operand(self, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->dstA));
+			convert_operand(self, section_id, section_index, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->dstA));
 			//instruction->dstA.value_size = ll_inst->srcA.size;
 			instruction->dstA.value_size = 0;
 			dis_instructions->instruction_number++;
@@ -581,16 +647,16 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 			instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 			instruction->opcode = LOAD;
 			instruction->flags = 0;
-			convert_operand(self, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->srcA));
+			convert_operand(self, section_id, section_index, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->srcA));
 			instruction->srcA.value_size = ll_inst->srcA.size;
 			if (ind_stack) {
 				instruction->srcA.indirect = IND_STACK;
 			} else {
 				instruction->srcA.indirect = IND_MEM;
 			}
-			convert_operand(self, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->srcB));
+			convert_operand(self, section_id, section_index, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->srcB));
 			instruction->srcB.value_size = 64;
-			convert_operand(self, ll_inst->address, &operand_reg_tmp3, 0, &(instruction->dstA));
+			convert_operand(self, section_id, section_index, ll_inst->address, &operand_reg_tmp3, 0, &(instruction->dstA));
 			instruction->dstA.value_size = ll_inst->srcA.size;
 			dis_instructions->instruction_number++;
 			previous_operand = &operand_reg_tmp3;
@@ -605,24 +671,24 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 		instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 		instruction->opcode = ll_inst->opcode;
 		instruction->flags = flags;
-		convert_operand(self, ll_inst->address, srcA_operand, 0, &(instruction->srcA));
+		convert_operand(self, section_id, section_index, ll_inst->address, srcA_operand, 0, &(instruction->srcA));
 		instruction->srcA.value_size = ll_inst->srcA.size;
-		convert_operand(self, ll_inst->address, srcB_operand, 0, &(instruction->srcB));
+		convert_operand(self, section_id, section_index, ll_inst->address, srcB_operand, 0, &(instruction->srcB));
 		instruction->srcB.value_size = ll_inst->srcB.size;
 		if (ll_inst->dstA.kind == KIND_IND_SCALE) {
-			convert_operand(self, ll_inst->address, &operand_reg_tmp4, 0, &(instruction->dstA));
+			convert_operand(self, section_id, section_index, ll_inst->address, &operand_reg_tmp4, 0, &(instruction->dstA));
 			instruction->dstA.value_size = ll_inst->dstA.size;
 		} else {
-			convert_operand(self, ll_inst->address, dstA_operand, 0, &(instruction->dstA));
+			convert_operand(self, section_id, section_index, ll_inst->address, dstA_operand, 0, &(instruction->dstA));
 		}
 		dis_instructions->instruction_number++;
 		if (ll_inst->dstA.kind == KIND_IND_SCALE) {
 			instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 			instruction->opcode = BITCAST;
 			instruction->flags = 0;
-			convert_operand(self, ll_inst->address, scale_ptr_operand, 0, &(instruction->srcA));
+			convert_operand(self, section_id, section_index, ll_inst->address, scale_ptr_operand, 0, &(instruction->srcA));
 			instruction->srcA.value_size = 0; /* Don't know the size at this point */
-			convert_operand(self, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->dstA));
+			convert_operand(self, section_id, section_index, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->dstA));
 			//instruction->dstA.value_size = ll_inst->srcA.size;
 			instruction->dstA.value_size = 0;
 			dis_instructions->instruction_number++;
@@ -630,10 +696,10 @@ int convert_base(struct self_s *self, struct instruction_low_level_s *ll_inst, i
 			instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 			instruction->opcode = STORE;
 			instruction->flags = 0;
-			convert_operand(self, ll_inst->address, &operand_reg_tmp4, 0, &(instruction->srcA));
+			convert_operand(self, section_id, section_index, ll_inst->address, &operand_reg_tmp4, 0, &(instruction->srcA));
 			instruction->srcA.value_size = ll_inst->srcA.size;
-			convert_operand(self, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->srcB));
-			convert_operand(self, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->dstA));
+			convert_operand(self, section_id, section_index, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->srcB));
+			convert_operand(self, section_id, section_index, ll_inst->address, &operand_reg_tmp2, 0, &(instruction->dstA));
 			instruction->dstA.value_size = ll_inst->dstA.size;
 			if (ind_stack) {
 				instruction->dstA.indirect = IND_STACK;
@@ -660,7 +726,7 @@ int copy_operand(struct operand_low_level_s *src, struct operand_low_level_s *ds
 	return 0;
 }
 
-int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *ll_inst, struct dis_instructions_s *dis_instructions) {
+int convert_ll_inst_to_rtl(struct self_s *self, int section_id, int section_index, struct instruction_low_level_s *ll_inst, struct dis_instructions_s *dis_instructions) {
 	int tmp;
 	//int n;
 	int result = 1;
@@ -686,7 +752,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 	case ZEXT:
 		copy_operand(&ll_inst->srcB, &ll_inst->srcA);
 		ll_inst->srcB.kind = KIND_EMPTY;
-		tmp  = convert_base(self, ll_inst, 0, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 0, dis_instructions);
 		result = tmp;
 		break;
 	case CMOV:
@@ -714,7 +780,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		ll_inst->opcode = MOV;
 		//copy_operand(&ll_inst->srcB, &ll_inst->srcA);
 		ll_inst->srcB.kind = KIND_EMPTY;
-		tmp  = convert_base(self, ll_inst, 0, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 0, dis_instructions);
 		result = tmp;
 		break;
 	case SETCC:
@@ -747,7 +813,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		instruction->srcA.value_size = 32;
 		dis_instructions->instruction_number++;
 		
-		tmp  = convert_base(self, ll_inst, 0, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 0, dis_instructions);
 		instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 		instruction->opcode = IF;
 		instruction->flags = 0;
@@ -770,7 +836,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		dis_instructions->instruction_number++;
 		
 		ll_inst->srcA.operand[0].value = 0;
-		tmp  = convert_base(self, ll_inst, 0, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 0, dis_instructions);
 		result = tmp;
 		break;
 
@@ -786,7 +852,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		ll_inst->srcB.operand[0].size = ll_inst->dstA.size;
 		ll_inst->srcB.operand[0].offset = 0;
 		ll_inst->opcode = SUB;
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case INC:
@@ -801,15 +867,15 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		ll_inst->srcB.operand[0].size = ll_inst->dstA.size;
 		ll_inst->srcB.operand[0].offset = 0;
 		ll_inst->opcode = ADD;
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case LEA: /* Used at the MC Inst low level */
-		tmp  = convert_base(self, ll_inst, 0, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 0, dis_instructions);
 		result = tmp;
 		break;
 	case JMPT: /* Jump Table */
-		tmp  = convert_base(self, ll_inst, 0, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 0, dis_instructions);
 		result = tmp;
 		instruction = &dis_instructions->instruction[dis_instructions->instruction_number -  1];
 		instruction->dstA.store = STORE_REG;
@@ -821,7 +887,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		break;
 	case JMPM: /* Jump Indirect */
 		ll_inst->opcode = JMPT;
-		tmp  = convert_base(self, ll_inst, 0, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 0, dis_instructions);
 		result = tmp;
 		instruction = &dis_instructions->instruction[dis_instructions->instruction_number -  1];
 		instruction->dstA.store = STORE_REG;
@@ -880,7 +946,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		instruction->opcode = CALL;
 		instruction->flags = 0;
 		/* Note: ll_inst->srcB due to the way opcode_form == 1 is processed. */
-		convert_operand(self, ll_inst->address, &(ll_inst->srcB), 0, &(instruction->srcA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcB), 0, &(instruction->srcA));
 		instruction->srcB.store = STORE_REG;
 		instruction->srcB.indirect = IND_DIRECT;
 		instruction->srcB.indirect_size = 64;
@@ -902,7 +968,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		 * dstA = EAX
 		 */
 		ll_inst->opcode = CALL;
-		tmp  = convert_base(self, ll_inst, 0, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 0, dis_instructions);
 		result = tmp;
 		instruction = &dis_instructions->instruction[dis_instructions->instruction_number -  1];
 		instruction->srcB.store = STORE_REG;
@@ -972,11 +1038,11 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 	case BRANCH: /* Branch Conditional. Similar to LLVM ICMP */
 		break;
 	case LOAD: /* Load from memory/stack */
-		tmp  = convert_base(self, ll_inst, 0, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 0, dis_instructions);
 		result = tmp;
 		break;
 	case STORE: /* Store to memory/stack */
-		tmp  = convert_base(self, ll_inst, 0, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 0, dis_instructions);
 		result = tmp;
 		break;
 	case SEX: /* Signed Extention */
@@ -995,7 +1061,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		}
 		copy_operand(&ll_inst->srcB, &ll_inst->srcA);
 		ll_inst->srcB.kind = KIND_EMPTY;
-		tmp  = convert_base(self, ll_inst, 0, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 0, dis_instructions);
 		result = tmp;
 		break;
 	case PHI: /* A PHI point */
@@ -1099,35 +1165,35 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		result = 0;
 		break;
 	case ADD:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case ADC:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case SUB:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case SBB:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case OR:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case XOR:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case rAND:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case NOT:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case TEST:
@@ -1137,64 +1203,64 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 			copy_operand(&ll_inst->dstA, &ll_inst->srcA);
 			ll_inst->dstA.kind = KIND_EMPTY;
 		}
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case NEG:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case CMP:
 		ll_inst->dstA.kind = KIND_EMPTY;
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case MUL:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case IMUL:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case DIV:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case IDIV:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case ROL:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case ROR:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case RCL:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case RCR:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case SHL:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case SHR:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case SAL:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case SAR:
-		tmp  = convert_base(self, ll_inst, 1, dis_instructions);
+		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
 		break;
 	case LEAVE:
@@ -1292,7 +1358,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 		instruction->opcode = STORE;
 		instruction->flags = 0;
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcA));
 		instruction->srcB.store = STORE_REG;
 		instruction->srcB.indirect = IND_DIRECT;
 		instruction->srcB.indirect_size = 64;
@@ -1326,7 +1392,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		instruction->srcB.relocated = 0;
 		instruction->srcB.value_size = ll_inst->srcA.size;
 		/* Form 2 puts the dest in the src. So correct it here */
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->dstA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->dstA));
 		dis_instructions->instruction_number++;
 
 		instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
@@ -1426,9 +1492,9 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 		instruction->opcode = LOAD;
 		instruction->flags = 0;
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcA));
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcB));
-		convert_operand(self, ll_inst->address, &(operand_reg_tmp2), 0, &(instruction->dstA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcB));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(operand_reg_tmp2), 0, &(instruction->dstA));
 		/* Force indirect */
 		instruction->srcA.indirect = IND_MEM;
 		instruction->srcA.indirect_size = ll_inst->srcA.size;
@@ -1439,9 +1505,9 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 		instruction->opcode = STORE;
 		instruction->flags = 0;
-		convert_operand(self, ll_inst->address, &(operand_reg_tmp2), 0, &(instruction->srcA));
-		convert_operand(self, ll_inst->address, &(ll_inst->dstA), 0, &(instruction->srcB));
-		convert_operand(self, ll_inst->address, &(ll_inst->dstA), 0, &(instruction->dstA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(operand_reg_tmp2), 0, &(instruction->srcA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->dstA), 0, &(instruction->srcB));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->dstA), 0, &(instruction->dstA));
 		/* Force indirect */
 		instruction->dstA.indirect = IND_MEM;
 		instruction->dstA.indirect_size = ll_inst->dstA.size;
@@ -1457,8 +1523,8 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		instruction->srcA.index = ll_inst->srcA.size >> 3;
 		instruction->srcA.relocated = 0;
 		instruction->srcA.value_size = ll_inst->srcA.size;
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->dstA));
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcB));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->dstA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcB));
 		dis_instructions->instruction_number++;
 
 		instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
@@ -1470,8 +1536,8 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		instruction->srcA.index = ll_inst->dstA.size >> 3;
 		instruction->srcA.relocated = 0;
 		instruction->srcA.value_size = ll_inst->dstA.size;
-		convert_operand(self, ll_inst->address, &(ll_inst->dstA), 0, &(instruction->dstA));
-		convert_operand(self, ll_inst->address, &(ll_inst->dstA), 0, &(instruction->srcB));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->dstA), 0, &(instruction->dstA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->dstA), 0, &(instruction->srcB));
 		dis_instructions->instruction_number++;
 
 		if (ll_inst->rep == 1) {
@@ -1499,9 +1565,9 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 		instruction->opcode = SEX;
 		instruction->flags = 0;
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcA));
 		instruction->srcA.value_size = 32;
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->dstA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->dstA));
 		instruction->dstA.value_size = 64;
 		dis_instructions->instruction_number++;
 
@@ -1531,7 +1597,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		instruction->srcA.index = REG_AX;
 		instruction->srcA.relocated = 0;
 		instruction->srcA.value_size = 64;
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcB));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcB));
 		instruction->srcB.value_size = 64;
 		instruction->dstA.store = STORE_REG;
 		instruction->dstA.indirect = IND_DIRECT;
@@ -1556,7 +1622,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		instruction->srcB.index = 32;
 		instruction->srcB.relocated = 0;
 		instruction->srcB.value_size = 64;
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->dstA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->dstA));
 		instruction->dstA.value_size = 64;
 		dis_instructions->instruction_number++;
 
@@ -1580,9 +1646,9 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		instruction = &dis_instructions->instruction[dis_instructions->instruction_number];
 		instruction->opcode = TRUNC;
 		instruction->flags = 0;
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcA));
 		instruction->srcA.value_size = 64;
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->dstA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->dstA));
 		instruction->dstA.value_size = 32;
 		dis_instructions->instruction_number++;
 		result = 0;
@@ -1592,9 +1658,9 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		instruction = &dis_instructions->instruction[dis_instructions->instruction_number];	
 		instruction->opcode = MOV;
 		instruction->flags = 0;
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcA));
 		instruction->srcA.value_size = 32;
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->dstA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->dstA));
 		instruction->dstA.value_size = 64;
 		dis_instructions->instruction_number++;
 
@@ -1624,7 +1690,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		instruction->srcA.index = REG_AX;
 		instruction->srcA.relocated = 0;
 		instruction->srcA.value_size = 64;
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcB));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcB));
 		instruction->srcB.value_size = 64;
 		instruction->dstA.store = STORE_REG;
 		instruction->dstA.indirect = IND_DIRECT;
@@ -1649,7 +1715,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		instruction->srcB.index = 32;
 		instruction->srcB.relocated = 0;
 		instruction->srcB.value_size = 64;
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->dstA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->dstA));
 		instruction->dstA.value_size = 64;
 		dis_instructions->instruction_number++;
 
@@ -1673,9 +1739,9 @@ int convert_ll_inst_to_rtl(struct self_s *self, struct instruction_low_level_s *
 		instruction = &dis_instructions->instruction[dis_instructions->instruction_number];
 		instruction->opcode = TRUNC;
 		instruction->flags = 0;
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->srcA));
 		instruction->srcA.value_size = 64;
-		convert_operand(self, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->dstA));
+		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcA), 0, &(instruction->dstA));
 		instruction->dstA.value_size = 32;
 		dis_instructions->instruction_number++;
 		result = 0;

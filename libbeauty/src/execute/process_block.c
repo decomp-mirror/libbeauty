@@ -99,6 +99,8 @@ int process_block(struct self_s *self, struct process_state_s *process_state, ui
 	void *handle_void = self->handle_void;
 	uint8_t *inst3;
 	uint64_t inst3_size;
+	int section_id;
+	int section_index;
 
 	debug_print(DEBUG_EXE, 1, "process_block entry\n");
 	//memory_text = process_state->memory_text;
@@ -111,8 +113,10 @@ int process_block(struct self_s *self, struct process_state_s *process_state, ui
 		debug_print(DEBUG_EXE, 1, "section_id mismatch\n");
 		exit(1);
 	}
-	inst3 = self->sections[memory_reg[2].section_index].content;
-	inst3_size = self->sections[memory_reg[2].section_index].content_size;
+	section_id = memory_reg[2].section_id;
+	section_index = memory_reg[2].section_index;
+	inst3 = self->sections[section_index].content;
+	inst3_size = self->sections[section_index].content_size;
 	debug_print(DEBUG_EXE, 1, "inst_log=%"PRId64"\n", inst_log);
 	debug_print(DEBUG_EXE, 1, "dis:Data at %p, size=0x%"PRIx64"\n", inst3, inst3_size);
 	for (offset = 0; ;) {
@@ -130,7 +134,7 @@ int process_block(struct self_s *self, struct process_state_s *process_state, ui
 		debug_print(DEBUG_EXE, 1, "eip=0x%"PRIx64", offset=0x%"PRIx64"\n",
 			memory_reg[2].offset_value, offset);
 		/* the calling program must define this function. This is a callback. */
-		result = disassemble(self, &dis_instructions, inst3, inst3_size, offset);
+		result = disassemble(self, section_id, section_index, &dis_instructions, inst3, inst3_size, offset);
 		debug_print(DEBUG_EXE, 1, "bytes used = %d\n", dis_instructions.bytes_used);
 		debug_print(DEBUG_EXE, 1, "eip=0x%"PRIx64", offset=0x%"PRIx64"\n",
 			memory_reg[2].offset_value, offset);
@@ -322,8 +326,10 @@ int process_block(struct self_s *self, struct process_state_s *process_state, ui
 				inst_exe_base = &inst_log_entry[inst_base];
 				instruction = &(inst_exe_base->instruction);
 				debug_print(DEBUG_EXE, 1, "Relocated = 0x%x\n", instruction->srcB.relocated);
-				debug_print(DEBUG_EXE, 1, "Relocated_area = 0x%x\n", instruction->srcB.relocated_area);
+				debug_print(DEBUG_EXE, 1, "Relocated_external_function = 0x%x\n", instruction->srcB.relocated_external_function);
 				debug_print(DEBUG_EXE, 1, "Relocated_index = 0x%x\n", instruction->srcB.relocated_index);
+				/* FIXME Jump tables */
+#if 0
 				if (2 == instruction->srcB.relocated_area) {
 					uint64_t index = instruction->srcB.relocated_index;
 					tmp = 0;
@@ -355,6 +361,7 @@ int process_block(struct self_s *self, struct process_state_s *process_state, ui
 						index += 8;
 					} while (!tmp);
 				}
+#endif
 			}
 			inst_log_prev = inst_log;
 			inst_log++;

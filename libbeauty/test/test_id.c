@@ -973,9 +973,11 @@ int main(int argc, char *argv[])
 			printf("\n");
 		}
 		if (!tmp) {
+			int section_id = 0;
+			int section_index = 0;
 			debug_print(DEBUG_MAIN, 1, "LLVM DIS2 opcode = 0x%x:not yet predicate = 0x%x\n\n", ll_inst->opcode, ll_inst->predicate);
 			tmp = LLVMPrintInstructionDecodeAsmX86_64(DA, ll_inst);
-			tmp = convert_ll_inst_to_rtl(self, ll_inst, &dis_instructions);
+			tmp = convert_ll_inst_to_rtl(self, section_id, section_index, ll_inst, &dis_instructions);
 			if (tmp) {
 				printf("Unhandled instruction, not yet implemented convert\n");
 //				test_result[l] = 1;

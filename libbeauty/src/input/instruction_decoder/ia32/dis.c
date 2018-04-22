@@ -411,7 +411,7 @@ void dis_Ex_Ix(void *handle_void, int opcode, struct dis_instructions_s *dis_ins
 	dis_instructions->instruction_number++;
 }
 
-int disassemble(struct self_s *self, struct dis_instructions_s *dis_instructions, uint8_t *base_address, uint64_t buffer_size, uint64_t offset) {
+int disassemble(struct self_s *self, int section_id, int section_index, struct dis_instructions_s *dis_instructions, uint8_t *base_address, uint64_t buffer_size, uint64_t offset) {
 	uint8_t reg = 0;
 	int half = 0;
 	int result = 0;

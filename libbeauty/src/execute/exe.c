@@ -2034,7 +2034,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 					exit(1);
 				}
 				call = inst->extension;
-				external_function = &(self->external_functions[instruction->srcA.relocated_area]);
+				external_function = &(self->external_functions[instruction->srcA.relocated_external_function]);
 				call->params_reg_size = external_function->fields_size;
 				call->params_reg = calloc(external_function->fields_size, sizeof(int));
 				for(n = 0; n < external_function->fields_size; n++) {

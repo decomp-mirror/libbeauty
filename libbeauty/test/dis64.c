@@ -221,7 +221,7 @@ int disassemble(struct self_s *self, struct dis_instructions_s *dis_instructions
 }
 #endif
 
-int disassemble(struct self_s *self, struct dis_instructions_s *dis_instructions, uint8_t *base_address, uint64_t buffer_size, uint64_t offset) {
+int disassemble(struct self_s *self, int section_id, int section_index, struct dis_instructions_s *dis_instructions, uint8_t *base_address, uint64_t buffer_size, uint64_t offset) {
 	struct instruction_low_level_s *ll_inst = (struct instruction_low_level_s *)self->ll_inst;
 	int tmp = 0;
 	int m;
@@ -243,7 +243,7 @@ int disassemble(struct self_s *self, struct dis_instructions_s *dis_instructions
 		printf("LLVMPrintInstructionDecodeAsmX86_64() failed. offset = 0x%"PRIx64"\n", offset);
 		exit(1);
 	}
-	tmp = convert_ll_inst_to_rtl(self, ll_inst, dis_instructions);
+	tmp = convert_ll_inst_to_rtl(self, section_id, section_index, ll_inst, dis_instructions);
 	if (tmp) {
 		printf("convert_ll_inst_to_rtl() failed. offset = 0x%"PRIx64"\n", offset);
 		exit(1);

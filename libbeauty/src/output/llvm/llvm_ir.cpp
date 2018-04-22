@@ -523,7 +523,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			break;
 			}
 		case 3: { // For external call()
-			int function = inst_log1->instruction.srcA.relocated_area; 
+			int function = inst_log1->instruction.srcA.relocated_external_function; 
 			struct extension_call_s *call_info = static_cast<struct extension_call_s *> (inst_log1->extension);
 			std::vector<Value*> vector_params;
 			for (n = 0; n < call_info->params_reg_size; n++) {

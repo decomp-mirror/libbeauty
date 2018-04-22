@@ -194,7 +194,7 @@ uint32_t relocated_data(void *handle, uint64_t offset, uint64_t size);
 extern int print_inst(struct self_s *self, struct instruction_s *instruction, int instruction_number, struct label_s *labels);
 extern int write_inst(struct self_s *self, struct string_s *string, struct instruction_s *instruction, int instruction_number, struct label_s *labels);
 extern int print_inst_short(struct self_s *self, struct instruction_s *instruction);
-extern int disassemble(struct self_s *self, struct dis_instructions_s *dis_instructions, uint8_t *base_address, uint64_t buffer_size, uint64_t offset);
+extern int disassemble(struct self_s *self, int section_id, int section_index, struct dis_instructions_s *dis_instructions, uint8_t *base_address, uint64_t buffer_size, uint64_t offset);
 extern void disassemble_callback_start(struct self_s *self);
 extern void disassemble_callback_end(struct self_s *self);
 

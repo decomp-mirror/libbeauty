@@ -480,13 +480,10 @@ struct operand_s {
 	 */
 	int relocated;
 	/* The section to point to. e.g. .rodata
-	 * 0 = NULL
-	 * 1 = code
-	 * 2 = rodata
-	 * 3 = data
-	 * >3 is malloc sections
 	 */
-	int relocated_area;
+	int relocated_section_id;
+	int relocated_section_index;
+	int relocated_external_function; /* If it points to an external function */
 	/* The offset withing the section of point to */
 	int relocated_index;
 	/* 0 = direct, 1 = data_memory, 2 = stack_memory, 3 = in-out port */
@@ -559,8 +556,8 @@ struct reloc_s {
 	uint64_t offset;
 	uint64_t offset_size;
 	/* The section_id and section_index of the destination or child */
-	int section_id;
-	int section_index;
+	uint64_t section_id;
+	uint64_t section_index;
 	char *name;
 	/* The destination or child offset to use.
 	   Use whichever value is non-zero */
