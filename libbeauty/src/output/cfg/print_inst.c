@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <rev.h>
 #include <string.h>
+#include <assert.h>
 
 char *dis_flags_table[] = { " ", "f" };
 
@@ -600,6 +601,10 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 		break;
 	default:
 		debug_print(DEBUG_OUTPUT, 1, "Print inst fails. Opcode = 0x%x\n", instruction->opcode);
+		exit(1);
+	}
+	if (instruction_number == 0) {
+		debug_print(DEBUG_OUTPUT, 1, "Print inst fails. Instruction number zero\n");
 		exit(1);
 	}
 	return ret;
