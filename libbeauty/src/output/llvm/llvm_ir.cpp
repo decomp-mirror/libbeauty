@@ -237,7 +237,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		dstA = builder->CreateAdd(srcA, srcB, buffer);
 		value[inst_log1->value3.value_id] = dstA;
 		sprint_value(OS1, dstA);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 		Buf1.clear();
 		break;
 	case 4:  // SUB
@@ -312,7 +312,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		dstA = builder->CreateSub(srcA, srcB, buffer);
 		value[inst_log1->value3.value_id] = dstA;
 		sprint_value(OS1, dstA);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 		Buf1.clear();
 		break;
 	case 7:  // XOR
@@ -358,7 +358,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		dstA = builder->CreateXor(srcA, srcB, buffer);
 		value[inst_log1->value3.value_id] = dstA;
 		sprint_value(OS1, dstA);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 		Buf1.clear();
 		break;
 	case 0xd:  // MUL
@@ -404,7 +404,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		dstA = builder->CreateMul(srcA, srcB, buffer);
 		value[inst_log1->value3.value_id] = dstA;
 		sprint_value(OS1, dstA);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 		Buf1.clear();
 		break;
 	case 0xe:  // IMUL
@@ -451,7 +451,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		dstA = builder->CreateMul(srcA, srcB, buffer);
 		value[inst_log1->value3.value_id] = dstA;
 		sprint_value(OS1, dstA);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 		Buf1.clear();
 		break;
 	case 0x11:  // JMP
@@ -461,7 +461,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			//dstA = BranchInst::Create(bb[node_true], bb[node]);
 			dstA = builder->CreateBr(bb[node_true]);
 			sprint_value(OS1, dstA);
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 			Buf1.clear();
 			result = 1;
 		}
@@ -518,7 +518,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			value[inst_log1->value3.value_id] = dstA;
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: dstA %p\n", inst, dstA);
 			sprint_value(OS1, dstA);
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 			Buf1.clear();
 			break;
 			}
@@ -556,7 +556,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			value[inst_log1->value3.value_id] = dstA;
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: dstA %p\n", inst, dstA);
 			sprint_value(OS1, dstA);
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 			Buf1.clear();
 			//debug_print(DEBUG_OUTPUT_LLVM, 1, "Relocated 3 Not yet handled\n");
 			//exit(1);
@@ -588,7 +588,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		Buf1.clear();
 		dstA = builder->CreateRet(srcA);
 		sprint_value(OS1, dstA);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 		Buf1.clear();
 		result = 1;
 		break;
@@ -627,7 +627,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		dstA = builder->CreateSExt(srcA, IntegerType::get(mod->getContext(), size_bits), buffer);
 		value[value_id_dst] = dstA;
 		sprint_value(OS1, dstA);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 		Buf1.clear();
 		break;
 	case 0x23:  // ICMP
@@ -676,7 +676,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		dstA = builder->CreateICmp(predicate_to_llvm_table[inst_log1->instruction.predicate], srcA, srcB, buffer);
 		value[inst_log1->value3.value_id] = dstA;
 		sprint_value(OS1, dstA);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 		Buf1.clear();
 		break;
 	case 0x24:  // BRANCH
@@ -704,7 +704,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		node_false = nodes[node].link_next[1].node;
 		dstA = builder->CreateCondBr(srcA, bb[node_true], bb[node_false]);
 		sprint_value(OS1, dstA);
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 		Buf1.clear();
 		result = 1;
 		break;
@@ -779,7 +779,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 
 			dstA->print(OS1);
 			OS1.flush();
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 			Buf1.clear();
 
 			if (value_id_dst) {
@@ -852,7 +852,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 
 			dstA->print(OS1);
 			OS1.flush();
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "DST: %s\n", Buf1.c_str());
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 			Buf1.clear();
 
 			if (value_id_dst) {
@@ -975,7 +975,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		dstA->print(OS1);
 		OS1 << "\n";
 		OS1.flush();
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 		Buf1.clear();
 		}
 		break;
@@ -1075,7 +1075,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		dstA->print(OS1);
 		OS1 << "\n";
 		OS1.flush();
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 		Buf1.clear();
 		break;
 
@@ -1121,7 +1121,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		dstA->print(OS1);
 		OS1 << "\n";
 		OS1.flush();
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 		Buf1.clear();
 		break;
 
@@ -1156,6 +1156,11 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "label->tip2: size_bits = 0x%lx\n", size_bits);
 		dstA = builder->CreateZExt(srcA, IntegerType::get(mod->getContext(), size_bits), buffer);
 		value[value_id_dst] = dstA;
+		dstA->print(OS1);
+		OS1 << "\n";
+		OS1.flush();
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
+		Buf1.clear();
 		break;
 
 	case 0x38:  // BITCAST
@@ -1195,6 +1200,11 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "BITCAST: label->tip2: size_bits = 0x%lx\n", size_bits);
 		dstA = builder->CreateBitCast(srcA, PointerType::get(IntegerType::get(mod->getContext(), size_bits), 0), buffer);
 		value[value_id_dst] = dstA;
+		dstA->print(OS1);
+		OS1 << "\n";
+		OS1.flush();
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
+		Buf1.clear();
 		break;
 
 
