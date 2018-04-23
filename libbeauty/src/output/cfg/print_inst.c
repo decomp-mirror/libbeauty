@@ -132,7 +132,7 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 
 //	debug_print(DEBUG_OUTPUT, 1, "opcode = 0x%x\n", instruction->opcode);
 //	debug_print(DEBUG_OUTPUT, 1, "flags = 0x%x\n", instruction->flags);
-	tmp = snprintf(buffer, 1023, "// 0x%04x:%s%s",
+	tmp = snprintf(buffer, 1023, "// %08x:%s%s",
 		instruction_number,
 		opcode_table[instruction->opcode],
 		dis_flags_table[instruction->flags]);

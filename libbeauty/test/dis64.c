@@ -253,7 +253,7 @@ int disassemble(struct self_s *self, int section_id, int section_index, struct d
 		exit(1);
 	}
 	for (m = 0; m < dis_instructions->instruction_number; m++) {
-		tmp = print_inst(self, &(dis_instructions->instruction[m]), m + 0xff00, NULL);
+		tmp = print_inst(self, &(dis_instructions->instruction[m]), m + 0x10000000, NULL);
 	}
 	return tmp;
 }
