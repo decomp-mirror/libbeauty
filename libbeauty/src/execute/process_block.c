@@ -110,7 +110,10 @@ int process_block(struct self_s *self, struct process_state_s *process_state, ui
 	memory_used = process_state->memory_used;
 
 	if (self->sections[memory_reg[2].section_index].section_id != memory_reg[2].section_id) {
-		debug_print(DEBUG_EXE, 1, "section_id mismatch\n");
+		debug_print(DEBUG_EXE, 1, "section_id mismatch mem section_index=0x%lx, sections[].section_id=0x%x, mem section_id=0x%lx\n",
+			memory_reg[2].section_index,
+			self->sections[memory_reg[2].section_index].section_id,
+			memory_reg[2].section_id);
 		exit(1);
 	}
 	section_id = memory_reg[2].section_id;
@@ -277,15 +280,21 @@ int process_block(struct self_s *self, struct process_state_s *process_state, ui
 					inst_log);
 				for (m = 0; m < list_length; m++ ) {
 					if (0 == entry[m].used) {
+						entry[m].esp_section_id = memory_reg[0].section_id;
+						entry[m].esp_section_index = memory_reg[0].section_index;
 						entry[m].esp_init_value = memory_reg[0].init_value;
 						entry[m].esp_offset_value = memory_reg[0].offset_value;
+						entry[m].ebp_section_id = memory_reg[1].section_id;
+						entry[m].ebp_section_index = memory_reg[1].section_index;
 						entry[m].ebp_init_value = memory_reg[1].init_value;
 						entry[m].ebp_offset_value = memory_reg[1].offset_value;
+						entry[m].eip_section_id = memory_reg[2].section_id;
+						entry[m].eip_section_index = memory_reg[2].section_index;
 						entry[m].eip_init_value = memory_reg[2].init_value;
 						entry[m].eip_offset_value = memory_reg[2].offset_value;
 						entry[m].previous_instuction = inst_log;
 						entry[m].used = 1;
-						debug_print(DEBUG_EXE, 1, "JCD:8 used 1 EIP: 0x%lx+0x%lx\n",
+						debug_print(DEBUG_EXE, 1, "Adding entry_point:used 1 EIP: 0x%lx+0x%lx\n",
 							memory_reg[2].init_value,
 							memory_reg[2].offset_value);
 						
@@ -295,15 +304,21 @@ int process_block(struct self_s *self, struct process_state_s *process_state, ui
 				/* FIXME: Would starting a "m" be better here? */
 				for (m = 0; m < list_length; m++ ) {
 					if (0 == entry[m].used) {
+						entry[m].esp_section_id = memory_reg[0].section_id;
+						entry[m].esp_section_index = memory_reg[0].section_index;
 						entry[m].esp_init_value = memory_reg[0].init_value;
 						entry[m].esp_offset_value = memory_reg[0].offset_value;
+						entry[m].ebp_section_id = memory_reg[1].section_id;
+						entry[m].ebp_section_index = memory_reg[1].section_index;
 						entry[m].ebp_init_value = memory_reg[1].init_value;
 						entry[m].ebp_offset_value = memory_reg[1].offset_value;
+						entry[m].eip_section_id = memory_reg[2].section_id;
+						entry[m].eip_section_index = memory_reg[2].section_index;
 						entry[m].eip_init_value = inst_exe->value3.init_value;
 						entry[m].eip_offset_value = inst_exe->value3.offset_value;
 						entry[m].previous_instuction = inst_log;
 						entry[m].used = 1;
-						debug_print(DEBUG_EXE, 1, "JCD:8 used 2 EIP: 0x%lx+0x%lx\n",
+						debug_print(DEBUG_EXE, 1, "Adding entry_point:used 2 EIP: 0x%lx+0x%lx\n",
 							inst_exe->value3.init_value,
 							inst_exe->value3.offset_value);
 						break;
