@@ -337,9 +337,9 @@ int print_dis_instructions(struct self_s *self)
 	self->external_function_reg_order[3] = REG_CX;
 	self->external_function_reg_order[4] = REG_08;
 	self->external_function_reg_order[5] = REG_09;
-	self->external_functions_size = 3;
+	self->external_functions_size = 12;
 	self->external_functions =
-		calloc(3, sizeof(struct external_function_s));
+		calloc(12, sizeof(struct external_function_s));
 	self->external_functions[1].function_name = "printf";
 	self->external_functions[1].return_type = 1;
 	self->external_functions[1].fields_size = 2;
@@ -355,9 +355,78 @@ int print_dis_instructions(struct self_s *self)
 		calloc(1, sizeof(int));
 	self->external_functions[2].field_type[0] = 1; // int
 
-	self->simple_field_types_size = 6;
+	self->external_functions[3].function_name = "i2c_transfer";
+	self->external_functions[3].return_type = 1;
+	self->external_functions[3].fields_size = 3;
+	self->external_functions[3].field_type =
+		calloc(3, sizeof(int));
+	self->external_functions[3].field_type[0] = 7; // int8_t *
+	self->external_functions[3].field_type[1] = 7; // int8_t *
+	self->external_functions[3].field_type[2] = 1; // int
+
+	self->external_functions[4].function_name = "msleep";
+	self->external_functions[4].return_type = 1;
+	self->external_functions[4].fields_size = 1;
+	self->external_functions[4].field_type =
+		calloc(1, sizeof(int));
+	self->external_functions[4].field_type[0] = 1; // int
+
+	self->external_functions[5].function_name = "printk";
+	self->external_functions[5].return_type = 1;
+	self->external_functions[5].fields_size = 2;
+	self->external_functions[5].field_type =
+		calloc(2, sizeof(int));
+	self->external_functions[5].field_type[0] = 3; // char *
+	self->external_functions[5].field_type[1] = 4; // ... 
+
+	self->external_functions[6].function_name = "kfree_wrap";
+	self->external_functions[6].return_type = 1;
+	self->external_functions[6].fields_size = 1;
+	self->external_functions[6].field_type =
+		calloc(1, sizeof(int));
+	self->external_functions[6].field_type[0] = 7; // int8_t *
+
+	self->external_functions[7].function_name = "__const_udelay";
+	self->external_functions[7].return_type = 1;
+	self->external_functions[7].fields_size = 1;
+	self->external_functions[7].field_type =
+		calloc(1, sizeof(int));
+	self->external_functions[7].field_type[0] = 8; // uint64_t
+
+	self->external_functions[8].function_name = "kzalloc_wrap";
+	self->external_functions[8].return_type = 7;
+	self->external_functions[8].fields_size = 1;
+	self->external_functions[8].field_type =
+		calloc(1, sizeof(int));
+	self->external_functions[8].field_type[0] = 1; // int
+
+	self->external_functions[9].function_name = "kmalloc_wrap";
+	self->external_functions[9].return_type = 7;
+	self->external_functions[9].fields_size = 1;
+	self->external_functions[9].field_type =
+		calloc(1, sizeof(int));
+	self->external_functions[9].field_type[0] = 1; // int
+
+	self->external_functions[10].function_name = "get_random_bytes";
+	self->external_functions[10].return_type = 1;
+	self->external_functions[10].fields_size = 2;
+	self->external_functions[10].field_type =
+		calloc(2, sizeof(int));
+	self->external_functions[10].field_type[0] = 3; // char *
+	self->external_functions[10].field_type[1] = 1; // int
+
+	self->external_functions[11].function_name = "memcpy";
+	self->external_functions[11].return_type = 1;
+	self->external_functions[11].fields_size = 3;
+	self->external_functions[11].field_type =
+		calloc(3, sizeof(int));
+	self->external_functions[11].field_type[0] = 7; // int8_t *
+	self->external_functions[11].field_type[1] = 7; // int8_t *
+	self->external_functions[11].field_type[2] = 1; // int
+
+	self->simple_field_types_size = 9;
 	self->simple_field_types =
-		calloc(6, sizeof(struct simple_field_type_s));
+		calloc(9, sizeof(struct simple_field_type_s));
 	self->simple_field_types[1].integer1 = 1;
 	self->simple_field_types[1].bits = 32;
 	self->simple_field_types[2].char1 = 1;
@@ -366,6 +435,12 @@ int print_dis_instructions(struct self_s *self)
 	self->simple_field_types[3].variable_def = 1;
 	self->simple_field_types[4].variable = 1;
 	self->simple_field_types[5].pointer1 = 2;
+	self->simple_field_types[6].integer1 = 1;
+	self->simple_field_types[6].bits = 8;
+	self->simple_field_types[7].pointer1 = 6;
+	self->simple_field_types[8].integer1 = 1;
+	self->simple_field_types[8].bits = 64;
+
 	self->struct_types_size = 0;
 	self->struct_type_size = 0;
 
@@ -5367,8 +5442,8 @@ int main(int argc, char *argv[])
 			debug_print(DEBUG_MAIN, 1, "rel[%d].type         = 0x%x\n", m, reloc->type);
 			debug_print(DEBUG_MAIN, 1, "rel[%d].offset       = 0x%lx\n", m, reloc->offset);
 			debug_print(DEBUG_MAIN, 1, "rel[%d].offset_size  = 0x%lx\n", m, reloc->offset_size);
-			debug_print(DEBUG_MAIN, 1, "rel[%d].id           = 0x%x\n", m, reloc->section_id);
-			debug_print(DEBUG_MAIN, 1, "rel[%d].index        = 0x%x\n", m, reloc->section_index);
+			debug_print(DEBUG_MAIN, 1, "rel[%d].id           = 0x%lx\n", m, reloc->section_id);
+			debug_print(DEBUG_MAIN, 1, "rel[%d].index        = 0x%lx\n", m, reloc->section_index);
 			debug_print(DEBUG_MAIN, 1, "rel[%d].name         = %s\n", m, reloc->name);
 			debug_print(DEBUG_MAIN, 1, "rel[%d].value_int    = 0x%lx\n", m, reloc->value_int);
 			debug_print(DEBUG_MAIN, 1, "rel[%d].value_uint   = 0x%lx\n", m, reloc->value_uint);
