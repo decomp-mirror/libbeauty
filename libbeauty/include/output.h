@@ -29,12 +29,14 @@ extern "C" int output_cfg_dot(struct self_s *self,
                          struct label_redirect_s *label_redirect, struct label_s *labels, int entry_point);
 extern "C" int output_cfg_dot_basic(struct self_s *self, struct control_flow_node_s *nodes, int nodes_size);
 extern "C" int output_cfg_dot_basic2(struct self_s *self, struct external_entry_point_s *external_entry_point);
+extern "C" int output_cfg_dot_simple(struct self_s *self, struct external_entry_point_s *external_entry_point, int index);
 #else
 extern int label_to_string(struct label_s *label, char *string, int size);
 int output_cfg_dot(struct self_s *self,
                          struct label_redirect_s *label_redirect, struct label_s *labels, struct label_s *labels_global, int entry_point);
 int output_cfg_dot_basic(struct self_s *self, struct control_flow_node_s *nodes, int nodes_size);
 int output_cfg_dot_basic2(struct self_s *self, struct external_entry_point_s *external_entry_point, int index);
+int output_cfg_dot_simple(struct self_s *self, struct external_entry_point_s *external_entry_point, int index);
 #endif
 
 #endif /* OUTPUT_H */
