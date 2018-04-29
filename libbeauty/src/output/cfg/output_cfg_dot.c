@@ -460,16 +460,15 @@ int output_cfg_dot_simple(struct self_s *self, struct external_entry_point_s *ex
                                         "color=\"%s\", label=\"Node:0x%08x:%s\\l",
                                         node,
 					"lightgray", node, name);
-		if (external_entry_point->params_size > 0) {
-			char buffer[1024];
+		if (1 == node) {
 			tmp = dprintf(fd, "(");
-			for (n = 0; n < external_entry_point->params_size; n++) {
-				//int label_index;
-				//label_index = external_entry_point->params[n];
-				//tmp = label_to_string(&external_entry_points[entry_point].labels[label_index], buffer, 1023);
-				//dprintf(fd, "%s", buffer);
-				if (n + 1 < external_entry_point->params_size) {
-					tmp = dprintf(fd, ", ");
+			if (external_entry_point->simple_params_reg_size > 0) {
+				char buffer[1024];
+				for (n = 0; n < external_entry_point->simple_params_reg_size; n++) {
+					dprintf(fd, "r0x%x", external_entry_point->simple_params_reg[n]);
+					if (n + 1 < external_entry_point->simple_params_reg_size) {
+						tmp = dprintf(fd, ", ");
+					}
 				}
 			}
 			tmp = dprintf(fd, ")");

@@ -346,14 +346,17 @@ struct external_entry_point_s {
 	/* param types are stored in the label tip2 */
 	int params_size;
 	int *params;
-	/* params_reg_ordered_size holds the number of register params in reg_params_order[] order */ 
+	/* params_reg_ordered_size holds the number of register params in reg_params_order[] order */
 	int params_reg_ordered_size;
-	/* params_reg_ordered holds the label for each reg param ordered per reg_params_order[] */ 
+	/* params_reg_ordered holds the label for each reg param ordered per reg_params_order[] */
 	int *params_reg_ordered;
-	/* params_stack_ordered_size holds the number of stack params */ 
+	/* params_stack_ordered_size holds the number of stack params */
 	int params_stack_ordered_size;
 	int *params_stack_ordered;
-	/* reg_params_size holds the number of register params as per reg_params_order[] */ 
+	/* simple_params_reg hold the register params as they would appear in the simple cfg output */
+	int simple_params_reg_size;
+	int *simple_params_reg;
+	/* reg_params_size holds the number of register params as per reg_params_order[] */
 	int reg_params_size;
 	int param_reg_label[MAX_REG];
 	int locals_size;
@@ -368,7 +371,7 @@ struct external_entry_point_s {
 	struct loop_s *loops;
 	int nodes_size;
 	struct control_flow_node_s *nodes;
-	int member_nodes_size; 
+	int member_nodes_size;
 	/* A list of all the global nodes that are part of this function */
 	/* Provides a mapping between the global nodes list and the function nodes list. */
 	int *member_nodes;

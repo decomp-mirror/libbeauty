@@ -5297,7 +5297,108 @@ int call_params_to_locals(struct self_s *self, int entry_point, int node)
 	return 0;
 }
 
+int find_function_simple_params_reg(struct self_s *self, int entry_point)
+{
+	struct external_entry_point_s *external_entry_points = self->external_entry_points;
+	struct control_flow_node_s *nodes = external_entry_points[entry_point].nodes;
+	int nodes_size = external_entry_points[entry_point].nodes_size;
+	int node;
+	int n, n2, n3;
+	int m;
+	int found;
+	int tmp;
+	int *array1;
+	int *array2;
+	int *nodes_todo;
+	int size = 0;
+	nodes_todo = calloc(nodes_size, sizeof(int));
+	array1 = calloc(MAX_REG, sizeof(int));
+	array2 = calloc(MAX_REG, sizeof(int));
 
+	// Fill array1[] with likely candidated for params.
+	for (node = 1; node < nodes_size; node++) {
+		if (!nodes[node].valid) {
+			/* Only output nodes that are valid */
+			continue;
+		}
+		for (n = 0; n < MAX_REG; n++) {
+			if (1 == nodes[node].used_register[n].seen) {
+				debug_print(DEBUG_MAIN, 1, "entry_point 0x%x, node 0x%x:node_used_reg 0x%x:seen=0x%x\n",
+					entry_point,
+					node,
+					n,
+					nodes[node].used_register[n].seen);
+				array1[n] = 1;
+			}
+		}
+	}
+	for (n = 0; n < MAX_REG; n++) {
+		if (1 == array1[n]) {
+			debug_print(DEBUG_MAIN, 1, "processing reg 0x%x\n", n);
+			nodes_todo[0] = 1;
+			found = 0;
+			while (0 == found) {
+				node = 0;
+				for (m = 0; m < nodes_size; m++) {
+					if (nodes_todo[m]) {
+						node = nodes_todo[m];
+						nodes_todo[m] = 0;
+						break;
+					}
+				}
+				debug_print(DEBUG_MAIN, 1, "found0 node = %d\n", node);
+				if (0 == node) {
+					// finished this reg
+					found = 1;
+					continue;
+				}
+				if (1 == nodes[node].used_register[n].seen) {
+					array2[n] = 1;
+					found = 1;
+					debug_print(DEBUG_MAIN, 1, "found1 simple_params_reg 0x%x\n", n);
+					break;
+				} else if (2 == nodes[node].used_register[n].seen) {
+					found = 1;
+					debug_print(DEBUG_MAIN, 1, "found2 simple_params_reg 0x%x\n", n);
+					continue;
+				} else {
+					for (n2 = 0; n2 < nodes[node].next_size; n2++) {
+						// add_nodes_todo
+						for (n3 = 0; n3 < nodes_size; n3++) {
+							if (0 == nodes_todo[n3]) {
+								break;
+							}
+						}
+						nodes_todo[n3] = nodes[node].link_next[n2].node;
+						debug_print(DEBUG_MAIN, 1, "add_nodes_todo: %d = %d\n", n3, nodes[node].link_next[n2].node);
+					}
+				}
+			} ; // while 
+		}
+	}
+	for (n = 0; n < MAX_REG; n++) {
+		if (array2[n]) {
+			debug_print(DEBUG_MAIN, 1, "simple_params_reg 0x%x\n", n);
+		}
+	}
+	size = 0;
+	for (n = 0; n < reg_params_order_size; n++) {
+		if (array2[reg_params_order[n]]) {
+			size = n + 1;
+		}
+	}
+	debug_print(DEBUG_MAIN, 1, "size = %d\n", size);
+	external_entry_points[entry_point].simple_params_reg = calloc(size, sizeof(int));
+	for (n = 0; n < size; n++) {
+		external_entry_points[entry_point].simple_params_reg[n] = reg_params_order[n];
+	}
+	external_entry_points[entry_point].simple_params_reg_size = size;
+
+	free(nodes_todo);
+	free(array1);
+	free(array2);
+	return 0;
+}
 
 int main(int argc, char *argv[])
 {
@@ -6130,6 +6231,12 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+		if ((external_entry_points[l].valid) && (external_entry_points[l].type == 1)) {
+			tmp = find_function_simple_params_reg(self, l);
+			debug_print(DEBUG_MAIN, 1, "simple_params_reg_size = %d\n", external_entry_points[l].simple_params_reg_size);
+		}
+	}
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 		if ((external_entry_points[l].valid) && (external_entry_points[l].type == 1)) {
 			tmp = output_cfg_dot_simple(self, &external_entry_points[l], l);
