@@ -967,7 +967,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, int section_id, int section_inde
 		 * srcB = ESP
 		 * dstA = EAX
 		 */
-		ll_inst->opcode = CALL;
+		ll_inst->opcode = CALLM;
 		tmp  = convert_base(self, section_id, section_index, ll_inst, 0, dis_instructions);
 		result = tmp;
 		instruction = &dis_instructions->instruction[dis_instructions->instruction_number -  1];

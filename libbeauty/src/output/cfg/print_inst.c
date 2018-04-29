@@ -519,6 +519,28 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 #endif
 		ret = 0;
 		break;
+
+	case CALLM:
+		if (instruction->srcA.indirect ||
+			(instruction->srcB.indirect)) {
+			ret = 1;
+			break;
+		}
+		tmp = snprintf(buffer, 1023, " (%s0x%"PRIx64"/%d) (unknown)",
+			store_table[instruction->srcA.store],
+			instruction->srcA.index,
+			instruction->srcA.value_size);
+		tmp = string_cat(string, buffer, strlen(buffer));
+#if 0
+		tmp = snprintf(buffer, 1023, " %s0x%"PRIx64"/%d",
+			store_table[instruction->srcB.store],
+			instruction->srcB.index,
+			instruction->srcB.value_size);
+		tmp = string_cat(string, buffer, strlen(buffer));
+#endif
+		ret = 0;
+		break;
+
 	case NOP:
 		//tmp = snprintf(buffer, 1023, "");
 		ret = 0;

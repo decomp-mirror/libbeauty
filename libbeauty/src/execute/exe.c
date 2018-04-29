@@ -862,6 +862,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 	case JMPT:
 	case JMP:
 	case CALL:
+	case CALLM:
 	case IF:
 	case SEX:
 	case BITCAST:
@@ -2052,6 +2053,36 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 				exit(1);
 				break;
 		}
+#if 1 
+		/* FIXME: Currently this is a NOP. Need length to come from entry_point */
+		/* Get value of dstA */
+		inst->value3.start_address = instruction->dstA.index;
+		/* FIXME: get length from entry_point */
+		inst->value3.length = instruction->dstA.value_size;
+		inst->value3.init_value_type = 0;
+		inst->value3.init_value = 0;
+		inst->value3.offset_value = 0;
+		//inst->value3.value_type = inst->value1.value_type;
+		inst->value3.value_type = 0;
+		inst->value3.indirect_init_value = 0;
+		inst->value3.indirect_offset_value = 0;
+		inst->value3.ref_memory = 0;
+		inst->value3.ref_log = 0;
+		inst->value3.value_scope = 2;
+		/* Counter */
+		inst->value3.value_id = 0;
+		inst->value1.value_id = 0;
+		/* 1 - Entry Used */
+		inst->value1.valid = 1;
+		inst->value3.valid = 1;
+		put_value_RTL_instruction(self, process_state, inst);
+#endif
+		break;
+
+	case CALLM:
+		debug_print(DEBUG_OUTPUT, 1, "FIXME: CALLM not yet exe\n");
+		/* Get value of srcA */
+		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcA), &(inst->value1), 0); 
 #if 1 
 		/* FIXME: Currently this is a NOP. Need length to come from entry_point */
 		/* Get value of dstA */

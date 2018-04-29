@@ -1104,6 +1104,34 @@ int fill_node_used_register_table(struct self_s *self, int entry_point)
 				}
 				break;
 
+			/* DSTA = EAX, SRCN = parameters */
+			case CALLM:
+				/* FIXME: TODO params */
+				if ((instruction->srcA.store == STORE_REG) &&
+					(instruction->srcA.indirect == IND_DIRECT)) {
+					/* SRCA is the function pointer */
+					nodes[node].used_register[instruction->srcA.index].src = inst;
+					debug_print(DEBUG_MAIN, 1, "CALLM Seen1A:0x%"PRIx64", SRCA\n", instruction->srcA.index);
+					if (nodes[node].used_register[instruction->srcA.index].seen == 0) {
+						nodes[node].used_register[instruction->srcA.index].seen = 1;
+						nodes[node].used_register[instruction->srcA.index].size = instruction->srcA.value_size;
+						nodes[node].used_register[instruction->srcA.index].src_first = inst;
+						debug_print(DEBUG_MAIN, 1, "Set1A\n");
+					}
+				}
+
+				if ((instruction->dstA.store == STORE_REG) &&
+					(instruction->dstA.indirect == IND_DIRECT)) {
+					nodes[node].used_register[instruction->dstA.index].dst = inst;
+					debug_print(DEBUG_MAIN, 1, "CALLM Seen2:0x%"PRIx64", DST\n", instruction->dstA.index);
+					if (nodes[node].used_register[instruction->dstA.index].seen == 0) {
+						nodes[node].used_register[instruction->dstA.index].seen = 2;
+						nodes[node].used_register[instruction->dstA.index].size = instruction->dstA.value_size;
+						debug_print(DEBUG_MAIN, 1, "Set2\n");
+					}
+				}
+				break;
+
 			case IF:
 				/* This does nothing to the table */
 				break;
