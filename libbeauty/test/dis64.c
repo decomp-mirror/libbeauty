@@ -5428,6 +5428,50 @@ int find_function_simple_params_reg(struct self_s *self, int entry_point)
 	return 0;
 }
 
+int fill_in_call_params(struct self_s *self, int entry_point)
+{
+	struct external_entry_point_s *external_entry_points = self->external_entry_points;
+	struct external_entry_point_s *external_entry_point = &(external_entry_points[entry_point]);
+	struct inst_log_entry_s *inst_log_entry = self->inst_log_entry;
+	struct inst_log_entry_s *inst_log1;
+	struct instruction_s *instruction;
+	struct control_flow_node_s *nodes = external_entry_point->nodes;
+	int found = 0;
+	int count = 0;
+	int n;
+	int inst;
+	for(n = 1; n < external_entry_point->nodes_size; n++) {
+		if ((nodes[n].valid)) {
+			inst = nodes[n].inst_start;
+			found = 0;
+			do {
+				count++;
+				inst_log1 =  &inst_log_entry[inst];
+				instruction =  &inst_log1->instruction;
+				switch (instruction->opcode) {
+				case CALL:
+					debug_print(DEBUG_MAIN, 1, "CALL found: node = 0x%x, inst = 0x%x\n", n, inst);
+					break;
+				default:
+					break;
+				}
+				if (inst == nodes[n].inst_end) {
+					found = 1;
+					break;
+				}
+				if (inst_log1->next_size > 0) {
+					inst = inst_log1->next[0];
+				} else {
+					/* Exit here */
+					found = 1;
+					break;
+				}
+			} while (!found && (count < 200));
+		}
+	}
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	int n = 0;
@@ -6263,6 +6307,11 @@ int main(int argc, char *argv[])
 		if ((external_entry_points[l].valid) && (external_entry_points[l].type == 1)) {
 			tmp = find_function_simple_params_reg(self, l);
 			debug_print(DEBUG_MAIN, 1, "simple_params_reg_size = %d\n", external_entry_points[l].simple_params_reg_size);
+		}
+	}
+	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+		if ((external_entry_points[l].valid) && (external_entry_points[l].type == 1)) {
+			tmp = fill_in_call_params(self, l);
 		}
 	}
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
