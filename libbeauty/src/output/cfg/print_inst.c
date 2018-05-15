@@ -461,15 +461,14 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 		case 1:
 			switch (instruction->srcA.indirect) {
 			case IND_DIRECT:
-				tmp = snprintf(buffer, 1023, " CALL2 0x%"PRIx64":%s(",
+				tmp = snprintf(buffer, 1023, " CALL1D 0x%"PRIx64":%s(",
 					instruction->srcA.index,
 					external_entry_points[instruction->srcA.index].name);
 				tmp = string_cat(string, buffer, strlen(buffer));
 				tmp_state = 0;
 				l = instruction->srcA.index;
-				for (n = 0; n < external_entry_points[l].reg_params_size; n++) {
-					int reg = external_entry_points[l].param_reg_label[reg_params_order[n]];
-					debug_print(DEBUG_OUTPUT, 1, "reg_params_order = 0x%x\n", reg_params_order[n]);
+				for (n = 0; n < external_entry_points[l].simple_params_reg_size; n++) {
+					int reg = external_entry_points[l].simple_params_reg[n];
 					if (tmp_state > 0) {
 						snprintf(buffer, 1023, ", ");
 						tmp = string_cat(string, buffer, strlen(buffer));
@@ -503,7 +502,7 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 			}
 			break;
 		case 3:
-			tmp = snprintf(buffer, 1023, " CALL external %s(), index=0x%"PRIx64", relocated=%d",
+			tmp = snprintf(buffer, 1023, " CALL3 external %s(), index=0x%"PRIx64", relocated=%d",
 				self->external_functions[instruction->srcA.relocated_external_function].function_name,
 				instruction->srcA.index,
 				instruction->srcA.relocated);
