@@ -461,8 +461,9 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 		case 1:
 			switch (instruction->srcA.indirect) {
 			case IND_DIRECT:
-				tmp = snprintf(buffer, 1023, " CALL1D 0x%"PRIx64":%s(",
+				tmp = snprintf(buffer, 1023, " CALL1D 0x%"PRIx64":0x%x:%s(",
 					instruction->srcA.index,
+					instruction->srcA.relocated_external_function,
 					external_entry_points[instruction->srcA.index].name);
 				tmp = string_cat(string, buffer, strlen(buffer));
 				tmp_state = 0;
@@ -485,11 +486,16 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 				tmp = snprintf(buffer, 1023, "(*r0x%"PRIx64") ();", 
 					instruction->srcA.index);
 				tmp = string_cat(string, buffer, strlen(buffer));
+				debug_print(DEBUG_OUTPUT, 1, "Print inst fails.\n");
+				exit(1);
 				break;
 			default:
-				tmp = snprintf(buffer, 1023, " CALL internal FAILED1 index=0x%"PRIx64"",
+				tmp = snprintf(buffer, 1023, " CALL internal FAILED1 srcA.indirect=0x%x, index=0x%"PRIx64"",
+					instruction->srcA.indirect,
 					instruction->srcA.index);
 				tmp = string_cat(string, buffer, strlen(buffer));
+				debug_print(DEBUG_OUTPUT, 1, "Print inst fails.\n");
+				exit(1);
 				break;
 			if (instruction->srcA.store == STORE_REG) {
 				tmp = snprintf(buffer, 1023, " (%s0x%"PRIx64"/%d) ();",
@@ -497,9 +503,33 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 					instruction->srcA.index,
 					instruction->srcA.value_size);
 				tmp = string_cat(string, buffer, strlen(buffer));
+				debug_print(DEBUG_OUTPUT, 1, "Print inst fails.\n");
+				exit(1);
 			}
 			break;
 			}
+			break;
+		case 2:
+			tmp = snprintf(buffer, 1023, " CALL2D 0x%"PRIx64":0x%x:%s(",
+				instruction->srcA.index,
+				instruction->srcA.relocated_external_function,
+				external_entry_points[instruction->srcA.index].name);
+			tmp = string_cat(string, buffer, strlen(buffer));
+			tmp_state = 0;
+			l = instruction->srcA.index;
+			for (n = 0; n < external_entry_points[l].simple_params_reg_size; n++) {
+				int reg = external_entry_points[l].simple_params_reg[n];
+				if (tmp_state > 0) {
+					snprintf(buffer, 1023, ", ");
+					tmp = string_cat(string, buffer, strlen(buffer));
+				}
+				snprintf(buffer, 1023, "r0x%x",
+						reg);
+				tmp = string_cat(string, buffer, strlen(buffer));
+				tmp_state++;
+			}
+			tmp = snprintf(buffer, 1023, ");");
+			tmp = string_cat(string, buffer, strlen(buffer));
 			break;
 		case 3:
 			tmp = snprintf(buffer, 1023, " CALL3 external %s(), index=0x%"PRIx64", relocated=%d",

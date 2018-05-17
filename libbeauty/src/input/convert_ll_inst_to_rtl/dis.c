@@ -128,10 +128,45 @@ int lookup_external_function(struct self_s *self, const char *symbol_name, int *
 	return found;
 }
 
+int lookup_external_entry_point_function(struct self_s *self, uint64_t section_id, uint64_t section_index, char *name, uint64_t value_uint, int *result)
+{
+	int found = 1; // 1 = not-found, 0 = found.
+	int tmp;
+	int len1, len2;
+	int l;
+	debug_print(DEBUG_INPUT_DIS, 1, "looking for external entry point %s\n", name);
+	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+        if (self->external_entry_points[l].valid && self->external_entry_points[l].type == 1) {
+			if ((self->external_entry_points[l].section_id == section_id) &&
+				(self->external_entry_points[l].section_index == section_index) &&
+				(self->external_entry_points[l].value == value_uint)) {
+				len1 = strlen(name);
+				len2 = strlen(self->external_entry_points[l].name);
+				if (len1 == len2) {
+					tmp = strncmp(name, self->external_entry_points[l].name, len2);
+					if (!tmp) {
+						*result = l;
+						debug_print(DEBUG_INPUT_DIS, 1, "found at %x\n", l);
+						found = 0;
+						break;
+					}
+				}
+			}
+		}
+	}
+	return found;
+}
+
 int search_relocation_table(struct self_s *self, uint64_t section_id, uint64_t section_index, uint8_t *base_address, uint64_t offset, uint64_t size, uint64_t *reloc_index)
 {
 	int n;
 	struct reloc_s *reloc = self->sections[section_index].reloc_entry;
+	debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: params: section_id=0x%lx, section_index=0x%lx, base_address = %p, offset = 0x%lx, size=0x%lx\n",
+		section_id,
+		section_index,
+		base_address,
+		offset,
+		size);
 	for (n = 0; n < self->sections[section_index].reloc_size; n++) {
 		if (reloc[n].offset == offset) {
 			*reloc_index = n;
@@ -217,11 +252,28 @@ int convert_operand(struct self_s *self, int section_id, int section_index, uint
 						exit(1);
 					}
 				} else {
+					int result = 0;
 					inst_operand->relocated = 2; /* Internal function / variable */
 					//inst_operand->relocated_area = reloc_table_entry->relocated_area;
 					inst_operand->relocated_section_id = reloc_table_entry->section_id;
 					inst_operand->relocated_section_index = reloc_table_entry->section_index;
 					inst_operand->relocated_index = reloc_index;
+					tmp = lookup_external_entry_point_function(self,
+															reloc_table_entry->section_id,
+															reloc_table_entry->section_index,
+															reloc_table_entry->name,
+															reloc_table_entry->value_uint,
+															&result);
+					if (!tmp) {
+						inst_operand->index = result;
+						inst_operand->relocated_external_function = result;
+						debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocated 2 found function %s at entry %d\n",
+									reloc_table_entry->name,
+									result);
+					} else {
+						debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocated 2 failed to find function %s\n", reloc_table_entry->name);
+						exit(1);
+					}
 				}
 				//exit(1);
 			}
@@ -947,6 +999,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, int section_id, int section_inde
 		instruction->flags = 0;
 		/* Note: ll_inst->srcB due to the way opcode_form == 1 is processed. */
 		convert_operand(self, section_id, section_index, ll_inst->address, &(ll_inst->srcB), 0, &(instruction->srcA));
+		debug_print(DEBUG_INPUT_DIS, 1, "CALL instruction->srcA.index = 0x%lx\n", instruction->srcA.index);
 		instruction->srcB.store = STORE_REG;
 		instruction->srcB.indirect = IND_DIRECT;
 		instruction->srcB.indirect_size = 64;
