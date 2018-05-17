@@ -23,6 +23,8 @@ gcc -c -g -O0 -o test21.o test21.c
 gcc -c -g -O0 -o test22.o test22.c
 gcc -c -g -O0 -o test23.o test23.c
 gcc -c -g -O0 -o test24.o test24.c
+gcc -c -g -O0 -o test25.o test25.c
+gcc -c -g -O0 -o test26.o test26.c
 gcc -c -g -O0 -o test30.o test30.c
 gcc -c -g -O0 -o test33.o test33.c
 gcc -c -g -O0 -o test34.o test34.c
