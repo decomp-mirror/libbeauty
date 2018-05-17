@@ -1987,6 +1987,8 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		//inst->value1.init_value = value->offset_value;
 		switch (instruction->srcA.relocated) {
 			case 2:
+				/* Do nothing for case 2, because we have already done this at decode time */
+#if 0
 				/* Link the call destination to a valid external_entry_point if possible */
 				for (n = 0; n < EXTERNAL_ENTRY_POINTS_MAX; n++) {
 					struct external_entry_point_s *external_entry_points = self->external_entry_points;
@@ -1999,6 +2001,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 							break;
 					}
 				}
+#endif
 				break;
 			case 0:
 				/* Link the call destination to a valid external_entry_point if possible */
