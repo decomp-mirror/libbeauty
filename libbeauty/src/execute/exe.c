@@ -804,6 +804,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 	int n;
 	struct extension_call_s *call;
 	struct external_function_s *external_function;
+	uint64_t eip;
 
 	//memory_text = process_state->memory_text;
 	//memory_stack = process_state->memory_stack;
@@ -811,6 +812,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 	//memory_data = process_state->memory_data;
 	//memory_used = process_state->memory_used;
 	int ret = 0;
+	eip = memory_reg[2].offset_value;
 
 	instruction = &inst->instruction;
 
@@ -1975,7 +1977,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		 * value3 = value3
 		 */
 		/* Get value of srcA */
-		//ret = get_value_RTL_instruction(self, process_state, &(instruction->srcA), &(inst->value1), 0);
+		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcA), &(inst->value1), 0);
 		//ret = get_value_RTL_instruction(self, process_state, &(instruction->srcB), &(inst->value2), 1);
 		//value = search_store(memory_reg,
 		//		REG_IP,
@@ -2006,10 +2008,13 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 			case 0:
 				/* Link the call destination to a valid external_entry_point if possible */
 				if (instruction->srcA.indirect == IND_DIRECT) {
-					debug_print(DEBUG_OUTPUT, 1, "CALL: SCANNING for call_offset\n");
+					debug_print(DEBUG_OUTPUT, 1, "CALL: SCANNING eip = 0x%lx, init_value = 0x%lx, offset_value = 0x%lx\n",
+						eip,
+						inst->value1.init_value,
+						inst->value1.offset_value);
 					for (n = 0; n < EXTERNAL_ENTRY_POINTS_MAX; n++) {
 						struct external_entry_point_s *external_entry_points = self->external_entry_points;
-						uint64_t call_offset = inst->value1.init_value + inst->value1.offset_value;
+						uint64_t call_offset = eip + inst->value1.init_value + inst->value1.offset_value;
 						if ((external_entry_points[n].valid != 0) &&
 							(external_entry_points[n].type == 1) &&
 							(external_entry_points[n].value == call_offset)) {
