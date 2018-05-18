@@ -272,7 +272,7 @@ int convert_operand(struct self_s *self, int section_id, int section_index, uint
 									result);
 					} else {
 						debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocated 2 failed to find function %s\n", reloc_table_entry->name);
-						exit(1);
+						//exit(1);
 					}
 				}
 				//exit(1);
