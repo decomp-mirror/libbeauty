@@ -1086,18 +1086,18 @@ int output_inst_in_c(struct self_s *self, struct process_state_s *process_state,
 			}
 			/* Search for EAX */
 			debug_print(DEBUG_OUTPUT, 1, "call index = 0x%"PRIx64"\n", instruction->srcA.index);
-			tmp = instruction->srcA.index;
-			if ((tmp >= 0) && (tmp < EXTERNAL_ENTRY_POINTS_MAX)) {
-				debug_print(DEBUG_OUTPUT, 1, "params size = 0x%x\n",
-					external_entry_points[instruction->srcA.index].params_size);
-			}
-			debug_print(DEBUG_OUTPUT, 1, "\t");
+			//tmp = instruction->srcA.index;
+			//if ((tmp >= 0) && (tmp < EXTERNAL_ENTRY_POINTS_MAX)) {
+			//	debug_print(DEBUG_OUTPUT, 1, "params size = 0x%x\n",
+			//		external_entry_points[instruction->srcA.index].params_size);
+			//}
+			//debug_print(DEBUG_OUTPUT, 1, "\t");
 			tmp = dprintf(fd, "\t");
 			value_id = inst_log1->value3.value_id;
 			tmp = get_label(value_id, label_redirect, labels, labels_global, &label);
 			tmp = label_to_string(label, buffer, 1023);
 			tmp = dprintf(fd, "%s", buffer);
-			debug_print(DEBUG_OUTPUT, 1, " = ");
+			debug_print(DEBUG_OUTPUT, 1, " = \n");
 			tmp = dprintf(fd, " = ");
 			if (IND_DIRECT == instruction->srcA.indirect) {
 				/* A direct call */
@@ -1120,10 +1120,12 @@ int output_inst_in_c(struct self_s *self, struct process_state_s *process_state,
 						exit(1);
 					}
 
+					debug_print(DEBUG_OUTPUT, 1, "params_reg_size = 0x%x\n", call->params_reg_size);
 					tmp_state = 0;
 					for (n2 = 0; n2 < call->params_reg_size; n2++) {
 						struct label_s *label;
 						value_id = call->params_reg[n2];
+						debug_print(DEBUG_OUTPUT, 1, "value_id = 0x%lx\n", value_id);
 						tmp = get_label(value_id, label_redirect, labels, labels_global, &label);
 						if (tmp_state > 0) {
 							dprintf(fd, ", ");
@@ -1132,6 +1134,7 @@ int output_inst_in_c(struct self_s *self, struct process_state_s *process_state,
 						tmp = dprintf(fd, "%s", buffer);
 						tmp_state++;
 					}
+					debug_print(DEBUG_OUTPUT, 1, "params_stack_size = 0x%x\n", call->params_stack_size);
 					for (n2 = 0; n2 < call->params_stack_size; n2++) {
 						uint64_t offset;
 						if (tmp_state > 0) {
@@ -1152,6 +1155,8 @@ int output_inst_in_c(struct self_s *self, struct process_state_s *process_state,
 				}
 			} else {
 				/* A indirect call via a function pointer or call table. */
+				debug_print(DEBUG_OUTPUT, 1, "Indirect call not handled\n");
+				exit(1);
 				tmp = dprintf(fd, "(*");
 				value_id = inst_log1->value1.value_id;
 				tmp = get_label(value_id, label_redirect, labels, labels_global, &label);

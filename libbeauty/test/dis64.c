@@ -1853,7 +1853,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 	struct inst_log_entry_s *inst_log_entry = self->inst_log_entry;
 	struct label_redirect_s *label_redirect = external_entry_point->label_redirect;
 	struct label_s *labels = external_entry_point->labels;
-	int m;
+	int l, m, n;
 	struct inst_log_entry_s *inst_log1;
 	struct instruction_s *instruction;
 	int variable_id = external_entry_point->variable_id;
@@ -1864,6 +1864,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 
 	/* n is the node to process */
 	int inst;
+	int size;
 	struct label_s label;
 	int found = 0, ret = 1;
 	int reg_tracker[MAX_REG];
@@ -2691,9 +2692,8 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 			 */
 			if (!(inst_log1->extension)) {
 				debug_print(DEBUG_MAIN, 1, "CALL no extension set\n");
-				exit(1);
+				inst_log1->extension = calloc(1, sizeof(struct extension_call_s));
 			}
-			//inst_log1->extension = calloc(1, sizeof(struct extension_call_s));
 			call = inst_log1->extension;
 			for (m = 0; m < MAX_REG; m++) {
 				call->reg_tracker[m] = reg_tracker[m];
@@ -2706,7 +2706,28 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 						call->reg_tracker[m]);
 				}
 			}
-			debug_print(DEBUG_MAIN, 1, "first reg 0x%x = 0x%x value\n", call->params_reg[0], call->reg_tracker[call->params_reg[0]]);
+			switch (instruction->srcA.relocated) {
+			case 1:
+				l = instruction->srcA.index;
+				size = self->external_entry_points[l].simple_params_reg_size;
+				call->params_reg = calloc(size, sizeof(int));
+				call->params_reg_size = size;
+				for (n = 0; n < size; n++) {
+					int reg = self->external_entry_points[l].simple_params_reg[n];
+					int tmp_label = call->reg_tracker[reg];
+					call->params_reg[n] = tmp_label;
+				}
+				break;
+
+			default:
+				debug_print(DEBUG_MAIN, 1, "srcA.relocated = %d\n", instruction->srcA.relocated);
+				exit(1);
+				break;
+			}
+
+			if (call->params_reg_size > 0) {
+				debug_print(DEBUG_MAIN, 1, "first reg 0x%x = 0x%x value\n", call->params_reg[0], call->reg_tracker[call->params_reg[0]]);
+			}
 			//debug_print(DEBUG_MAIN, 1, "CALL exiting\n");
 			//exit(1);
 			/* Used to update the reg_tracker while stepping through the assign src */
@@ -2815,7 +2836,7 @@ int check_domain(struct label_redirect_s *label_redirect)
 	if (1 != label_redirect->domain) {
 		debug_print(DEBUG_MAIN, 1, "check_domain failed 0x%lx\n", label_redirect->domain);
 		printf("check_domain failed\n");
-		assert(0);
+		//assert(0);
 		exit(1);
 	}
 	return 0;
@@ -5228,21 +5249,21 @@ int call_params_to_locals(struct self_s *self, int entry_point, int node)
 	int inst;
 	struct label_s *label;
 	int found = 0;
+	int tmp;
 	debug_print(DEBUG_MAIN, 1, "PARAMS: entry_point = 0x%x, node = 0x%x\n", entry_point, node);
-	debug_print(DEBUG_MAIN, 1, "not yet handled\n");
-	exit(1);
 
 	inst = nodes[node].inst_start;
 	do {
 		inst_log1 =  &inst_log_entry[inst];
 		instruction =  &inst_log1->instruction;
+		debug_print(DEBUG_MAIN, 1, "inst = 0x%x\n", inst);
 		switch (instruction->opcode) {
 		case CALL:
 			switch (instruction->srcA.relocated) {
 			case 1:
 				debug_print(DEBUG_MAIN, 1, "relocated = %d\n", instruction->srcA.relocated);
-				//debug_print(DEBUG_MAIN, 1, "PRINTING INST CALL\n");
-				//tmp = print_inst(self, instruction, n, labels);
+				debug_print(DEBUG_MAIN, 1, "PRINTING INST CALL\n");
+				tmp = print_inst(self, instruction, inst, labels);
 				//if (instruction->srcA.relocated != 1) {
 				//	break;
 				//}
@@ -5300,11 +5321,25 @@ int call_params_to_locals(struct self_s *self, int entry_point, int node)
 					}
 				}
 				break;
+			case 2:
+				debug_print(DEBUG_MAIN, 1, "relocated = %d\n", instruction->srcA.relocated);
+				debug_print(DEBUG_MAIN, 1, "PRINTING INST CALL\n");
+				tmp = print_inst(self, instruction, inst, labels);
+				//if (instruction->srcA.relocated != 1) {
+				//	break;
+				//}
+				debug_print(DEBUG_MAIN, 1, "not yet handled\n");
+				exit(1);
+				break;
 			case 3:
 				debug_print(DEBUG_MAIN, 1, "relocated = %d\n", instruction->srcA.relocated);
+				debug_print(DEBUG_MAIN, 1, "not yet handled\n");
+				exit(1);
 				break;
 			default:
 				debug_print(DEBUG_MAIN, 1, "relocated = %d\n", instruction->srcA.relocated);
+				debug_print(DEBUG_MAIN, 1, "not yet handled\n");
+				exit(1);
 				break;
 			}
 
@@ -5466,7 +5501,7 @@ int fill_in_call_params(struct self_s *self, int entry_point)
 					found = 1;
 					break;
 				}
-			} while (!found && (count < 200));
+			} while (!found && (count < 20000)); // FIXME: What should the safety limit be?
 		}
 	}
 	return 0;
@@ -6319,8 +6354,8 @@ int main(int argc, char *argv[])
 			tmp = output_cfg_dot_simple(self, &external_entry_points[l], l);
 		}
 	}
-	debug_print(DEBUG_MAIN, 1, "Exiting before assigning labels\n");
-	exit(1);
+	//debug_print(DEBUG_MAIN, 1, "Exiting before assigning labels\n");
+	//exit(1);
 	/************************************************************
 	 * This section deals with starting true SSA.
 	 * This bit sets the valid_id to 0 for both dst and src.
@@ -7309,6 +7344,7 @@ int main(int argc, char *argv[])
 	 * e.g. Change local0011 = function(param_reg0040);
 	 *      to     local0011 = function(local0009);
 	 ***************************************************/
+#if 0
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 		if (external_entry_points[l].valid && external_entry_points[l].type == 1) {
 			for(n = 1; n < external_entry_points[l].nodes_size; n++) {
@@ -7324,6 +7360,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+#endif
 	/**************************************************
 	 * This section deals with variable types, scanning forwards
 	 * FIXME: Need to make this a little more intelligent

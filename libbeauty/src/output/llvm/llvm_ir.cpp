@@ -473,8 +473,6 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: OPCODE = 0x%x:CALL\n", inst, inst_log1->instruction.opcode);
 		switch (inst_log1->instruction.srcA.relocated) {
 		case 1: {
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "Not yet handled\n");
-			exit(1);
 			struct extension_call_s *call_info = static_cast<struct extension_call_s *> (inst_log1->extension);
 			std::vector<Value*> vector_params;
 			int function_to_call = 0;
