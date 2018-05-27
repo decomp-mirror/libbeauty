@@ -476,8 +476,9 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			struct extension_call_s *call_info = static_cast<struct extension_call_s *> (inst_log1->extension);
 			std::vector<Value*> vector_params;
 			int function_to_call = 0;
+			function_to_call = inst_log1->instruction.srcA.index;
 
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: params_size = 0x%x:0x%x\n", inst, call_info->params_reg_size, declaration[0].FT->getNumParams());
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: params_size = 0x%x:0x%x\n", inst, call_info->params_reg_size, declaration[function_to_call].FT->getNumParams());
 			for (n = 0; n < call_info->params_reg_size; n++) {
 				tmp = check_domain(&(external_entry_point->label_redirect[call_info->params_reg[n]]));
 				value_id = external_entry_point->label_redirect[call_info->params_reg[n]].index;
@@ -488,12 +489,12 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 				}
 				vector_params.push_back(value[value_id]);
 			}
-			PointerType* PointerTy_1 = PointerType::get(IntegerType::get(mod->getContext(), 64), 0);
+			PointerType* PointerTy_1 = PointerType::get(IntegerType::get(mod->getContext(), 8), 0);
 			ConstantPointerNull* const_ptr_5 = ConstantPointerNull::get(PointerTy_1);
 			vector_params.push_back(const_ptr_5); /* EIP */
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: args_size = 0x%lx\n", inst, vector_params.size());
 			tmp = label_to_string(&external_entry_point->labels[inst_log1->value3.value_id], buffer, 1023);
-			declaration[0].F->print(OS1);
+			declaration[function_to_call].F->print(OS1);
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 			Buf1.clear();
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: declaration dump done.\n", inst);
@@ -505,11 +506,6 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 					Buf1.clear();
 				}
 			}
-			function_to_call = 0;
-			if ((1 == inst_log1->instruction.srcA.relocated) &&
-				(STORE_DIRECT == inst_log1->instruction.srcA.store)) {
-				function_to_call = inst_log1->instruction.srcA.index;
-			}
 			CallInst* call_inst = builder->CreateCall(declaration[function_to_call].F, vector_params, buffer);
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: call_inst %p\n", inst, call_inst);
 
@@ -518,9 +514,12 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			dstA = call_inst;
 			value[inst_log1->value3.value_id] = dstA;
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: dstA %p\n", inst, dstA);
+			dstA->getType()->print(OS1);
 			sprint_value(OS1, dstA);
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
 			Buf1.clear();
+			//debug_print(DEBUG_OUTPUT_LLVM, 1, "exit(1)\n");
+			//exit(1);
 			break;
 			}
 		case 3: { // For external call()
@@ -1523,6 +1522,7 @@ int LLVM_ir_export::output(struct self_s *self)
 			}
 		}
 	}
+	/* Initialise the function type declarations */
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 		if ((external_entry_points[l].valid != 0) &&
 			(external_entry_points[l].type == 1)) {
@@ -1550,6 +1550,7 @@ int LLVM_ir_export::output(struct self_s *self)
 			declaration[l].FT = FT;
 		}
 	}
+	/* Initialise the function with parameters declarations */
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 		if ((external_entry_points[l].valid != 0) &&
 			(external_entry_points[l].type == 1)) {
