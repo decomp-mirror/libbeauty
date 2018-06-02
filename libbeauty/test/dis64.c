@@ -2981,7 +2981,7 @@ int tip_result_print(struct self_s *self, int entry_point)
 			continue;
 		}
 		tmp = label_to_string(&(labels[tip_this->associated_label]), &(buffer[0]), 1023);
-		debug_print(DEBUG_ANALYSE_TIP, 1, "tip:0x%x, associated_label = 0x%lx:%s, integer = 0x%lx, integer_size = 0x%lx, pointer = 0x%lx, pointer_to_tip = 0x%lx, probability = 0x%x, rule_size = 0x%x\n",
+		debug_print(DEBUG_ANALYSE_TIP, 1, "tip:0x%x, associated_label = 0x%lx:%s, integer = 0x%lx, integer_size = 0x%lx, pointer = 0x%lx, pointer_to_tip = 0x%lx, probability = 0x%x, rule_size = 0x%lx\n",
 			l,
 			tip_this->associated_label,
 			buffer,
@@ -3207,6 +3207,11 @@ int tip_rules_process(struct self_s *self, int entry_point)
 	struct instruction_s *instruction;
 	int l,m;
 	int size;
+	uint64_t index;
+	uint64_t lab_pointer;
+	uint64_t size_bits;
+	int return_index;
+
 
 	debug_print(DEBUG_ANALYSE_TIP, 1, "entered\n");
 
@@ -3221,21 +3226,47 @@ int tip_rules_process(struct self_s *self, int entry_point)
 			rule_this = &(tip_this->rules[m]);
 			inst_log1 =  &inst_log_entry[rule_this->inst_number];
 			instruction =  &inst_log1->instruction;
-			if (rule_this->pointer) {
-				tip_this->pointer = 1;
-				if (rule_this->pointer_to_tip2) {
-					tip_this->pointer_to_tip = rule_this->pointer_to_tip2;
-					/* A pointer has no size yet */
-					tip_this->integer_size = 0;
-				}
-			} else {
-				if (rule_this->size_bits) {
-					debug_print(DEBUG_ANALYSE_TIP, 1, "0x%x:0x%x size = 0x%x\n", l, m, rule_this->size_bits);
-					if ((size) && (rule_this->size_bits != size)) {
-						printf("integer size varying. Need to add TRUNC or ZEXT or SEX in.\n");
-						exit(1);
+			debug_print(DEBUG_ANALYSE_TIP, 1, "Inst 0x%x: Opcode 0x%x\n", rule_this->inst_number, instruction->opcode);
+			switch (instruction->opcode) {
+			case CALL:
+				/* FIXME: We should really do this in the order of depth first using the call dependancy graph.*/
+				switch (instruction->srcA.relocated) {
+				case 1:
+					return_index = self->external_entry_points[instruction->srcA.index].function_return_type;
+					lab_pointer = self->external_entry_points[instruction->srcA.index].tip2[return_index].pointer;
+					size_bits = self->external_entry_points[instruction->srcA.index].tip2[return_index].integer_size;
+					if (lab_pointer) {
+						/* Pointer type */
+						rule_this->pointer = 1;
+					} else {
+						/* Integer type */
+						rule_this->size_bits = size_bits;
+						debug_print(DEBUG_ANALYSE_TIP, 1, "Setting TIP to 0x%x bits\n", rule_this->size_bits);
 					}
-					size = rule_this->size_bits;
+					break;
+				default:
+					debug_print(DEBUG_ANALYSE_TIP, 1, "CALL type not implemented yet relocated = 0x%x\n", instruction->srcA.relocated);
+					exit(1);
+					break;
+				}
+				// Fall thought
+			default:
+				if (rule_this->pointer) {
+					tip_this->pointer = 1;
+					if (rule_this->pointer_to_tip2) {
+						tip_this->pointer_to_tip = rule_this->pointer_to_tip2;
+						/* A pointer has no size yet */
+						tip_this->integer_size = 0;
+					}
+				} else {
+					if (rule_this->size_bits) {
+						debug_print(DEBUG_ANALYSE_TIP, 1, "0x%x:0x%x size = 0x%x\n", l, m, rule_this->size_bits);
+						if ((size) && (rule_this->size_bits != size)) {
+							printf("integer size varying. Need to add TRUNC or ZEXT or SEX in.\n");
+							exit(1);
+						}
+						size = rule_this->size_bits;
+					}
 				}
 			}
 		}
@@ -3451,7 +3482,7 @@ int build_tip2_table(struct self_s *self, int entry_point, int node)
 			/* FIXME: No info yet. */
 			value_id3 = inst_log1->value3.value_id;
 			//size_bits3 = instruction->dstA.value_size;
-			size_bits3 = 32; // FIXME. Need to derive this
+			size_bits3 = 0; // FIXME. Need to derive this
 			tmp = rule_add(self, entry_point, node, inst, 0, 3, value_id3, 0, 0, 0, 0, 0, size_bits3);
 			ret = 0;
 			break;
@@ -6715,6 +6746,20 @@ int main(int argc, char *argv[])
 					break;
 				}
 			}
+		}
+	}
+
+	/* For the second time, once function params and return types are discovered */
+	/* Process TIP rules */
+	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+		if (external_entry_points[l].valid && external_entry_points[l].type == 1) {
+			tip_rules_process(self, l);
+		}
+	}
+	/* Print TIP results */
+	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
+		if (external_entry_points[l].valid && external_entry_points[l].type == 1) {
+			tip_result_print(self, l);
 		}
 	}
 
