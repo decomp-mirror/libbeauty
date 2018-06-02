@@ -2708,6 +2708,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 			}
 			switch (instruction->srcA.relocated) {
 			case 1:
+			case 2:
 				l = instruction->srcA.index;
 				size = self->external_entry_points[l].simple_params_reg_size;
 				call->params_reg = calloc(size, sizeof(int));
@@ -3232,6 +3233,7 @@ int tip_rules_process(struct self_s *self, int entry_point)
 				/* FIXME: We should really do this in the order of depth first using the call dependancy graph.*/
 				switch (instruction->srcA.relocated) {
 				case 1:
+				case 2:
 					return_index = self->external_entry_points[instruction->srcA.index].function_return_type;
 					lab_pointer = self->external_entry_points[instruction->srcA.index].tip2[return_index].pointer;
 					size_bits = self->external_entry_points[instruction->srcA.index].tip2[return_index].integer_size;
