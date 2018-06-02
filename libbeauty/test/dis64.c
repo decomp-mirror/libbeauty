@@ -2972,7 +2972,7 @@ int tip_result_print(struct self_s *self, int entry_point)
 	int tmp;
 	char buffer[1024];
 
-	debug_print(DEBUG_ANALYSE_TIP, 1, "entered\n");
+	debug_print(DEBUG_ANALYSE_TIP, 1, "entered function 0x%x:%s\n", entry_point, external_entry_point->name);
 
 	for(l = 0; l < 1000; l++) {
 		tip_this = &(tip[l]);
@@ -2981,7 +2981,7 @@ int tip_result_print(struct self_s *self, int entry_point)
 			continue;
 		}
 		tmp = label_to_string(&(labels[tip_this->associated_label]), &(buffer[0]), 1023);
-		debug_print(DEBUG_ANALYSE_TIP, 1, "tip:0x%x, associated_label = 0x%lx:%s, integer = 0x%lx, integer_size = 0x%lx, pointer = 0x%lx, pointer_to_tip = 0x%lx, probability = 0x%x\n",
+		debug_print(DEBUG_ANALYSE_TIP, 1, "tip:0x%x, associated_label = 0x%lx:%s, integer = 0x%lx, integer_size = 0x%lx, pointer = 0x%lx, pointer_to_tip = 0x%lx, probability = 0x%x, rule_size = 0x%x\n",
 			l,
 			tip_this->associated_label,
 			buffer,
@@ -2989,7 +2989,22 @@ int tip_result_print(struct self_s *self, int entry_point)
 			tip_this->integer_size,
 			tip_this->pointer,
 			tip_this->pointer_to_tip,
-			tip_this->probability);
+			tip_this->probability,
+			tip_this->rule_size);
+		for (m = 0; m < tip_this->rule_size; m++) {
+			debug_print(DEBUG_ANALYSE_TIP, 1, "    Rule 0x%x node = 0x%x, inst = 0x%x, phi = 0x%x, operand = 0x%x, tipA_derived_from = 0x%x, tipB_derived_from = 0x%x, tip_derived_from_this = 0x%x, pointer = 0x%x, pointer_to_tip2 = 0x%x, size_bits = 0x%x\n",
+				m,
+				tip_this->rules[m].node,
+				tip_this->rules[m].inst_number,
+				tip_this->rules[m].phi_number,
+				tip_this->rules[m].operand,
+				tip_this->rules[m].tipA_derived_from,
+				tip_this->rules[m].tipB_derived_from,
+				tip_this->rules[m].tip_derived_from_this,
+				tip_this->rules[m].pointer,
+				tip_this->rules[m].pointer_to_tip2,
+				tip_this->rules[m].size_bits);
+		}
 	}
 	return 0;
 }
@@ -3434,6 +3449,10 @@ int build_tip2_table(struct self_s *self, int entry_point, int node)
 
 		case CALL:
 			/* FIXME: No info yet. */
+			value_id3 = inst_log1->value3.value_id;
+			//size_bits3 = instruction->dstA.value_size;
+			size_bits3 = 32; // FIXME. Need to derive this
+			tmp = rule_add(self, entry_point, node, inst, 0, 3, value_id3, 0, 0, 0, 0, 0, size_bits3);
 			ret = 0;
 			break;
 
@@ -6691,7 +6710,7 @@ int main(int argc, char *argv[])
 				label_index = function_find_return_label(self, &external_entry_points[l], n);
 				if (label_index) {
 					/* Found the return */
-					debug_print(DEBUG_MAIN, 1, "function_return: 0x%lx\n", label_index);
+					debug_print(DEBUG_MAIN, 1, "function_return: 0x%x:0x%lx\n", l, label_index);
 					external_entry_points[l].function_return_type = label_index;
 					break;
 				}
