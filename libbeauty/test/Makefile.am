@@ -8,7 +8,7 @@ AM_CXXFLAGS = -I$(top_srcdir)/test -O0 -g3 -Wall -fno-rtti -std=c++11
 #bin_PROGRAMS = dis32 dis64 bf
 #noinst_PROGRAMS = dis64 test_id test_id_arm mem test_case
 #noinst_PROGRAMS = dis64 test_id test_case build_reg_table
-noinst_PROGRAMS = dis64 test_id test_case test_llvm_builder
+noinst_PROGRAMS = dis64 test_id test_case test_llvm_builder llvm_test
 #noinst_PROGRAMS = dis64 test_case
 
 #noinst_HEADERS = \
@@ -36,6 +36,9 @@ test_case_SOURCES = \
 
 test_llvm_builder_SOURCES = \
 	test_llvm_builder.cpp
+
+llvm_test_SOURCES = \
+	llvm_test.cpp
 
 #build_reg_table_SOURCES = \
 #	build_reg_table.cpp
@@ -72,6 +75,7 @@ test_llvm_builder_LDADD = -L$(libdir) -L/usr/lib/llvm-5.0/lib \
 #test_case_LDADD = -L/usr/local/lib -lz -ldl -lLLVMX86AsmParser -lLLVMX86Desc -lLLVMX86Info \
 #		 -lLLVMMCDisassembler -lLLVMX86Disassembler -lLLVMSupport -L/usr/local/lib/ -lstdc++
 test_case_LDADD = -L$(libdir) -L/usr/lib/llvm-5.0/lib -lz -ldl -lLLVM-5.0 -lstdc++
+llvm_test_LDADD = -L$(libdir) -L/usr/lib/llvm-5.0/lib -lz -ldl -lLLVM-5.0 -lstdc++
 
 #build_reg_table_LDADD = -L$(libdir) -lz -ldl -lLLVM-3.5svn -L/usr/local/lib/ -lstdc++
 #mem_LDADD = -L$(libdir) -lz -ldl -lLLVM-3.2 -L/usr/lib/llvm-3.2/lib -lstdc++
@@ -91,6 +95,7 @@ test_id_LDFLAGS = @MODULE_LDFLAGS@ -O0 -Wall -fno-rtti $(common_LDFLAGS)
 test_llvm_builder_LDFLAGS = @MODULE_LDFLAGS@ -O0 -Wall -fno-rtti
 #test_id_arm_LDFLAGS = @MODULE_LDFLAGS@ -O0 -Wall -fno-rtti
 test_case_LDFLAGS = @MODULE_LDFLAGS@ -O0 -Wall -fno-rtti
+llvm_test_LDFLAGS = @MODULE_LDFLAGS@ -O0 -Wall -fno-rtti
 #build_reg_table_LDFLAGS = @MODULE_LDFLAGS@ -O0 -Wall -fno-rtti
 #mem_LDFLAGS = @MODULE_LDFLAGS@ -O0 -Wall -fno-rtti
 
