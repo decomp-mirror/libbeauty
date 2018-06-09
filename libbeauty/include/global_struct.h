@@ -33,6 +33,10 @@
 #define MAX_REG 0x1e0
 #define EXTERNAL_ENTRY_POINTS_MAX 1000
 
+struct input_find_types_s {
+	int find_types;
+};
+
 struct external_function_s {
     char *function_name;
     int return_type;   // E.g. i32

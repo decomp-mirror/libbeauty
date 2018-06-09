@@ -2,7 +2,8 @@ include $(top_srcdir)/misc/Makefile.common
 
 SUBDIRS = binary_file_decoder \
 	instruction_decoder \
-	convert_ll_inst_to_rtl
+	convert_ll_inst_to_rtl \
+	header
 
 #noinst_LTLIBRARIES = libInput_Module.la
 

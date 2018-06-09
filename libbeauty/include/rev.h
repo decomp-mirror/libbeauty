@@ -35,6 +35,7 @@
 #include <dis.h>
 #include <exe.h>
 #include <output.h>
+#include <input.h>
 
 #define EXTERNAL_ENTRY_POINTS_MAX 1000
 #define RELOCATION_SIZE 1000

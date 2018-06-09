@@ -39,6 +39,7 @@
 #define DEBUG_ANALYSE_PHI 8
 #define DEBUG_OUTPUT_LLVM 9
 #define DEBUG_ANALYSE_TIP 10
+#define DEBUG_INPUT_HEADER 11
 
 #ifdef __cplusplus
 extern "C" {

@@ -97,6 +97,7 @@ int debug_analyse_phi = 0;
 int debug_analyse_tip = 0;
 int debug_output = 0;
 int debug_output_llvm = 0;
+int debug_input_header = 0;
 
 void setLogLevel()
 {
@@ -120,6 +121,8 @@ void setLogLevel()
 		debug_output = 1;
 	if (getenv("ENABLE_DEBUG_OUTPUT_LLVM"))
 		debug_output_llvm = 1;
+	if (getenv("ENABLE_DEBUG_INPUT_HEADER"))
+		debug_input_header = 1;
 }
 
 void dbg_print(const char* file, int line, const char* func, int module, int level, const char *format, ...)
@@ -184,6 +187,12 @@ void dbg_print(const char* file, int line, const char* func, int module, int lev
 	case DEBUG_OUTPUT_LLVM:
 		if (level <= debug_output_llvm) {
 			dprintf(STDERR_FILENO, "DEBUG_OUTPUT_LLVM,0x%x %s:%d %s(): ", level, file, line, func);
+			vdprintf(STDERR_FILENO, format, ap);
+		}
+		break;
+	case DEBUG_INPUT_HEADER:
+		if (level <= debug_input_header) {
+			dprintf(STDERR_FILENO, "DEBUG_INPUT_HEADER,0x%x %s:%d %s(): ", level, file, line, func);
 			vdprintf(STDERR_FILENO, format, ap);
 		}
 		break;
@@ -5611,6 +5620,7 @@ int main(int argc, char *argv[])
 	LLVMDecodeAsmX86_64Ref decode_asm;
 	char *buffer = NULL;
 	int section_code_index;
+	struct input_find_types_s find_types;
 
 	buffer = calloc(1,1024);
 	setLogLevel();
@@ -5798,6 +5808,8 @@ int main(int argc, char *argv[])
 		debug_print(DEBUG_MAIN, 1, " 0x%02x", data[n]);
 	}
 	debug_print(DEBUG_MAIN, 1, "\n");
+
+	tmp = input_find_types("test110.bc", &find_types);
 
 #if 0
 	bf_get_reloc_table_code_section(handle_void);

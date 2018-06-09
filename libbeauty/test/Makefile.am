@@ -50,6 +50,7 @@ llvm_test_SOURCES = \
 dis64_LDADD = -L$(libdir) -L/usr/lib/llvm-5.0/lib -lbeauty_input_bfd -lbeauty_exe \
 		-lbeauty_analyse -lbeauty_output_cfg -lbeauty_output_llvm \
 		-lbeauty_decoder_llvm_amd64 -lbeauty_ll_inst_to_rtl \
+		-lbeauty_input_header \
 		-lLLVM-5.0 \
 		-lstdc++ -lz -lm -ldl -lpthread -lncurses
 #dis64_LDADD = -L/usr/local/lib -lbeauty_input_bfd -lbeauty_decoder_amd64 -lbeauty_exe \
