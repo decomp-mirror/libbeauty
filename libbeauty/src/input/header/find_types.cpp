@@ -127,8 +127,19 @@ extern "C" int input_find_types(char *filename, struct input_find_types_s *find_
 		outs() << "Found TypeFinder:\n";
 		StructType *STy = *I;
 		outs() << *STy;
+		outs() << "\n";
+		outs() << "Name:" << STy->getStructName() << "\n";
+		outs() << "Num Elems:" << STy->getStructNumElements() << "\n";
+		for (StructType::element_iterator I2 = STy->element_begin(),
+				 E2 = STy->element_end();
+				 I2 != E2; ++I2) {
+			Type *Ty = *I2;
+			outs() << *Ty << "\n";
+		}
+		outs() << "\n";
 	}
 	outs() << "\n";
+
 #if 0
 	for (Module::global_value_iterator I = Mod->global_value_begin(),
 			 E = Mod->global_value_end();
