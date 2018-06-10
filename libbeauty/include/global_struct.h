@@ -29,6 +29,7 @@
 
 #include <inttypes.h>
 #include <stdlib.h>
+#include <llvm-c/Types.h>
 
 #define MAX_REG 0x1e0
 #define EXTERNAL_ENTRY_POINTS_MAX 1000
@@ -625,6 +626,7 @@ struct self_s {
 	int *external_function_reg_order;
 	uint64_t sections_size;
 	struct section_s *sections;
+	void *input_header;
 };
 
 #endif /* GLOBAL_STRUCT_H */

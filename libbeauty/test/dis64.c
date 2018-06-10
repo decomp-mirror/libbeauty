@@ -5809,8 +5809,9 @@ int main(int argc, char *argv[])
 	}
 	debug_print(DEBUG_MAIN, 1, "\n");
 
-	tmp = input_find_types("test110.bc", &find_types);
-
+	tmp = input_find_types(self, "test110.bc", &find_types);
+	input_dump_mod(self);
+	exit(1);
 #if 0
 	bf_get_reloc_table_code_section(handle_void);
 	

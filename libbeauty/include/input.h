@@ -24,9 +24,11 @@
 #define INPUT_H
 
 #ifdef __cplusplus
-extern "C" int input_find_types(char *filename, struct input_find_types_s *find_types);
+extern "C" int input_find_types(struct self_s *self, char *filename, struct input_find_types_s *find_types);
+extern "C" int input_dump_mod(struct self_s *self);
 #else
-int input_find_types(char *filename, struct input_find_types_s *find_types);
+int input_find_types(struct self_s *self, char *filename, struct input_find_types_s *find_types);
+int input_dump_mod(struct self_s *self);
 #endif
 
 #endif /* INPUT_H */

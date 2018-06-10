@@ -100,18 +100,39 @@ static std::unique_ptr<Module> openInputFile(LLVMContext &Context) {
 	return M;
 }
 #endif
-extern "C" int input_find_types(char *filename, struct input_find_types_s *find_types) {
+
+class LLVM_input_header
+{
+	public:
+		int input_dump_mod(struct self_s *self);
+		int input_find_types(struct self_s *self, char *filename, struct input_find_types_s *find_types);
+
+	private:
+		LLVMContext Context;
+		std::unique_ptr<Module> Mod;
+};
+
+
+int LLVM_input_header::input_dump_mod(struct self_s *self) {
+	debug_print(DEBUG_INPUT_HEADER, 0, "Entered\n");
+	outs() << *Mod;
+	return 0;
+}
+
+int LLVM_input_header::input_find_types(struct self_s *self, char *filename, struct input_find_types_s *find_types) {
 
 	debug_print(DEBUG_INPUT_HEADER, 0, "Entered\n");
-	LLVMContext Context;
 	llvm::TypeFinder type_finder;
 	llvm_shutdown_obj Y;  // Call llvm_shutdown() on exit.
 	InputFilename = filename;
-	Context.setDiagnosticHandler(diagnosticHandler, nullptr);
+	LLVM_input_header::Context.setDiagnosticHandler(diagnosticHandler, nullptr);
 	SMDiagnostic error;
   //Module *m = parseIRFile("hello.bc", error, context);
 	//std::unique_ptr<Module> Mod = openInputFile(Context);
-	std::unique_ptr<Module> Mod = parseIRFile(filename, error, Context);
+	//std::unique_ptr<Module> Mod = parseIRFile(filename, error, Context);
+	LLVM_input_header::Mod = parseIRFile(filename, error, Context);
+	//llvm:Module *Mod = parseIRFile(filename, error, Context);
+	//Module *Mod = parseIRFile(filename, error, Context);
 	//outs() << *Mod;
 	if (!Mod) {
 		debug_print(DEBUG_INPUT_HEADER, 0, "Exiting. Probably File not found\n");
@@ -135,6 +156,11 @@ extern "C" int input_find_types(char *filename, struct input_find_types_s *find_
 				 I2 != E2; ++I2) {
 			Type *Ty = *I2;
 			outs() << *Ty << "\n";
+			Type::TypeID type_id = Ty->getTypeID();
+			outs() << "Type ID:" << type_id << "\n";
+			unsigned num_contained_types = Ty->getNumContainedTypes();
+			outs() << "Num Containded Types:" << num_contained_types << "\n";
+
 		}
 		outs() << "\n";
 	}
@@ -156,9 +182,9 @@ extern "C" int input_find_types(char *filename, struct input_find_types_s *find_
 		I->print(llvm::outs());
 	}
 	outs() << "\n";
+#endif
 
-
-
+#if 1
 	for (Module::const_iterator I = Mod->begin(),
 			 E = Mod->end();
 			 I != E; ++I) {
@@ -166,7 +192,8 @@ extern "C" int input_find_types(char *filename, struct input_find_types_s *find_
 		I->print(llvm::outs());
 	}
 	outs() << "\n";
-
+#endif
+#if 0
 	for (Module::const_ifunc_iterator I = Mod->ifunc_begin(),
 			 E = Mod->ifunc_end();
 			 I != E; ++I) {
@@ -174,7 +201,8 @@ extern "C" int input_find_types(char *filename, struct input_find_types_s *find_
 		I->print(llvm::outs());
 	}
 	outs() << "\n";
-
+#endif
+#if 0
 	for (Module::const_alias_iterator I = Mod->alias_begin(),
 			 E = Mod->alias_end();
 			 I != E; ++I) {
@@ -203,4 +231,23 @@ extern "C" int input_find_types(char *filename, struct input_find_types_s *find_
 #endif
 	debug_print(DEBUG_INPUT_HEADER, 0, "Ended\n");
 	return 0;
+}
+
+extern "C" int input_dump_mod(struct self_s *self) {
+	int tmp;
+	LLVM_input_header *input_header = (LLVM_input_header*)self->input_header;
+	tmp = input_header->input_dump_mod(self);
+	return tmp;
+}
+
+extern "C" int input_find_types(struct self_s *self, char *filename, struct input_find_types_s *find_types) {
+	int tmp;
+	debug_print(DEBUG_INPUT_HEADER, 0, "Entered\n");
+	LLVM_input_header *input_header = new(LLVM_input_header);
+	void *ref = input_header;
+	self->input_header = ref;
+	debug_print(DEBUG_INPUT_HEADER, 0, "sizeof: %lu\n", sizeof(input_header));
+	tmp = input_header->input_find_types(self, filename, find_types);
+	debug_print(DEBUG_INPUT_HEADER, 0, "Ended\n");
+	return tmp;
 }
