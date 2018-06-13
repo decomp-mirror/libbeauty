@@ -2729,6 +2729,26 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				}
 				break;
 
+			case 3:
+				debug_print(DEBUG_MAIN, 1, "srcA.relocated = %d\n", instruction->srcA.relocated);
+				debug_print(DEBUG_MAIN, 1, "srcA.index = %ld\n", instruction->srcA.index);
+				debug_print(DEBUG_MAIN, 1, "srcA.relocated_external_function = %d\n", instruction->srcA.relocated_external_function);
+				l = instruction->srcA.relocated_external_function;
+				debug_print(DEBUG_MAIN, 1, "function_name = %s\n",
+					self->external_functions[l].function_name);
+				debug_print(DEBUG_MAIN, 1, "fields_size = %d\n",
+					self->external_functions[l].fields_size);
+				//    self->external_functions[2].field_type 
+				size = self->external_functions[l].fields_size;
+				call->params_reg = calloc(size, sizeof(int));
+				call->params_reg_size = size;
+				for (n = 0; n < size; n++) {
+					int reg = reg_params_order[2 + n];
+					int tmp_label = call->reg_tracker[reg];
+					call->params_reg[n] = tmp_label;
+				}
+				break;
+
 			default:
 				debug_print(DEBUG_MAIN, 1, "srcA.relocated = %d\n", instruction->srcA.relocated);
 				exit(1);
@@ -3246,6 +3266,20 @@ int tip_rules_process(struct self_s *self, int entry_point)
 					return_index = self->external_entry_points[instruction->srcA.index].function_return_type;
 					lab_pointer = self->external_entry_points[instruction->srcA.index].tip2[return_index].pointer;
 					size_bits = self->external_entry_points[instruction->srcA.index].tip2[return_index].integer_size;
+					if (lab_pointer) {
+						/* Pointer type */
+						rule_this->pointer = 1;
+					} else {
+						/* Integer type */
+						rule_this->size_bits = size_bits;
+						debug_print(DEBUG_ANALYSE_TIP, 1, "Setting TIP to 0x%x bits\n", rule_this->size_bits);
+					}
+					break;
+				case 3:
+					return_index = self->external_functions[instruction->srcA.relocated_external_function].return_type;
+					lab_pointer = self->simple_field_types[return_index].pointer1;
+					size_bits = self->simple_field_types[return_index].bits;
+					/* FIXME: Handle more different types. */
 					if (lab_pointer) {
 						/* Pointer type */
 						rule_this->pointer = 1;
@@ -5810,8 +5844,8 @@ int main(int argc, char *argv[])
 	debug_print(DEBUG_MAIN, 1, "\n");
 
 	tmp = input_find_types(self, "test110.bc", &find_types);
-	input_dump_mod(self);
-	exit(1);
+	//input_dump_mod(self);
+	//exit(1);
 #if 0
 	bf_get_reloc_table_code_section(handle_void);
 	

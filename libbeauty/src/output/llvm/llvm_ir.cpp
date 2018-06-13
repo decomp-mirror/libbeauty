@@ -528,8 +528,10 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			struct extension_call_s *call_info = static_cast<struct extension_call_s *> (inst_log1->extension);
 			std::vector<Value*> vector_params;
 			for (n = 0; n < call_info->params_reg_size; n++) {
-				int reg_value = call_info->reg_tracker[call_info->params_reg[n]]; 
-				value_id = external_entry_point->label_redirect[reg_value].index;
+				//int reg_value = call_info->reg_tracker[call_info->params_reg[n]]; 
+				//value_id = external_entry_point->label_redirect[reg_value].index;
+				tmp = check_domain(&(external_entry_point->label_redirect[call_info->params_reg[n]]));
+				value_id = external_entry_point->label_redirect[call_info->params_reg[n]].index;
 				debug_print(DEBUG_OUTPUT_LLVM, 1, "call_info_params = 0x%x->0x%x, %p\n", call_info->params_reg[n], value_id, value[value_id]);
 				if (!value_id) {
 					debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: invalid call_info_param\n");
@@ -544,6 +546,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 					FuncTy_puts_args.push_back(IntegerType::get(mod->getContext(), self->simple_field_types[field_type].bits));
 				}
 			}
+			// FIXME: Assign the correct label to the return value.
 			//FuncTy_puts_args.push_back(IntegerType::get(mod->getContext(), 32));
 			auto CalleeTy = FunctionType::get(IntegerType::get(mod->getContext(), 32),
 				FuncTy_puts_args,

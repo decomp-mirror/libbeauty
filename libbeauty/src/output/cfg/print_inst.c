@@ -532,8 +532,23 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 			tmp = string_cat(string, buffer, strlen(buffer));
 			break;
 		case 3:
-			tmp = snprintf(buffer, 1023, " CALL3 external %s(), index=0x%"PRIx64", relocated=%d",
-				self->external_functions[instruction->srcA.relocated_external_function].function_name,
+			tmp = snprintf(buffer, 1023, " CALL3 external %s(",
+				self->external_functions[instruction->srcA.relocated_external_function].function_name),
+			tmp = string_cat(string, buffer, strlen(buffer));
+			tmp_state = 0;
+			l = instruction->srcA.relocated_external_function;
+			for (n = 0; n < self->external_functions[l].fields_size; n++) {
+				int reg = reg_params_order[2 + n];
+				if (tmp_state > 0) {
+					snprintf(buffer, 1023, ", ");
+					tmp = string_cat(string, buffer, strlen(buffer));
+				}
+				snprintf(buffer, 1023, "r0x%x",
+						reg);
+				tmp = string_cat(string, buffer, strlen(buffer));
+				tmp_state++;
+			}
+			tmp = snprintf(buffer, 1023, "), index=0x%"PRIx64", relocated=%d",
 				instruction->srcA.index,
 				instruction->srcA.relocated);
 			tmp = string_cat(string, buffer, strlen(buffer));
