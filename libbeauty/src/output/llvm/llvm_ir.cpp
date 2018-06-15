@@ -495,6 +495,10 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			vector_params.push_back(const_ptr_5); /* EIP */
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: args_size = 0x%lx\n", inst, vector_params.size());
 			tmp = label_to_string(&external_entry_point->labels[inst_log1->value3.value_id], buffer, 1023);
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "AX = 0x%lx:0x%lx %s\n",
+						inst_log1->value3.value_id,
+						external_entry_point->label_redirect[inst_log1->value3.value_id].index,
+						buffer);
 			declaration[function_to_call].F->print(OS1);
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 			Buf1.clear();
@@ -546,14 +550,19 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 					FuncTy_puts_args.push_back(IntegerType::get(mod->getContext(), self->simple_field_types[field_type].bits));
 				}
 			}
-			// FIXME: Assign the correct label to the return value.
 			//FuncTy_puts_args.push_back(IntegerType::get(mod->getContext(), 32));
+			tmp = label_to_string(&external_entry_point->labels[inst_log1->value3.value_id], buffer, 1023);
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "AX = 0x%lx:0x%lx %s\n",
+						inst_log1->value3.value_id,
+						external_entry_point->label_redirect[inst_log1->value3.value_id].index,
+						buffer);
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: dstA %p\n", inst, dstA);
 			auto CalleeTy = FunctionType::get(IntegerType::get(mod->getContext(), 32),
 				FuncTy_puts_args,
 				/*isVarArg=*/false);
 			auto Callee =
 				Function::Create(CalleeTy, Function::ExternalLinkage, self->external_functions[function].function_name, mod);
-			CallInst* call_inst = builder->CreateCall(Callee, vector_params);
+			CallInst* call_inst = builder->CreateCall(Callee, vector_params, buffer);
 			call_inst->setCallingConv(CallingConv::C);
 			call_inst->setTailCall(false);
 			dstA = call_inst;
