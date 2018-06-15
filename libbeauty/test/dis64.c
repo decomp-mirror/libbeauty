@@ -4952,7 +4952,7 @@ int assign_id_label_dst(struct self_s *self, int function, int inst, struct inst
 
 	debug_print(DEBUG_MAIN, 1, "label address2 = %p\n", label);
 	debug_print(DEBUG_MAIN, 1, "opcode = 0x%x\n", instruction->opcode);
-	debug_print(DEBUG_MAIN, 1, "assign_id_label_dst: value to log_to_label:entry_point = 0x%x, inst = 0x%x:%s, dstA:store 0x%x, indirect 0x%x, index 0x%"PRIx64", value_size 0x%x, relocated 0x%x, value3:value_scope 0x%x, value_id 0x%"PRIx64", indirect_offset_value 0x%"PRIx64"\n",
+	debug_print(DEBUG_MAIN, 1, "value to log_to_label:entry_point = 0x%x, inst = 0x%x:%s, dstA:store 0x%x, indirect 0x%x, index 0x%"PRIx64", value_size 0x%x, relocated 0x%x, value3:value_scope 0x%x, value_id 0x%"PRIx64", indirect_offset_value 0x%"PRIx64"\n",
 		function,
 		inst,
 		opcode_table[instruction->opcode],
@@ -5132,6 +5132,29 @@ int assign_id_label_dst(struct self_s *self, int function, int inst, struct inst
 			inst_log1->value3.value_id = variable_id;
 		} else {
 			debug_print(DEBUG_MAIN, 1, "ERROR: CALL with indirect dstA\n");
+			exit(1);
+		}
+		debug_print(DEBUG_MAIN, 1, "value3.value_scope = 0x%x\n", inst_log1->value3.value_scope);
+		memset(label, 0, sizeof(struct label_s));
+		ret = log_to_label(instruction->dstA.store,
+			instruction->dstA.indirect,
+			instruction->dstA.index,
+			instruction->dstA.value_size,
+			instruction->dstA.relocated,
+			inst_log1->value3.value_scope,
+			inst_log1->value3.value_id,
+			inst_log1->value3.indirect_offset_value,
+			label);
+		if (ret) {
+			debug_print(DEBUG_MAIN, 1, "Inst:0x%x, value3 unknown label\n", inst);
+		}
+		break;
+	case CALLM:
+		debug_print(DEBUG_MAIN, 1, "SSA CALLM inst_log 0x%x\n", inst);
+		if (IND_DIRECT == instruction->dstA.indirect) {
+			inst_log1->value3.value_id = variable_id;
+		} else {
+			debug_print(DEBUG_MAIN, 1, "ERROR: CALLM with indirect dstA\n");
 			exit(1);
 		}
 		debug_print(DEBUG_MAIN, 1, "value3.value_scope = 0x%x\n", inst_log1->value3.value_scope);
