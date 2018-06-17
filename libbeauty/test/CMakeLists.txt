@@ -30,3 +30,15 @@ target_link_libraries(test_id -L${LIBRARY_OUTPUT_PATH} -L/usr/lib/llvm-5.0/lib
 		-lstdc++ -lz -lm -ldl -lpthread -lncurses )
 target_include_directories(test_id PRIVATE "${libbeauty_INCLUDE_DIRS}")
 #install (TARGETS dis64 DESTINATION bin)
+
+add_executable(test_llvm_builder test_llvm_builder.cpp)
+set_target_properties(test_llvm_builder PROPERTIES
+      CXX_STANDARD 11
+      CXX_EXTENSIONS NO
+)
+target_link_libraries(test_llvm_builder -L${LIBRARY_OUTPUT_PATH} -L/usr/lib/llvm-5.0/lib
+		-lLLVM-5.0
+		-lstdc++ -lz -ldl )
+target_include_directories(test_llvm_builder PRIVATE "${libbeauty_INCLUDE_DIRS}")
+#install (TARGETS test_llvm_builder DESTINATION bin)
+
