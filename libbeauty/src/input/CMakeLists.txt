@@ -1,0 +1,5 @@
+add_subdirectory(binary_file_decoder)
+add_subdirectory(convert_ll_inst_to_rtl)
+add_subdirectory(header)
+add_subdirectory(instruction_decoder)
+

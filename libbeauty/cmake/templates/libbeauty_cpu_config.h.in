@@ -1,0 +1,5 @@
+// libbeauty CPU baseline features
+@LIBBEAUTY_CPU_BASELINE_DEFINITIONS_CONFIGMAKE@
+
+// libbeauty supported CPU dispatched features
+@LIBBEAUTY_CPU_DISPATCH_DEFINITIONS_CONFIGMAKE@

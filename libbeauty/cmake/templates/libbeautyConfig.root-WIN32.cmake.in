@@ -1,0 +1,146 @@
+# ===================================================================================
+#  The libbeauty CMake configuration file
+#
+#             ** File generated automatically, do not modify **
+#
+#  Usage from an external project:
+#    In your CMakeLists.txt, add these lines:
+#
+#    FIND_PACKAGE(libbeauty REQUIRED)
+#    TARGET_LINK_LIBRARIES(MY_TARGET_NAME ${libbeauty_LIBS})
+#
+#    Or you can search for specific libbeauty modules:
+#
+#    FIND_PACKAGE(libbeauty REQUIRED core imgcodecs)
+#
+#    If the module is found then LIBBEAUTY_<MODULE>_FOUND is set to TRUE.
+#
+#    This file will define the following variables:
+#      - libbeauty_LIBS                     : The list of libraries to link against.
+#      - libbeauty_INCLUDE_DIRS             : The libbeauty include directories.
+#      - libbeauty_COMPUTE_CAPABILITIES     : The version of compute capability
+#      - libbeauty_VERSION                  : The version of this libbeauty build: "@LIBBEAUTY_VERSION_PLAIN@"
+#      - libbeauty_VERSION_MAJOR            : Major version part of libbeauty_VERSION: "@LIBBEAUTY_VERSION_MAJOR@"
+#      - libbeauty_VERSION_MINOR            : Minor version part of libbeauty_VERSION: "@LIBBEAUTY_VERSION_MINOR@"
+#      - libbeauty_VERSION_PATCH            : Patch version part of libbeauty_VERSION: "@LIBBEAUTY_VERSION_PATCH@"
+#      - libbeauty_VERSION_STATUS           : Development status of this build: "@LIBBEAUTY_VERSION_STATUS@"
+#
+#    Advanced variables:
+#      - libbeauty_SHARED
+#
+# ===================================================================================
+#
+#    Windows pack specific options:
+#      - libbeauty_STATIC
+#      - libbeauty_CUDA
+
+if(CMAKE_VERSION VERSION_GREATER 2.6)
+  get_property(libbeauty_LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+  if(NOT ";${libbeauty_LANGUAGES};" MATCHES ";CXX;")
+    enable_language(CXX)
+  endif()
+endif()
+
+if(NOT DEFINED libbeauty_STATIC)
+  # look for global setting
+  if(BUILD_SHARED_LIBS)
+    set(libbeauty_STATIC OFF)
+  else()
+    set(libbeauty_STATIC ON)
+  endif()
+endif()
+
+if(NOT DEFINED libbeauty_CUDA)
+  # if user' app uses CUDA, then it probably wants CUDA-enabled libbeauty binaries
+  if(CUDA_FOUND)
+    set(libbeauty_CUDA ON)
+  endif()
+endif()
+
+if(DEFINED libbeauty_ARCH AND DEFINED libbeauty_RUNTIME)
+  # custom overridden values
+elseif(MSVC)
+  if(CMAKE_CL_64)
+    set(libbeauty_ARCH x64)
+  elseif((CMAKE_GENERATOR MATCHES "ARM") OR ("${arch_hint}" STREQUAL "ARM") OR (CMAKE_VS_EFFECTIVE_PLATFORMS MATCHES "ARM|arm"))
+    # see Modules/CmakeGenericSystem.cmake
+    set(libbeauty_ARCH ARM)
+  else()
+    set(libbeauty_ARCH x86)
+  endif()
+  if(MSVC_VERSION EQUAL 1400)
+    set(libbeauty_RUNTIME vc8)
+  elseif(MSVC_VERSION EQUAL 1500)
+    set(libbeauty_RUNTIME vc9)
+  elseif(MSVC_VERSION EQUAL 1600)
+    set(libbeauty_RUNTIME vc10)
+  elseif(MSVC_VERSION EQUAL 1700)
+    set(libbeauty_RUNTIME vc11)
+  elseif(MSVC_VERSION EQUAL 1800)
+    set(libbeauty_RUNTIME vc12)
+  elseif(MSVC_VERSION EQUAL 1900)
+    set(libbeauty_RUNTIME vc14)
+  elseif(MSVC_VERSION MATCHES "^191[0-9]$")
+    set(libbeauty_RUNTIME vc15)
+  endif()
+elseif(MINGW)
+  set(libbeauty_RUNTIME mingw)
+
+  execute_process(COMMAND ${CMAKE_CXX_COMPILER} -dumpmachine
+                  OUTPUT_VARIABLE LIBBEAUTY_GCC_TARGET_MACHINE
+                  OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(LIBBEAUTY_GCC_TARGET_MACHINE MATCHES "amd64|x86_64|AMD64")
+    set(MINGW64 1)
+    set(libbeauty_ARCH x64)
+  else()
+    set(libbeauty_ARCH x86)
+  endif()
+endif()
+
+if(NOT libbeauty_FIND_QUIETLY)
+  message(STATUS "libbeauty ARCH: ${libbeauty_ARCH}")
+  message(STATUS "libbeauty RUNTIME: ${libbeauty_RUNTIME}")
+  message(STATUS "libbeauty STATIC: ${libbeauty_STATIC}")
+endif()
+
+get_filename_component(libbeauty_CONFIG_PATH "${CMAKE_CURRENT_LIST_FILE}" PATH)
+if(libbeauty_RUNTIME AND libbeauty_ARCH)
+  if(libbeauty_STATIC AND EXISTS "${libbeauty_CONFIG_PATH}/${libbeauty_ARCH}/${libbeauty_RUNTIME}/staticlib/libbeautyConfig.cmake")
+    if(libbeauty_CUDA AND EXISTS "${libbeauty_CONFIG_PATH}/gpu/${libbeauty_ARCH}/${libbeauty_RUNTIME}/staticlib/libbeautyConfig.cmake")
+      set(libbeauty_LIB_PATH "${libbeauty_CONFIG_PATH}/gpu/${libbeauty_ARCH}/${libbeauty_RUNTIME}/staticlib")
+    else()
+      set(libbeauty_LIB_PATH "${libbeauty_CONFIG_PATH}/${libbeauty_ARCH}/${libbeauty_RUNTIME}/staticlib")
+    endif()
+  elseif(EXISTS "${libbeauty_CONFIG_PATH}/${libbeauty_ARCH}/${libbeauty_RUNTIME}/lib/libbeautyConfig.cmake")
+    if(libbeauty_CUDA AND EXISTS "${libbeauty_CONFIG_PATH}/gpu/${libbeauty_ARCH}/${libbeauty_RUNTIME}/lib/libbeautyConfig.cmake")
+      set(libbeauty_LIB_PATH "${libbeauty_CONFIG_PATH}/gpu/${libbeauty_ARCH}/${libbeauty_RUNTIME}/lib")
+    else()
+      set(libbeauty_LIB_PATH "${libbeauty_CONFIG_PATH}/${libbeauty_ARCH}/${libbeauty_RUNTIME}/lib")
+    endif()
+  endif()
+endif()
+
+if(libbeauty_LIB_PATH AND EXISTS "${libbeauty_LIB_PATH}/libbeautyConfig.cmake")
+  include("${libbeauty_LIB_PATH}/libbeautyConfig.cmake")
+
+  if(NOT libbeauty_FIND_QUIETLY)
+    message(STATUS "Found libbeauty ${libbeauty_VERSION} in ${libbeauty_LIB_PATH}")
+    if(NOT libbeauty_LIB_PATH MATCHES "/staticlib")
+      get_filename_component(_libbeauty_LIB_PATH "${libbeauty_LIB_PATH}/../bin" ABSOLUTE)
+      file(TO_NATIVE_PATH "${_libbeauty_LIB_PATH}" _libbeauty_LIB_PATH)
+      message(STATUS "You might need to add ${_libbeauty_LIB_PATH} to your PATH to be able to run your applications.")
+      if(libbeauty_LIB_PATH MATCHES "/gpu/")
+        string(REPLACE "\\gpu" "" _libbeauty_LIB_PATH2 "${_libbeauty_LIB_PATH}")
+        message(STATUS "GPU support is enabled so you might also need ${_libbeauty_LIB_PATH2} in your PATH (it must go after the ${_libbeauty_LIB_PATH}).")
+      endif()
+    endif()
+  endif()
+else()
+  if(NOT libbeauty_FIND_QUIETLY)
+    message(WARNING
+"Found libbeauty Windows Pack but it has no binaries compatible with your configuration.
+You should manually point CMake variable libbeauty_DIR to your build of libbeauty library."
+    )
+  endif()
+  set(libbeauty_FOUND FALSE)
+endif()

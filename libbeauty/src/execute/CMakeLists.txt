@@ -1,0 +1,5 @@
+set(the_description "Execute")
+add_library(beauty_exe exe.c process_block.c)
+target_link_libraries(beauty_exe -L${LIBRARY_OUTPUT_PATH} -lbeauty_input_bfd -lbeauty_output_cfg)
+target_include_directories(beauty_exe PRIVATE "${libbeauty_INCLUDE_DIRS}")
+install (TARGETS beauty_exe DESTINATION lib/beauty)

@@ -1,7 +1,7 @@
 #ifndef __BFL_INTERNAL__
 #define __BFL_INTERNAL__
 
-#include "config.h"
+// #include "config.h"
 
 #include <bfd.h>
 #include <inttypes.h>

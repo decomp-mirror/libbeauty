@@ -1,0 +1,14 @@
+# Package Information for pkg-config
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir_old=@includedir@/libbeauty
+includedir_new=@includedir@
+
+Name: libbeauty
+Description: Open Source Computer Vision Library
+Version: @LIBBEAUTY_VERSION_PLAIN@
+Libs: @LIBBEAUTY_PC_LIBS@
+Libs.private: @LIBBEAUTY_PC_LIBS_PRIVATE@
+Cflags: -I${includedir_old} -I${includedir_new}

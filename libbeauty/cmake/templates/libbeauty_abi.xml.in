@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+
+    This file is auto-generated
+
+-->
+
+<descriptor>
+
+<version>
+    @LIBBEAUTY_ABI_VERSION@
+</version>
+
+<headers>
+    @LIBBEAUTY_ABI_HEADERS@
+</headers>
+
+<libs>
+    @LIBBEAUTY_ABI_LIBRARIES@
+</libs>
+
+<skip_headers>
+    libbeauty2/core/hal/intrin*
+    libbeauty2/core/cuda*
+    libbeauty2/core/opencl*
+    libbeauty2/core/private*
+    libbeauty/cxeigen.hpp
+    libbeauty2/core/eigen.hpp
+    libbeauty2/flann/hdf5.h
+    libbeauty2/imgcodecs/ios.h
+    libbeauty2/videoio/cap_ios.h
+    libbeauty2/xobjdetect/private.hpp
+    @LIBBEAUTY_ABI_SKIP_HEADERS@
+</skip_headers>
+
+<skip_libs>
+    @LIBBEAUTY_ABI_SKIP_LIBRARIES@
+</skip_libs>
+
+<gcc_options>
+ @LIBBEAUTY_ABI_GCC_OPTIONS@
+</gcc_options>
+
+</descriptor>

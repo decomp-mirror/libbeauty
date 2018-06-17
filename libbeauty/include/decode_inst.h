@@ -39,7 +39,7 @@ extern "C" {
 
 void *LLVMCreateMCInst(void);
 
-LLVMDecodeAsmX86_64Ref LLVMNewDecodeAsmX86_64();
+LLVMDecodeAsmX86_64Ref LLVMNewDecodeAsmX86_64(void);
 int LLVMSetupDecodeAsmX86_64(void *DC);
 int LLVMInstructionDecodeAsmX86_64(LLVMDecodeAsmContextRef DCR, uint8_t *Bytes,
 		uint64_t BytesSize, uint64_t PC,

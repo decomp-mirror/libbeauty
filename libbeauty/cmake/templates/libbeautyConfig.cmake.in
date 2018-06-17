@@ -1,0 +1,315 @@
+# ===================================================================================
+#  The libbeauty CMake configuration file
+#
+#             ** File generated automatically, do not modify **
+#
+#  Usage from an external project:
+#    In your CMakeLists.txt, add these lines:
+#
+#    find_package(libbeauty REQUIRED)
+#    include_directories(${libbeauty_INCLUDE_DIRS}) # Not needed for CMake >= 2.8.11
+#    target_link_libraries(MY_TARGET_NAME ${libbeauty_LIBS})
+#
+#    Or you can search for specific libbeauty modules:
+#
+#    find_package(libbeauty REQUIRED core videoio)
+#
+#    You can also mark libbeauty components as optional:
+
+#    find_package(libbeauty REQUIRED core OPTIONAL_COMPONENTS viz)
+#
+#    If the module is found then LIBBEAUTY_<MODULE>_FOUND is set to TRUE.
+#
+#    This file will define the following variables:
+#      - libbeauty_LIBS                     : The list of all imported targets for libbeauty modules.
+#      - libbeauty_INCLUDE_DIRS             : The libbeauty include directories.
+#      - libbeauty_COMPUTE_CAPABILITIES     : The version of compute capability.
+#      - libbeauty_ANDROID_NATIVE_API_LEVEL : Minimum required level of Android API.
+#      - libbeauty_VERSION                  : The version of this libbeauty build: "@LIBBEAUTY_VERSION_PLAIN@"
+#      - libbeauty_VERSION_MAJOR            : Major version part of libbeauty_VERSION: "@LIBBEAUTY_VERSION_MAJOR@"
+#      - libbeauty_VERSION_MINOR            : Minor version part of libbeauty_VERSION: "@LIBBEAUTY_VERSION_MINOR@"
+#      - libbeauty_VERSION_PATCH            : Patch version part of libbeauty_VERSION: "@LIBBEAUTY_VERSION_PATCH@"
+#      - libbeauty_VERSION_STATUS           : Development status of this build: "@LIBBEAUTY_VERSION_STATUS@"
+#
+#    Advanced variables:
+#      - libbeauty_SHARED                   : Use libbeauty as shared library
+#      - libbeauty_INSTALL_PATH             : libbeauty location
+#      - libbeauty_LIB_COMPONENTS           : Present libbeauty modules list
+#      - libbeauty_USE_MANGLED_PATHS        : Mangled libbeauty path flag
+#
+#    Deprecated variables:
+#      - libbeauty_VERSION_TWEAK            : Always "0"
+#
+# ===================================================================================
+
+# ======================================================
+#  Version variables:
+# ======================================================
+SET(libbeauty_VERSION @LIBBEAUTY_VERSION_PLAIN@)
+SET(libbeauty_VERSION_MAJOR  @LIBBEAUTY_VERSION_MAJOR@)
+SET(libbeauty_VERSION_MINOR  @LIBBEAUTY_VERSION_MINOR@)
+SET(libbeauty_VERSION_PATCH  @LIBBEAUTY_VERSION_PATCH@)
+SET(libbeauty_VERSION_TWEAK  0)
+SET(libbeauty_VERSION_STATUS "@LIBBEAUTY_VERSION_STATUS@")
+
+include(FindPackageHandleStandardArgs)
+
+if(NOT CMAKE_VERSION VERSION_LESS 2.8.8
+    AND libbeauty_FIND_COMPONENTS  # prevent excessive output
+)
+  # HANDLE_COMPONENTS was introduced in CMake 2.8.8
+  list(APPEND _libbeauty_FPHSA_ARGS HANDLE_COMPONENTS)
+  # The missing components will be handled by the FindPackageHandleStandardArgs
+  # module.
+  set(_libbeauty_HANDLE_COMPONENTS_MANUALLY FALSE)
+else()
+  # The missing components will be handled by this config.
+  set(_libbeauty_HANDLE_COMPONENTS_MANUALLY TRUE)
+endif()
+
+# Extract directory name from full path of the file currently being processed.
+# Note that CMake 2.8.3 introduced CMAKE_CURRENT_LIST_DIR. We reimplement it
+# for older versions of CMake to support these as well.
+if(CMAKE_VERSION VERSION_LESS "2.8.3")
+  get_filename_component(CMAKE_CURRENT_LIST_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+endif()
+
+# Extract the directory where *this* file has been installed (determined at cmake run-time)
+# Get the absolute path with no ../.. relative marks, to eliminate implicit linker warnings
+set(libbeauty_CONFIG_PATH "${CMAKE_CURRENT_LIST_DIR}")
+get_filename_component(libbeauty_INSTALL_PATH "${libbeauty_CONFIG_PATH}/@libbeauty_INSTALL_PATH_RELATIVE_CONFIGCMAKE@" REALPATH)
+
+# Search packages for host system instead of packages for target system.
+# in case of cross compilation this macro should be defined by toolchain file
+if(NOT COMMAND find_host_package)
+    macro(find_host_package)
+        find_package(${ARGN})
+    endmacro()
+endif()
+if(NOT COMMAND find_host_program)
+    macro(find_host_program)
+        find_program(${ARGN})
+    endmacro()
+endif()
+
+
+@CUDA_CONFIGCMAKE@
+@ANDROID_CONFIGCMAKE@
+
+@IPPILIBBEAUTY_CONFIGCMAKE@
+@IPPIW_CONFIGCMAKE@
+
+# Some additional settings are required if libbeauty is built as static libs
+set(libbeauty_SHARED @BUILD_SHARED_LIBS@)
+
+# Enables mangled install paths, that help with side by side installs
+set(libbeauty_USE_MANGLED_PATHS @libbeauty_USE_MANGLED_PATHS_CONFIGCMAKE@)
+
+set(libbeauty_LIB_COMPONENTS @LIBBEAUTY_MODULES_CONFIGCMAKE@)
+set(libbeauty_INCLUDE_DIRS @libbeauty_INCLUDE_DIRS_CONFIGCMAKE@)
+
+if(NOT TARGET libbeauty_core)
+  include(${CMAKE_CURRENT_LIST_DIR}/libbeautyModules${libbeauty_MODULES_SUFFIX}.cmake)
+endif()
+
+if(NOT CMAKE_VERSION VERSION_LESS "2.8.11")
+  # Target property INTERFACE_INCLUDE_DIRECTORIES available since 2.8.11:
+  # * http://www.cmake.org/cmake/help/v2.8.11/cmake.html#prop_tgt:INTERFACE_INCLUDE_DIRECTORIES
+  foreach(__component ${libbeauty_LIB_COMPONENTS})
+    if(TARGET ${__component})
+      set_target_properties(
+          ${__component}
+          PROPERTIES
+          INTERFACE_INCLUDE_DIRECTORIES "${libbeauty_INCLUDE_DIRS}"
+      )
+    endif()
+  endforeach()
+endif()
+
+
+if(NOT DEFINED LIBBEAUTY_MAP_IMPORTED_CONFIG)
+  if(CMAKE_GENERATOR MATCHES "Visual Studio" OR MSVC)
+    # libbeauty supports Debug and Release builds only.
+    # But MSVS has 'RelWithDebInfo' 'MinSizeRel' configurations for applications.
+    # By default CMake maps these configuration on the first available (Debug) which is wrong.
+    # Non-Debug build of Application can't be used with libbeauty Debug build (ABI mismatch problem)
+    # Add mapping of RelWithDebInfo and MinSizeRel to Release here
+    set(LIBBEAUTY_MAP_IMPORTED_CONFIG "RELWITHDEBINFO=!Release;MINSIZEREL=!Release")
+  endif()
+endif()
+set(__remap_warnings "")
+macro(olibbeauty_map_imported_config target)
+  if(DEFINED LIBBEAUTY_MAP_IMPORTED_CONFIG) # list, "RELWITHDEBINFO=Release;MINSIZEREL=Release"
+    get_target_property(__available_configurations ${target} IMPORTED_CONFIGURATIONS)
+    foreach(remap ${LIBBEAUTY_MAP_IMPORTED_CONFIG})
+      if(remap MATCHES "^(.+)=(!?)([^!]+)$")
+        set(__remap_config "${CMAKE_MATCH_1}")
+        set(__final_config "${CMAKE_MATCH_3}")
+        set(__force_flag "${CMAKE_MATCH_2}")
+        string(TOUPPER "${__final_config}" __final_config_upper)
+        string(TOUPPER "${__remap_config}" __remap_config_upper)
+        if(";${__available_configurations};" MATCHES ";${__remap_config_upper};" AND NOT "${__force_flag}" STREQUAL "!")
+          # configuration already exists, skip remap
+          set(__remap_warnings "${__remap_warnings}... Configuration already exists ${__remap_config} (skip mapping ${__remap_config} => ${__final_config}) (available configurations: ${__available_configurations})\n")
+          continue()
+        endif()
+        if(__available_configurations AND NOT ";${__available_configurations};" MATCHES ";${__final_config_upper};")
+          # skip, configuration is not available
+          if(NOT "${__force_flag}" STREQUAL "!")
+            set(__remap_warnings "${__remap_warnings}... Configuration is not available '${__final_config}' for ${target}, build may fail (available configurations: ${__available_configurations})\n")
+          endif()
+        endif()
+        set_target_properties(${target} PROPERTIES
+            MAP_IMPORTED_CONFIG_${__remap_config} "${__final_config}"
+        )
+      else()
+        message(WARNING "Invalid entry of LIBBEAUTY_MAP_IMPORTED_CONFIG: '${remap}' (${LIBBEAUTY_MAP_IMPORTED_CONFIG})")
+      endif()
+    endforeach()
+  endif()
+endmacro()
+
+
+# ==============================================================
+#  Form list of modules (components) to find
+# ==============================================================
+if(NOT libbeauty_FIND_COMPONENTS)
+  set(libbeauty_FIND_COMPONENTS ${libbeauty_LIB_COMPONENTS})
+  list(REMOVE_ITEM libbeauty_FIND_COMPONENTS libbeauty_java)
+  if(GTest_FOUND OR GTEST_FOUND)
+    list(REMOVE_ITEM libbeauty_FIND_COMPONENTS libbeauty_ts)
+  endif()
+endif()
+
+set(libbeauty_WORLD_COMPONENTS @LIBBEAUTY_WORLD_MODULES@)
+
+# expand short module names and see if requested components exist
+foreach(__libbeautycomponent ${libbeauty_FIND_COMPONENTS})
+  # Store the name of the original component so we can set the
+  # libbeauty_<component>_FOUND variable which can be checked by the user.
+  set (__original_libbeautycomponent ${__libbeautycomponent})
+  if(NOT __libbeautycomponent MATCHES "^libbeauty_")
+    set(__libbeautycomponent libbeauty_${__libbeautycomponent})
+  endif()
+  list(FIND libbeauty_LIB_COMPONENTS ${__libbeautycomponent} __libbeautycomponentIdx)
+  if(__libbeautycomponentIdx LESS 0)
+    if(_libbeauty_HANDLE_COMPONENTS_MANUALLY)
+      # Either the component is required or the user did not set any components at
+      # all. In the latter case, the libbeauty_FIND_REQUIRED_<component> variable
+      # will not be defined since it is not set by this config. So let's assume
+      # the implicitly set components are always required.
+      if(NOT DEFINED libbeauty_FIND_REQUIRED_${__original_libbeautycomponent} OR
+          libbeauty_FIND_REQUIRED_${__original_libbeautycomponent})
+        message(FATAL_ERROR "${__libbeautycomponent} is required but was not found")
+      elseif(NOT libbeauty_FIND_QUIETLY)
+        # The component was marked as optional using OPTIONAL_COMPONENTS
+        message(WARNING "Optional component ${__libbeautycomponent} was not found")
+      endif()
+    endif(_libbeauty_HANDLE_COMPONENTS_MANUALLY)
+    #indicate that module is NOT found
+    string(TOUPPER "${__libbeautycomponent}" __libbeautycomponentUP)
+    set(${__libbeautycomponentUP}_FOUND "${__libbeautycomponentUP}_FOUND-NOTFOUND")
+    set(libbeauty_${__original_libbeautycomponent}_FOUND FALSE)
+  else()
+    # Not using list(APPEND) here, because libbeauty_LIBS may not exist yet.
+    # Also not clearing libbeauty_LIBS anywhere, so that multiple calls
+    # to find_package(libbeauty) with different component lists add up.
+    set(libbeauty_LIBS ${libbeauty_LIBS} "${__libbeautycomponent}")
+    #indicate that module is found
+    string(TOUPPER "${__libbeautycomponent}" __libbeautycomponentUP)
+    set(${__libbeautycomponentUP}_FOUND 1)
+    set(libbeauty_${__original_libbeautycomponent}_FOUND TRUE)
+  endif()
+  if(libbeauty_SHARED AND ";${libbeauty_WORLD_COMPONENTS};" MATCHES ";${__libbeautycomponent};" AND NOT TARGET ${__libbeautycomponent})
+    get_target_property(__implib_dbg libbeauty_world IMPORTED_IMPLIB_DEBUG)
+    get_target_property(__implib_release libbeauty_world  IMPORTED_IMPLIB_RELEASE)
+    get_target_property(__location_dbg libbeauty_world IMPORTED_LOCATION_DEBUG)
+    get_target_property(__location_release libbeauty_world  IMPORTED_LOCATION_RELEASE)
+    get_target_property(__include_dir libbeauty_world INTERFACE_INCLUDE_DIRECTORIES)
+    add_library(${__libbeautycomponent} SHARED IMPORTED)
+    set_target_properties(${__libbeautycomponent} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${__include_dir}")
+    if(__location_dbg)
+      set_property(TARGET ${__libbeautycomponent} APPEND PROPERTY IMPORTED_CONFIGURATIONS DEBUG)
+      set_target_properties(${__libbeautycomponent} PROPERTIES
+        IMPORTED_IMPLIB_DEBUG "${__implib_dbg}"
+        IMPORTED_LINK_INTERFACE_LIBRARIES_DEBUG ""
+        IMPORTED_LOCATION_DEBUG "${__location_dbg}"
+      )
+    endif()
+    if(__location_release)
+      set_property(TARGET ${__libbeautycomponent} APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+      set_target_properties(${__libbeautycomponent} PROPERTIES
+        IMPORTED_IMPLIB_RELEASE "${__implib_release}"
+        IMPORTED_LINK_INTERFACE_LIBRARIES_RELEASE ""
+        IMPORTED_LOCATION_RELEASE "${__location_release}"
+      )
+    endif()
+  endif()
+  if(TARGET ${__libbeautycomponent})
+    olibbeauty_map_imported_config(${__libbeautycomponent})
+  endif()
+endforeach()
+
+if(__remap_warnings AND NOT libbeauty_FIND_QUIETLY)
+  message("libbeauty: configurations remap warnings:\n${__remap_warnings}libbeauty: Check variable LIBBEAUTY_MAP_IMPORTED_CONFIG=${LIBBEAUTY_MAP_IMPORTED_CONFIG}")
+endif()
+
+# ==============================================================
+# Compatibility stuff
+# ==============================================================
+set(libbeauty_LIBRARIES ${libbeauty_LIBS})
+
+#
+# Some macroses for samples
+#
+macro(olibbeauty_check_dependencies)
+  set(OLIBBEAUTY_DEPENDENCIES_FOUND TRUE)
+  foreach(d ${ARGN})
+    if(NOT TARGET ${d})
+      message(WARNING "libbeauty: Can't resolve dependency: ${d}")
+      set(OLIBBEAUTY_DEPENDENCIES_FOUND FALSE)
+      break()
+    endif()
+  endforeach()
+endmacro()
+
+# adds include directories in such way that directories from the libbeauty source tree go first
+function(olibbeauty_include_directories)
+  set(__add_before "")
+  file(TO_CMAKE_PATH "${libbeauty_INSTALL_PATH}" __baseDir)
+  foreach(dir ${ARGN})
+    get_filename_component(__abs_dir "${dir}" ABSOLUTE)
+    if("${__abs_dir}" MATCHES "^${__baseDir}")
+      list(APPEND __add_before "${dir}")
+    else()
+      include_directories(AFTER SYSTEM "${dir}")
+    endif()
+  endforeach()
+  include_directories(BEFORE ${__add_before})
+endfunction()
+
+macro(olibbeauty_include_modules)
+  include_directories(BEFORE "${libbeauty_INCLUDE_DIRS}")
+endmacro()
+
+macro(olibbeauty_include_modules_recurse)
+  include_directories(BEFORE "${libbeauty_INCLUDE_DIRS}")
+endmacro()
+
+macro(olibbeauty_target_link_libraries)
+  target_link_libraries(${ARGN})
+endmacro()
+
+# remove all matching elements from the list
+macro(olibbeauty_list_filterout lst regex)
+  foreach(item ${${lst}})
+    if(item MATCHES "${regex}")
+      list(REMOVE_ITEM ${lst} "${item}")
+    endif()
+  endforeach()
+endmacro()
+
+# We do not actually need REQUIRED_VARS to be checked for. Just use the
+# installation directory for the status.
+find_package_handle_standard_args(libbeauty REQUIRED_VARS libbeauty_INSTALL_PATH
+                                  VERSION_VAR libbeauty_VERSION ${_libbeauty_FPHSA_ARGS})

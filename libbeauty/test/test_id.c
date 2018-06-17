@@ -684,6 +684,43 @@ int disassemble(void *handle_void, struct dis_instructions_s *dis_instructions, 
 }
 #endif
 
+int disassemble(struct self_s *self, int section_id, int section_index, struct dis_instructions_s *dis_instructions, uint8_t *base_address, uint64_t buffer_size, uint64_t offset) {
+	struct instruction_low_level_s *ll_inst = (struct instruction_low_level_s *)self->ll_inst;
+	int tmp = 0;
+	int m;
+	LLVMDecodeAsmX86_64Ref da = self->decode_asm;
+
+	ll_inst->opcode = 0;
+	ll_inst->srcA.kind = KIND_EMPTY;
+	ll_inst->srcB.kind = KIND_EMPTY;
+	ll_inst->dstA.kind = KIND_EMPTY;
+	tmp = LLVMInstructionDecodeAsmX86_64(da, base_address,
+		buffer_size, offset,
+		ll_inst);
+	if (tmp) {
+		printf("LLVMInstructionDecodeAsmX86_64 failed. offset = 0x%"PRIx64"\n", offset);
+		exit(1);
+	}
+	tmp = LLVMPrintInstructionDecodeAsmX86_64(da, ll_inst);
+	if (tmp) {
+		printf("LLVMPrintInstructionDecodeAsmX86_64() failed. offset = 0x%"PRIx64"\n", offset);
+		exit(1);
+	}
+	tmp = convert_ll_inst_to_rtl(self, section_id, section_index, ll_inst, dis_instructions);
+	if (tmp) {
+		printf("convert_ll_inst_to_rtl() failed. offset = 0x%"PRIx64"\n", offset);
+		exit(1);
+	}
+	if (ll_inst->octets != dis_instructions->bytes_used) {
+		printf("octets mismatch 0x%x:0x%x\n", ll_inst->octets, dis_instructions->bytes_used);
+		exit(1);
+	}
+	for (m = 0; m < dis_instructions->instruction_number; m++) {
+		tmp = print_inst(self, &(dis_instructions->instruction[m]), m + 0x10000000, NULL);
+	}
+	return tmp;
+}
+
 /* getHexToken()
    Get next valid hexadecimal token from str starting at pos
    str is a string of hex tokens separated by 'delimiter'

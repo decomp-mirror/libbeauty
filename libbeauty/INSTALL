@@ -45,6 +45,7 @@ b) https://github.com/jcdutton/libbeauty/archive/master.zip
 6. Set CC, CXX, CPP, CXXCPP environment variables if you wish to use clang/llvm to compile libbeauty:
 export CC=/usr/bin/clang-5.0
 export CPP=/usr/bin/clang++-5.0
+export CXX=/usr/bin/clang++-5.0
 export CXXCPP="/usr/bin/clang++-5.0 -E"
 export CPP="/usr/bin/clang-5.0 -E"
 
