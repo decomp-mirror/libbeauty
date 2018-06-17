@@ -7,8 +7,7 @@ Compiler: gcc or clang
 
 Prerequisites:
 -------------
-autoconf
-libtool
+cmake
 llvm-dev
 libclang-dev
 binutils-dev
@@ -51,10 +50,10 @@ export CPP="/usr/bin/clang-5.0 -E"
 
 Otherwise gcc is the default.
 
-Then run once:
- $ autogen.sh
-After that, you only need to run:
- $ ./configure
+Type:
+$ mkdir build
+$ cd build
+$ cmake -DCMAKE_BUILD_TYPE=Debug ..
 
 7. To compile, run
    $ make
