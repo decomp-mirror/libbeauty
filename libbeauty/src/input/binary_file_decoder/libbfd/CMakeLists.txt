@@ -1,6 +1,8 @@
 set(the_description "Input libbfd")
 #libbeauty_define_module(beauty_input_bfd)
 add_library(beauty_input_bfd bfl-internal.h bfl.c)
+set_target_properties(beauty_input_bfd PROPERTIES SOVERSION 1)
+set_target_properties(beauty_input_bfd PROPERTIES VERSION "1.0.0")
 target_link_libraries(beauty_input_bfd -lbfd -liberty -lz -ldl -lopcodes)
 target_include_directories(beauty_input_bfd PRIVATE "${libbeauty_INCLUDE_DIRS}")
 install (TARGETS beauty_input_bfd DESTINATION lib/beauty)

@@ -1,5 +1,7 @@
 set(the_description "Output LLVM")
 add_library(beauty_output_llvm llvm_ir.cpp mytool.cpp)
+set_target_properties(beauty_output_llvm PROPERTIES SOVERSION 1)
+set_target_properties(beauty_output_llvm PROPERTIES VERSION "1.0.0")
 set_target_properties(beauty_output_llvm PROPERTIES
       CXX_STANDARD 11
       CXX_EXTENSIONS NO

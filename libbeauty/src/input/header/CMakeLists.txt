@@ -1,5 +1,7 @@
 set(the_description "Input Header")
 add_library(beauty_input_header find_types.cpp)
+set_target_properties(beauty_input_header PROPERTIES SOVERSION 1)
+set_target_properties(beauty_input_header PROPERTIES VERSION "1.0.0")
 set_target_properties(beauty_input_header PROPERTIES
       CXX_STANDARD 11
       CXX_EXTENSIONS NO
