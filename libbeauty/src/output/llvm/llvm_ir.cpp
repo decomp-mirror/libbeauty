@@ -556,7 +556,6 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 						inst_log1->value3.value_id,
 						external_entry_point->label_redirect[inst_log1->value3.value_id].index,
 						buffer);
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: dstA %p\n", inst, dstA);
 			auto CalleeTy = FunctionType::get(IntegerType::get(mod->getContext(), 32),
 				FuncTy_puts_args,
 				/*isVarArg=*/false);
