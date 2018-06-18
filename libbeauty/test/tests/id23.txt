@@ -3,16 +3,16 @@
 # TEST CASE 0x23
 # setne  -0x5b(%rbp)
 # CHECK: getInstruction Size = 0x4
-# CHECK: result: len=33:// 0x0000:IF   cond=6 JMP-REL=0x0
-# CHECK: result: len=44:// 0x0001:SUB  r0x30/64, i0x5b/64, r0x160/64
-# CHECK: result: len=31:// 0x0002:MOV  i0x1/8, r0x1c0/8
-# CHECK: result: len=37:// 0x0003:BITCAST  r0x160/0, r0x180/0
-# CHECK: result: len=49:// 0x0004:STORE  r0x1c0/8, r0x180/64, s[r0x180]/8
-# CHECK: result: len=33:// 0x0005:IF   cond=5 JMP-REL=0x0
-# CHECK: result: len=44:// 0x0006:SUB  r0x30/64, i0x5b/64, r0x160/64
-# CHECK: result: len=31:// 0x0007:MOV  i0x0/8, r0x1c0/8
-# CHECK: result: len=37:// 0x0008:BITCAST  r0x160/0, r0x180/0
-# CHECK: result: len=49:// 0x0009:STORE  r0x1c0/8, r0x180/64, s[r0x180]/8
+# CHECK: result: len=35:// 00000000:IF   cond=6 JMP-REL=0x0
+# CHECK: result: len=46:// 00000001:SUB  r0x30/64, i0x5b/64, r0x160/64
+# CHECK: result: len=33:// 00000002:MOV  i0x1/8, r0x1c0/8
+# CHECK: result: len=39:// 00000003:BITCAST  r0x160/0, r0x180/0
+# CHECK: result: len=51:// 00000004:STORE  r0x1c0/8, r0x180/64, s[r0x180]/8
+# CHECK: result: len=35:// 00000005:IF   cond=5 JMP-REL=0x0
+# CHECK: result: len=46:// 00000006:SUB  r0x30/64, i0x5b/64, r0x160/64
+# CHECK: result: len=33:// 00000007:MOV  i0x0/8, r0x1c0/8
+# CHECK: result: len=39:// 00000008:BITCAST  r0x160/0, r0x180/0
+# CHECK: result: len=51:// 00000009:STORE  r0x1c0/8, r0x180/64, s[r0x180]/8
 # CHECK: inst_size = 10
 0x0f 0x95 0x45 0xa5
 

@@ -3,10 +3,10 @@
 # TEST CASE 0x4
 # movzbl  -96(%rbp), %esi
 # CHECK: getInstruction Size = 0x4
-# CHECK: result: len=44:// 0x0000:SUB  r0x30/64, i0x60/64, r0x160/64
-# CHECK: result: len=37:// 0x0001:BITCAST  r0x160/0, r0x180/0
-# CHECK: result: len=48:// 0x0002:LOAD  s[r0x180]/8, r0x180/64, r0x1a0/8
-# CHECK: result: len=34:// 0x0003:ZEXT  r0x1a0/8, r0x38/32
+# CHECK: result: len=46:// 00000000:SUB  r0x30/64, i0x60/64, r0x160/64
+# CHECK: result: len=39:// 00000001:BITCAST  r0x160/0, r0x180/0
+# CHECK: result: len=50:// 00000002:LOAD  s[r0x180]/8, r0x180/64, r0x1a0/8
+# CHECK: result: len=36:// 00000003:ZEXT  r0x1a0/8, r0x38/32
 # CHECK: inst_size = 4
 0x0f 0xb6 0x75 0xa0
 

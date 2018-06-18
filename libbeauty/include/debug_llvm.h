@@ -42,15 +42,12 @@
 #define DEBUG_INPUT_HEADER 11
 
 #ifdef __cplusplus
-extern "C" {
-#endif /* !defined(__cplusplus) */
-
+extern "C" void dbg_print(const char* file, int line, const char* func, int module, int level, const char *format, ...) __attribute__((__format__ (printf, 6, 7)));
+#else
 extern void dbg_print(const char* file, int line, const char* func, int module, int level, const char *format, ...) __attribute__((__format__ (printf, 6, 7)));
-#define debug_print(module, level, format, ...) dbg_print(__FILE__, __LINE__, __FUNCTION__, module, level, format, ##__VA_ARGS__)
-
-#ifdef __cplusplus
-}
 #endif /* !defined(__cplusplus) */
+
+#define debug_print(module, level, format, ...) dbg_print(__FILE__, __LINE__, __FUNCTION__, module, level, format, ##__VA_ARGS__)
 
 #endif /* DEBUG_LLVM_H */
 

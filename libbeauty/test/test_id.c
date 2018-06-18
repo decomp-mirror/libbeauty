@@ -587,7 +587,7 @@ int debug_analyse_phi = 0;
 int debug_output = 0;
 int debug_output_llvm = 0;
 
-void setLogLevel()
+void setLogLevel(void)
 {
 	if (getenv("ENABLE_DEBUG_DIS64"))
 		debug_dis64 = 1;

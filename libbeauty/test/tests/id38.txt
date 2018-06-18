@@ -3,11 +3,11 @@
 # TEST CASE 0x38
 # mul    %ecx
 # CHECK: getInstruction Size = 0x2
-# CHECK: result: len=33:// 0x0000:MOV  r0x10/32, r0x10/64
-# CHECK: result: len=31:// 0x0001:MOV  r0x8/32, r0x8/64
-# CHECK: result: len=41:// 0x0002:MULf r0x8/64, r0x10/64, r0x8/64
-# CHECK: result: len=42:// 0x0003:SAR r0x8/64, i0x20/64, r0x10/64
-# CHECK: result: len=33:// 0x0004:TRUNC  r0x8/64, r0x8/32
-# CHECK: result: len=35:// 0x0005:TRUNC  r0x10/64, r0x10/32
+# CHECK: result: len=35:// 00000000:MOV  r0x10/32, r0x10/64
+# CHECK: result: len=33:// 00000001:MOV  r0x8/32, r0x8/64
+# CHECK: result: len=43:// 00000002:MULf r0x8/64, r0x10/64, r0x8/64
+# CHECK: result: len=44:// 00000003:SAR r0x8/64, i0x20/64, r0x10/64
+# CHECK: result: len=35:// 00000004:TRUNC  r0x8/64, r0x8/32
+# CHECK: result: len=37:// 00000005:TRUNC  r0x10/64, r0x10/32
 # CHECK: inst_size = 6
 0xf7 0xe1

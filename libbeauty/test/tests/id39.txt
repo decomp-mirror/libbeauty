@@ -3,10 +3,10 @@
 # TEST CASE 0x39
 # mov    -0x10(%rbp),%rax
 # CHECK: getInstruction Size = 0x4
-# CHECK: result: len=44:// 0x0000:SUB  r0x30/64, i0x10/64, r0x160/64
-# CHECK: result: len=37:// 0x0001:BITCAST  r0x160/0, r0x180/0
-# CHECK: result: len=50:// 0x0002:LOAD  s[r0x180]/64, r0x180/64, r0x1a0/64
-# CHECK: result: len=33:// 0x0003:MOV  r0x1a0/64, r0x8/64
+# CHECK: result: len=46:// 00000000:SUB  r0x30/64, i0x10/64, r0x160/64
+# CHECK: result: len=39:// 00000001:BITCAST  r0x160/0, r0x180/0
+# CHECK: result: len=52:// 00000002:LOAD  s[r0x180]/64, r0x180/64, r0x1a0/64
+# CHECK: result: len=35:// 00000003:MOV  r0x1a0/64, r0x8/64
 # CHECK inst_size = 4
 0x48 0x8b 0x45 0xf0
 

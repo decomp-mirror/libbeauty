@@ -212,8 +212,10 @@ int convert_operand(struct self_s *self, int section_id, int section_index, uint
 			ll_operand->operand[operand_number].offset,
 			ll_operand->operand[operand_number].size);
 		reloc_index = 0;
-		debug_print(DEBUG_INPUT_DIS, 1, "sections = 0x%lx reloc_size = 0x%lx\n",
+		if (self->sections_size > section_index) {
+			debug_print(DEBUG_INPUT_DIS, 1, "sections = 0x%lx reloc_size = 0x%lx\n",
 				self->sections_size, self->sections[section_index].reloc_size);
+		}
 		if (self->sections_size && self->sections[section_index].reloc_size) {
 			debug_print(DEBUG_INPUT_DIS, 1, "sections = 0x%lx reloc_size = 0x%lx\n",
 				self->sections_size, self->sections[section_index].reloc_size);

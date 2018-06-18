@@ -3,9 +3,9 @@
 # TEST CASE 0x3E
 # mov    0x0(%rip),%eax
 # CHECK: getInstruction Size = 0x6
-# CHECK: result: len=43:// 0x0000:ADD  r0x48/64, i0x0/64, r0x160/64
-# CHECK: result: len=37:// 0x0001:BITCAST  r0x160/0, r0x180/0
-# CHECK: result: len=50:// 0x0002:LOAD  m[r0x180]/32, r0x180/64, r0x1a0/32
-# CHECK: result: len=33:// 0x0003:MOV  r0x1a0/32, r0x8/32
+# CHECK: result: len=45:// 00000000:ADD  r0x48/64, i0x0/64, r0x160/64
+# CHECK: result: len=39:// 00000001:BITCAST  r0x160/0, r0x180/0
+# CHECK: result: len=52:// 00000002:LOAD  m[r0x180]/32, r0x180/64, r0x1a0/32
+# CHECK: result: len=35:// 00000003:MOV  r0x1a0/32, r0x8/32
 # CHECK: inst_size = 4
 0x8b 0x05 0x00 0x00 0x00 0x00

@@ -3,6 +3,6 @@
 # TEST CASE 0x35
 # cmp    $0x8,%r13b
 # CHECK: getInstruction Size = 0x4
-# CHECK: result: len=30:// 0x0000:CMPf r0x78/8, i0x8/8
+# CHECK: result: len=32:// 00000000:CMPf r0x78/8, i0x8/8
 # CHECK: inst_size = 1
 0x41 0x80 0xfd 0x08

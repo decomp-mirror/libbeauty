@@ -3,7 +3,7 @@
 # TEST CASE 0x2F
 # callq
 # CHECK: getInstruction Size = 0x5
-# CHECK: result: len=44:// 0x0000:CALL CALL FAILED index=0x12345678
+# CHECK: result: len=69:// 00000000:CALL CALL internal FAILED2 index=0x12345678, relocated=0
 # CHECK: inst_size = 1
 0xe8 0x78 0x56 0x34 0x12
 

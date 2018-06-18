@@ -3,11 +3,11 @@
 # TEST CASE 0x24
 # jmpq   *0x0(,%rax,8)
 # CHECK: getInstruction Size = 0x7
-# CHECK: result: len=43:// 0x0000:IMUL  r0x8/64, i0x8/64, r0x160/64
-# CHECK: result: len=44:// 0x0001:ADD  r0x160/64, i0x0/64, r0x160/64
-# CHECK: result: len=37:// 0x0002:BITCAST  r0x160/0, r0x180/0
-# CHECK: result: len=50:// 0x0003:LOAD  m[r0x180]/64, r0x180/64, r0x1a0/64
-# CHECK: result: len=35:// 0x0004:JMPT  r0x1a0/64, r0x48/64
+# CHECK: result: len=45:// 00000000:IMUL  r0x8/64, i0x8/64, r0x160/64
+# CHECK: result: len=46:// 00000001:ADD  r0x160/64, i0x0/64, r0x160/64
+# CHECK: result: len=39:// 00000002:BITCAST  r0x160/0, r0x180/0
+# CHECK: result: len=52:// 00000003:LOAD  m[r0x180]/64, r0x180/64, r0x1a0/64
+# CHECK: result: len=37:// 00000004:JMPT  r0x1a0/64, r0x48/64
 # CHECK: inst_size = 5
 0xff 0x24 0xc5 0x00 0x00 0x00 0x00
 
