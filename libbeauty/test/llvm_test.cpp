@@ -129,6 +129,30 @@ int main(int argc, char **argv) {
 	}
 	outs() << "\n";
 
+    outs() << "\n";
+    const auto &FL = Mod->getFunctionList();
+    //int64_t size = FL.size();
+    int64_t size = Mod->size();
+    outs() << "size = " << size << "\n";
+    outs() << "sizeM = " << Mod->size() << "\n";
+    Module::const_iterator it = Mod->begin();
+    Module::const_iterator functions[size + 1];
+    functions[0] = Mod->end();
+    for (int n = 0; n < size; n++) {
+    	functions[n + 1] = it;
+    	++it;
+    }
+    Module::FunctionListType FL2[size + 1];
+
+    llvm::outs() << "\nName: ";
+    llvm::outs() << "\n";
+    //llvm::outs() << FL2[0]->getName();
+    llvm::outs() << functions[2]->getName();
+    llvm::outs() << "\n";
+    llvm::outs() << (functions[2] == Mod->end());
+    llvm::outs() << " - Done\n";
+
+
 	for (Module::const_ifunc_iterator I = Mod->ifunc_begin(),
 			 E = Mod->ifunc_end();
 			 I != E; ++I) {
