@@ -136,6 +136,62 @@ int check_domain(struct label_redirect_s *label_redirect)
 	return 0;
 }
 
+Type *import_alien_type(struct self_s *self, Module *mod, Type *type_alien) {
+
+	Type * ReturnTy;
+	if (type_alien->isIntegerTy()) {
+		ReturnTy = IntegerType::get(mod->getContext(), type_alien->getScalarSizeInBits());
+		return ReturnTy;
+	} else if (type_alien->isPointerTy()) {
+		Type * type_alien2 = type_alien->getPointerElementType();
+		if (type_alien2->isIntegerTy()) {
+				ReturnTy = PointerType::get(
+						IntegerType::get(mod->getContext(),
+								type_alien2->getScalarSizeInBits()),
+						0); // Address space zero
+				llvm::outs() << *type_alien << "\n";
+				llvm::outs() << *type_alien2 << "\n";
+				llvm::outs() << *ReturnTy << "\n";
+				return ReturnTy;
+		}
+//				ReturnTy = IntegerType::get(mod->getContext(), type_alien->getScalarSizeInBits());
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "Return/Param pointer type not handled yet\n");
+		llvm::outs() << *type_alien << "\n";
+		llvm::outs() << type_alien2->isAggregateType() << " - Aggregate\n";
+		llvm::outs() << type_alien2->isArrayTy() << " - Array\n";
+		llvm::outs() << type_alien2->isDoubleTy() << " - Double\n";
+		llvm::outs() << type_alien2->isFloatTy() << " - Float\n";
+		llvm::outs() << type_alien2->isIntegerTy() << " - Integer\n";
+		llvm::outs() << type_alien2->isFunctionTy() << " - Function\n";
+		llvm::outs() << type_alien2->isFunctionTy() << " - Function\n";
+		llvm::outs() << type_alien2->isPointerTy() << " - Pointer\n";
+		llvm::outs() << type_alien2->isStructTy() << " - Struct\n";
+		llvm::outs() << type_alien2->isVectorTy() << " - Vector\n";
+		llvm::outs() << type_alien2->isVoidTy() << " - Void\n";
+
+		exit(1);
+	} else {
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "Return/Param type not handled yet\n");
+		llvm::outs() << *type_alien << "\n";
+		llvm::outs() << type_alien->isAggregateType() << " - Aggregate\n";
+		llvm::outs() << type_alien->isArrayTy() << " - Array\n";
+		llvm::outs() << type_alien->isDoubleTy() << " - Double\n";
+		llvm::outs() << type_alien->isFloatTy() << " - Float\n";
+		llvm::outs() << type_alien->isIntegerTy() << " - Integer\n";
+		llvm::outs() << type_alien->isFunctionTy() << " - Function\n";
+		llvm::outs() << type_alien->isFunctionTy() << " - Function\n";
+		llvm::outs() << type_alien->isPointerTy() << " - Pointer\n";
+		llvm::outs() << type_alien->isStructTy() << " - Struct\n";
+		llvm::outs() << type_alien->isVectorTy() << " - Vector\n";
+		llvm::outs() << type_alien->isVoidTy() << " - Void\n";
+
+		exit(1);
+	}
+	return ReturnTy;
+}
+
+
+
 int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct declaration_s *declaration, Value **value, BasicBlock **bb, int node, int external_entry, int inst)
 {
 	struct inst_log_entry_s *inst_log_entry = self->inst_log_entry;
@@ -544,34 +600,27 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 				if (!value_id) {
 					debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: invalid call_info_param\n");
 					exit(1);
+				} else {
+					outs() << *value[value_id] << " - value_id\n";
 				}
 				vector_params.push_back(value[value_id]);
 			}
 			/* Import the function declaration from an alien module */
 			auto CalleeTy_alien = input_header->get_function_type(function);
 			auto ReturnTy_alien = CalleeTy_alien->getReturnType();
-			Type * ReturnTy;
-			if (ReturnTy_alien->isIntegerTy()) {
-				ReturnTy = IntegerType::get(mod->getContext(), ReturnTy_alien->getScalarSizeInBits());
-			} else {
-				debug_print(DEBUG_OUTPUT_LLVM, 1, "Return type not handled yet\n");
-				exit(1);
-			}
+			Type *ReturnTy = import_alien_type(self, mod, ReturnTy_alien);
+
 			std::vector<Type*>FuncTy_puts_args;
 			int number_of_params = CalleeTy_alien->getFunctionNumParams();
 			for (n = 0; n < number_of_params; n++) {
 				Type *param_alien = CalleeTy_alien->getFunctionParamType(n);
-				if (param_alien->isIntegerTy()) {
-					FuncTy_puts_args.push_back(IntegerType::get(mod->getContext(), param_alien->getScalarSizeInBits()));
-				} else {
-					debug_print(DEBUG_OUTPUT_LLVM, 1, "external arg type not handled yet\n");
-					exit(1);
-				}
+				Type *param = import_alien_type(self, mod, param_alien);
+				FuncTy_puts_args.push_back(param);
 			}
 			auto CalleeTy = FunctionType::get(
 					ReturnTy,
 					FuncTy_puts_args,
-					/*isVarArg=*/false);
+					CalleeTy_alien->isVarArg());
 
 			StringRef name = input_header->get_function_name(self, function);
 			function_name = strndup(name.data(), 1024);
