@@ -126,7 +126,7 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 	int tmp_state = 0;
 	int n, l;
 	char buffer[1024];
-	const char function_name[1024];
+	char *function_name;
 	int fields_size;
 	struct external_entry_point_s *external_entry_points = self->external_entry_points;
 
@@ -534,8 +534,8 @@ int write_inst(struct self_s *self, struct string_s *string, struct instruction_
 			tmp = string_cat(string, buffer, strlen(buffer));
 			break;
 		case 3:
-			tmp = input_external_function_get_name(self, instruction->srcA.relocated_external_function, function_name);
-			debug_print(DEBUG_OUTPUT, 1, "Function Name %p\n", function_name);
+			tmp = input_external_function_get_name(self, instruction->srcA.relocated_external_function, &function_name);
+			debug_print(DEBUG_OUTPUT, 1, "Function Name %p:%s\n", function_name, function_name);
 			tmp = snprintf(buffer, 1023, " CALL3 external %s(",
 				function_name),
 			tmp = string_cat(string, buffer, strlen(buffer));

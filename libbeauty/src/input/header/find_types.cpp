@@ -335,12 +335,12 @@ extern "C" int input_external_function_get_size(struct self_s *self, int functio
 	return tmp;
 }
 
-extern "C" int input_external_function_get_name(struct self_s *self, int function_index, char *function_name) {
+extern "C" int input_external_function_get_name(struct self_s *self, int function_index, char **function_name) {
 	int tmp;
 	LLVM_input_header *input_header = (LLVM_input_header*)self->input_header;
 	StringRef name = input_header->get_function_name(self, function_index);
 	char *name2 = strndup(name.data(), 1024);
-	function_name = name2;
+	*function_name = name2;
 	return tmp;
 }
 

@@ -1880,7 +1880,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 	struct label_s label;
 	int found = 0, ret = 1;
 	int reg_tracker[MAX_REG];
-	const char function_name[1024];
+	char *function_name;
 	debug_print(DEBUG_MAIN, 1, "assign_labels_to_src() node 0x%x\n", node);
 	/* Initialise the reg_tracker at each node */
 	for (m = 0; m < MAX_REG; m++) {
@@ -2738,9 +2738,9 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				debug_print(DEBUG_MAIN, 1, "srcA.index = %ld\n", instruction->srcA.index);
 				debug_print(DEBUG_MAIN, 1, "srcA.relocated_external_function = %d\n", instruction->srcA.relocated_external_function);
 				l = instruction->srcA.relocated_external_function;
-				tmp = input_external_function_get_name(self, l, function_name);
+				tmp = input_external_function_get_name(self, l, &function_name);
 
-				debug_print(DEBUG_MAIN, 1, "function_name = %s\n",
+				debug_print(DEBUG_MAIN, 1, "CALL3a function_name = %s\n",
 					function_name);
 				tmp = input_external_function_get_size(self, l, &size);
 

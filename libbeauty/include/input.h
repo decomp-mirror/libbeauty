@@ -84,14 +84,14 @@ extern "C" int input_find_types(struct self_s *self, char *filename, struct inpu
 extern "C" int input_dump_mod(struct self_s *self);
 extern "C" int lookup_external_function(struct self_s *self, const char *symbol_name, int *result);
 extern "C" int input_external_function_get_size(struct self_s *self, int function_index, int *fields_size);
-extern "C" int input_external_function_get_name(struct self_s *self, int function_index, char *function_name);
+extern "C" int input_external_function_get_name(struct self_s *self, int function_index, char **function_name);
 extern "C" int input_external_function_get_return_type(struct self_s *self, int function_index, int *lab_pointer, int *size_bits);
 #else
 int input_find_types(struct self_s *self, char *filename, struct input_find_types_s *find_types);
 int input_dump_mod(struct self_s *self);
 int lookup_external_function(struct self_s *self, const char *symbol_name, int *result);
 int input_external_function_get_size(struct self_s *self, int function_index, int *fields_size);
-int input_external_function_get_name(struct self_s *self, int function_index, char *function_name);
+int input_external_function_get_name(struct self_s *self, int function_index, char **function_name);
 int input_external_function_get_return_type(struct self_s *self, int function_index, int *lab_pointer, int *size_bits);
 #endif
 
