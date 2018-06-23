@@ -77,7 +77,7 @@ enum {
 #define SEX 0x1f /* Signed Extention */
 #define JMPT 0x20 /* Jump Table */
 #define CALLT 0x21 /* Call jump table */
-#define PHI 0x22 /* A PHI point */
+#define LIB_PHI 0x22 /* A LIB_PHI point */
 #define ICMP 0x23 /* ICMP. Similar to LLVM ICMP */
 #define BRANCH 0x24 /* Branch Conditional. Similar to LLVM ICMP */
 #define LOAD 0x25 /* Load from memory/stack */

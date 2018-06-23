@@ -346,6 +346,8 @@ int print_dis_instructions(struct self_s *self)
 	self->external_function_reg_order[3] = REG_CX;
 	self->external_function_reg_order[4] = REG_08;
 	self->external_function_reg_order[5] = REG_09;
+	self->external_functions_size = 0;
+#if 0
 	self->external_functions_size = 12;
 	self->external_functions =
 		calloc(12, sizeof(struct external_function_s));
@@ -432,7 +434,7 @@ int print_dis_instructions(struct self_s *self)
 	self->external_functions[11].field_type[0] = 7; // int8_t *
 	self->external_functions[11].field_type[1] = 7; // int8_t *
 	self->external_functions[11].field_type[2] = 1; // int
-
+#endif
 	self->simple_field_types_size = 9;
 	self->simple_field_types =
 		calloc(9, sizeof(struct simple_field_type_s));
@@ -1870,6 +1872,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 	uint64_t data_address;
 	struct memory_s *memory;
 	struct extension_call_s *call;
+	int tmp;
 
 	/* n is the node to process */
 	int inst;
@@ -1877,6 +1880,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 	struct label_s label;
 	int found = 0, ret = 1;
 	int reg_tracker[MAX_REG];
+	const char function_name[1024];
 	debug_print(DEBUG_MAIN, 1, "assign_labels_to_src() node 0x%x\n", node);
 	/* Initialise the reg_tracker at each node */
 	for (m = 0; m < MAX_REG; m++) {
@@ -2734,12 +2738,15 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				debug_print(DEBUG_MAIN, 1, "srcA.index = %ld\n", instruction->srcA.index);
 				debug_print(DEBUG_MAIN, 1, "srcA.relocated_external_function = %d\n", instruction->srcA.relocated_external_function);
 				l = instruction->srcA.relocated_external_function;
+				tmp = input_external_function_get_name(self, l, function_name);
+
 				debug_print(DEBUG_MAIN, 1, "function_name = %s\n",
-					self->external_functions[l].function_name);
+					function_name);
+				tmp = input_external_function_get_size(self, l, &size);
+
 				debug_print(DEBUG_MAIN, 1, "fields_size = %d\n",
-					self->external_functions[l].fields_size);
+					size);
 				//    self->external_functions[2].field_type 
-				size = self->external_functions[l].fields_size;
 				call->params_reg = calloc(size, sizeof(int));
 				call->params_reg_size = size;
 				for (n = 0; n < size; n++) {
@@ -3241,6 +3248,7 @@ int tip_rules_process(struct self_s *self, int entry_point)
 	uint64_t lab_pointer;
 	uint64_t size_bits;
 	int return_index;
+	int tmp;
 
 
 	debug_print(DEBUG_ANALYSE_TIP, 1, "entered\n");
@@ -3276,9 +3284,7 @@ int tip_rules_process(struct self_s *self, int entry_point)
 					}
 					break;
 				case 3:
-					return_index = self->external_functions[instruction->srcA.relocated_external_function].return_type;
-					lab_pointer = self->simple_field_types[return_index].pointer1;
-					size_bits = self->simple_field_types[return_index].bits;
+					tmp = input_external_function_get_return_type(self, instruction->srcA.relocated_external_function, &lab_pointer, &size_bits);
 					/* FIXME: Handle more different types. */
 					if (lab_pointer) {
 						/* Pointer type */
@@ -5683,7 +5689,8 @@ int main(int argc, char *argv[])
 	setLogLevel();
 
 	debug_print(DEBUG_MAIN, 1, "Hello loops 0x%x\n", 2000);
-
+	getcwd(buffer, 1024);
+    printf("CWD = %s\n", buffer);
 	if (argc != 2) {
 		printf("Syntax error\n");
 		printf("Usage: dis64 filename\n");

@@ -805,6 +805,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 	struct extension_call_s *call;
 	struct external_function_s *external_function;
 	uint64_t eip;
+	int fields_size = 0;
 
 	//memory_text = process_state->memory_text;
 	//memory_stack = process_state->memory_stack;
@@ -2045,10 +2046,14 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 					exit(1);
 				}
 				call = inst->extension;
-				external_function = &(self->external_functions[instruction->srcA.relocated_external_function]);
-				call->params_reg_size = external_function->fields_size;
-				call->params_reg = calloc(external_function->fields_size, sizeof(int));
-				for(n = 0; n < external_function->fields_size; n++) {
+				tmp = input_external_function_get_size(self, instruction->srcA.relocated_external_function, &fields_size);
+				if (tmp) {
+					debug_print(DEBUG_OUTPUT, 1, "external function not found. exiting\n");
+					exit(1);
+				}
+				call->params_reg_size = fields_size;
+				call->params_reg = calloc(fields_size, sizeof(int));
+				for(n = 0; n < fields_size; n++) {
 					call->params_reg[n] = self->external_function_reg_order[n];
 				}
 				debug_print(DEBUG_OUTPUT, 1, "call->params_reg_size = %d\n", call->params_reg_size);

@@ -621,7 +621,6 @@ struct self_s {
 	int struct_type_size;
 	struct struct_type_s *struct_type;
 	int external_functions_size;
-	struct external_function_s *external_functions;
 	int external_function_reg_order_size;
 	int *external_function_reg_order;
 	uint64_t sections_size;

@@ -24,11 +24,75 @@
 #define INPUT_H
 
 #ifdef __cplusplus
+#include "llvm-c/Types.h"
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/ADT/StringMap.h"
+#include "llvm/ADT/StringRef.h"
+#include "llvm/ADT/iterator_range.h"
+#include "llvm/IR/Attributes.h"
+#include "llvm/IR/Comdat.h"
+#include "llvm/IR/DataLayout.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/GlobalAlias.h"
+#include "llvm/IR/GlobalIFunc.h"
+#include "llvm/IR/GlobalVariable.h"
+#include "llvm/IR/Metadata.h"
+#include "llvm/IR/SymbolTableListTraits.h"
+#include "llvm/IR/Module.h"
+#include "llvm/Support/CBindingWrapping.h"
+#include "llvm/Support/CodeGen.h"
+#include <cstddef>
+#include <cstdint>
+#include <iterator>
+#include <memory>
+#include <string>
+#include <vector>
+
+namespace llvm {
+
+class Error;
+class FunctionType;
+class GVMaterializer;
+class LLVMContext;
+class MemoryBuffer;
+class RandomNumberGenerator;
+template <class PtrType> class SmallPtrSetImpl;
+class StructType;
+class Module;
+
+class LLVM_input_header
+{
+	public:
+		int input_dump_mod(struct self_s *self);
+		int input_find_types(struct self_s *self, char *filename, struct input_find_types_s *find_types);
+		int lookup_external_function(struct self_s *self, const char *symbol_name, int *result);
+		int input_external_function_get_size(struct self_s *self, int function_index, int *fields_size);
+		StringRef get_function_name(struct self_s *self, int function_index);
+		int input_external_function_get_return_type(struct self_s *self, int function_index, int *lab_pointer, int *size_bits);
+		FunctionType *get_function_type(int function_index);
+
+
+	private:
+		LLVMContext Context;
+		std::unique_ptr<Module> Mod;
+		int functions_size;
+		Module::const_iterator *functions;
+
+};
+} // end namespace llvm
 extern "C" int input_find_types(struct self_s *self, char *filename, struct input_find_types_s *find_types);
 extern "C" int input_dump_mod(struct self_s *self);
+extern "C" int lookup_external_function(struct self_s *self, const char *symbol_name, int *result);
+extern "C" int input_external_function_get_size(struct self_s *self, int function_index, int *fields_size);
+extern "C" int input_external_function_get_name(struct self_s *self, int function_index, char *function_name);
+extern "C" int input_external_function_get_return_type(struct self_s *self, int function_index, int *lab_pointer, int *size_bits);
 #else
 int input_find_types(struct self_s *self, char *filename, struct input_find_types_s *find_types);
 int input_dump_mod(struct self_s *self);
+int lookup_external_function(struct self_s *self, const char *symbol_name, int *result);
+int input_external_function_get_size(struct self_s *self, int function_index, int *fields_size);
+int input_external_function_get_name(struct self_s *self, int function_index, char *function_name);
+int input_external_function_get_return_type(struct self_s *self, int function_index, int *lab_pointer, int *size_bits);
 #endif
 
 #endif /* INPUT_H */

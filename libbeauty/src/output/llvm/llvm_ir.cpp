@@ -10,6 +10,7 @@
 #include <sstream>
 #include <global_struct.h>
 
+#include <input.h>
 #include <output.h>
 #include <debug_llvm.h>
 
@@ -528,7 +529,10 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			break;
 			}
 		case 3: { // For external call()
-			int function = inst_log1->instruction.srcA.relocated_external_function; 
+			int function = inst_log1->instruction.srcA.relocated_external_function;
+			LLVM_input_header *input_header = (LLVM_input_header*)self->input_header;
+			char *function_name;
+
 			struct extension_call_s *call_info = static_cast<struct extension_call_s *> (inst_log1->extension);
 			std::vector<Value*> vector_params;
 			for (n = 0; n < call_info->params_reg_size; n++) {
@@ -543,24 +547,50 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 				}
 				vector_params.push_back(value[value_id]);
 			}
+			/* Import the function declaration from an alien module */
+			auto CalleeTy_alien = input_header->get_function_type(function);
+			auto ReturnTy_alien = CalleeTy_alien->getReturnType();
+			Type * ReturnTy;
+			if (ReturnTy_alien->isIntegerTy()) {
+				ReturnTy = IntegerType::get(mod->getContext(), ReturnTy_alien->getScalarSizeInBits());
+			} else {
+				debug_print(DEBUG_OUTPUT_LLVM, 1, "Return type not handled yet\n");
+				exit(1);
+			}
 			std::vector<Type*>FuncTy_puts_args;
-			for (n = 0; n < self->external_functions[function].fields_size; n++) {
-				int field_type = self->external_functions[function].field_type[n];
-				if (self->simple_field_types[field_type].integer1 == 1) {
-					FuncTy_puts_args.push_back(IntegerType::get(mod->getContext(), self->simple_field_types[field_type].bits));
+			int number_of_params = CalleeTy_alien->getFunctionNumParams();
+			for (n = 0; n < number_of_params; n++) {
+				Type *param_alien = CalleeTy_alien->getFunctionParamType(n);
+				if (param_alien->isIntegerTy()) {
+					FuncTy_puts_args.push_back(IntegerType::get(mod->getContext(), param_alien->getScalarSizeInBits()));
+				} else {
+					debug_print(DEBUG_OUTPUT_LLVM, 1, "external arg type not handled yet\n");
+					exit(1);
 				}
 			}
-			//FuncTy_puts_args.push_back(IntegerType::get(mod->getContext(), 32));
+			auto CalleeTy = FunctionType::get(
+					ReturnTy,
+					FuncTy_puts_args,
+					/*isVarArg=*/false);
+
+			StringRef name = input_header->get_function_name(self, function);
+			function_name = strndup(name.data(), 1024);
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "function_name = %p:%s\n", function_name, function_name);
+			llvm::outs() << function_name << " - function_name\n";
+
+			auto Callee =
+				Function::Create(CalleeTy, Function::ExternalLinkage, function_name, mod);
+
+			llvm::outs() << *Callee << " - Callee\n";
+			llvm::outs() << &(*Callee->getParent()) << " - Callee-parent\n";
+			llvm::outs() << mod << " - mod\n";
+
 			tmp = label_to_string(&external_entry_point->labels[inst_log1->value3.value_id], buffer, 1023);
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "AX = 0x%lx:0x%lx %s\n",
 						inst_log1->value3.value_id,
 						external_entry_point->label_redirect[inst_log1->value3.value_id].index,
 						buffer);
-			auto CalleeTy = FunctionType::get(IntegerType::get(mod->getContext(), 32),
-				FuncTy_puts_args,
-				/*isVarArg=*/false);
-			auto Callee =
-				Function::Create(CalleeTy, Function::ExternalLinkage, self->external_functions[function].function_name, mod);
+
 			CallInst* call_inst = builder->CreateCall(Callee, vector_params, buffer);
 			call_inst->setCallingConv(CallingConv::C);
 			call_inst->setTailCall(false);

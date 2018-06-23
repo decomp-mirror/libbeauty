@@ -143,15 +143,21 @@ int main(int argc, char **argv) {
     	++it;
     }
     Module::FunctionListType FL2[size + 1];
-
     llvm::outs() << "\nName: ";
     llvm::outs() << "\n";
     //llvm::outs() << FL2[0]->getName();
     llvm::outs() << functions[2]->getName();
     llvm::outs() << "\n";
+    llvm::outs() << functions[2]->getReturnType()->isIntegerTy();
+    llvm::outs() << " - isIntegerTy\n";
+    llvm::outs() << functions[2]->getReturnType()->getScalarSizeInBits();
+    llvm::outs() << " - SizeInBits\n";
+    llvm::outs() << functions[2]->getReturnType()->isPointerTy();
+    llvm::outs() << " - isPointerTy\n";
     llvm::outs() << (functions[2] == Mod->end());
     llvm::outs() << " - Done\n";
 
+    exit(1);
 
 	for (Module::const_ifunc_iterator I = Mod->ifunc_begin(),
 			 E = Mod->ifunc_end();

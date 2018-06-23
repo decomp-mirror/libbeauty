@@ -106,28 +106,6 @@ uint32_t print_reloc_table_entry(struct reloc_table_s *reloc_table_entry) {
 	return 0;
 }
 
-int lookup_external_function(struct self_s *self, const char *symbol_name, int *result)
-{
-	int found = 1; // 1 = not-found, 0 = found.
-	int tmp;
-	int len1, len2;
-	int n;
-
-	for(n = 1; n < self->external_functions_size; n++) {
-		len1 = strlen(symbol_name);
-		len2 = strlen(self->external_functions[n].function_name);
-		if (len1 == len2) {
-			tmp = strncmp(symbol_name, self->external_functions[n].function_name, len2);
-			if (!tmp) {
-				*result = n;
-				found = 0;
-				break;
-			}
-		}
-	}
-	return found;
-}
-
 int lookup_external_entry_point_function(struct self_s *self, uint64_t section_id, uint64_t section_index, char *name, uint64_t value_uint, int *result)
 {
 	int found = 1; // 1 = not-found, 0 = found.
@@ -1119,7 +1097,7 @@ int convert_ll_inst_to_rtl(struct self_s *self, int section_id, int section_inde
 		tmp  = convert_base(self, section_id, section_index, ll_inst, 0, dis_instructions);
 		result = tmp;
 		break;
-	case PHI: /* A PHI point */
+	case LIB_PHI: /* A PHI point */
 		break;
 	case RET: /* Special instruction for helping to print the "result local_regNNNN;" */
                 /* POP -> IP=[SP]; SP=SP+4; */

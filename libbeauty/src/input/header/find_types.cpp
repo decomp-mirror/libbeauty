@@ -39,8 +39,10 @@
 #include "llvm/IRReader/IRReader.h"
 #include <system_error>
 #include <iostream>
+#include <vector>
 #include <global_struct.h>
 #include <debug_llvm.h>
+#include <input.h>
 using namespace llvm;
 
 static cl::opt<std::string>
@@ -101,18 +103,6 @@ static std::unique_ptr<Module> openInputFile(LLVMContext &Context) {
 }
 #endif
 
-class LLVM_input_header
-{
-	public:
-		int input_dump_mod(struct self_s *self);
-		int input_find_types(struct self_s *self, char *filename, struct input_find_types_s *find_types);
-
-	private:
-		LLVMContext Context;
-		std::unique_ptr<Module> Mod;
-};
-
-
 int LLVM_input_header::input_dump_mod(struct self_s *self) {
 	debug_print(DEBUG_INPUT_HEADER, 0, "Entered\n");
 	outs() << *Mod;
@@ -127,6 +117,8 @@ int LLVM_input_header::input_find_types(struct self_s *self, char *filename, str
 	InputFilename = filename;
 	LLVM_input_header::Context.setDiagnosticHandler(diagnosticHandler, nullptr);
 	SMDiagnostic error;
+	int n;
+	uint64_t size;
   //Module *m = parseIRFile("hello.bc", error, context);
 	//std::unique_ptr<Module> Mod = openInputFile(Context);
 	//std::unique_ptr<Module> Mod = parseIRFile(filename, error, Context);
@@ -185,10 +177,18 @@ int LLVM_input_header::input_find_types(struct self_s *self, char *filename, str
 #endif
 
 #if 1
+	n = 1;
+	size = Mod->size();
+	LLVM_input_header::functions_size = size;
+	LLVM_input_header::functions =
+    		new Module::const_iterator[size + 1];
+	functions[0] = Mod->end(); // Empty first record.
 	for (Module::const_iterator I = Mod->begin(),
 			 E = Mod->end();
 			 I != E; ++I) {
 		outs() << "Found Funct:\n";
+		functions[n] = I;
+		n++;
 		I->print(llvm::outs());
 	}
 	outs() << "\n";
@@ -233,6 +233,74 @@ int LLVM_input_header::input_find_types(struct self_s *self, char *filename, str
 	return 0;
 }
 
+int LLVM_input_header::lookup_external_function(struct self_s *self, const char *symbol_name, int *result) {
+	int found = 1; // 1 = not-found, 0 = found.
+	int tmp;
+	uint64_t nl;
+
+	for(nl = 1; nl <= LLVM_input_header::functions_size; nl++) {
+		tmp = functions[nl]->getName().compare(symbol_name);
+		if (!tmp) {
+			*result = nl;
+			found = 0;
+			break;
+		}
+	}
+	return found;
+}
+
+int LLVM_input_header::input_external_function_get_size(struct self_s *self, int function_index, int *fields_size) {
+	int tmp = 0;
+	debug_print(DEBUG_INPUT_HEADER, 0, "Entered\n");
+	if (function_index > functions_size) {
+		return 1;
+	}
+	*fields_size = functions[function_index]->getFunctionType()->getNumParams();
+	debug_print(DEBUG_INPUT_HEADER, 0, "NumOperands = %d\n", *fields_size);
+	return 0;
+}
+
+StringRef LLVM_input_header::get_function_name(struct self_s *self, int function_index) {
+	int tmp = 0;
+	debug_print(DEBUG_INPUT_HEADER, 0, "Entered\n");
+	if (function_index > functions_size) {
+		debug_print(DEBUG_INPUT_HEADER, 0, "function_index out of range\n");
+		exit(1);
+	}
+	return functions[function_index]->getName();
+}
+
+int LLVM_input_header::input_external_function_get_return_type(struct self_s *self, int function_index, int *lab_pointer, int *size_bits) {
+	int tmp = 0;
+	int integer_type = 0;
+	debug_print(DEBUG_INPUT_HEADER, 0, "Entered\n");
+	if (function_index > functions_size) {
+		return 1;
+	}
+	*size_bits = 0;
+	*lab_pointer = 0;
+    integer_type = functions[function_index]->getReturnType()->isIntegerTy();
+    if (integer_type) {
+    	*size_bits = functions[function_index]->getReturnType()->getScalarSizeInBits();
+    }
+    llvm::outs() << " - SizeInBits\n";
+    if (functions[function_index]->getReturnType()->isPointerTy()) {
+    	*lab_pointer = 1;
+    	*size_bits = 8;
+    }
+	debug_print(DEBUG_INPUT_HEADER, 0, "Size = %d, lab_pointer = %d\n", *size_bits, *lab_pointer);
+	return 0;
+}
+
+FunctionType *LLVM_input_header::get_function_type( int function_index) {
+
+	FunctionType *ft = (*functions[function_index]).getFunctionType();
+
+	return ft;
+	//Auto fred &(*functions[function_index]).F
+
+
+}
 extern "C" int input_dump_mod(struct self_s *self) {
 	int tmp;
 	LLVM_input_header *input_header = (LLVM_input_header*)self->input_header;
@@ -249,5 +317,36 @@ extern "C" int input_find_types(struct self_s *self, char *filename, struct inpu
 	debug_print(DEBUG_INPUT_HEADER, 0, "sizeof: %lu\n", sizeof(input_header));
 	tmp = input_header->input_find_types(self, filename, find_types);
 	debug_print(DEBUG_INPUT_HEADER, 0, "Ended\n");
+	return tmp;
+}
+
+extern "C" int lookup_external_function(struct self_s *self, const char *symbol_name, int *result)
+{
+	int tmp;
+	LLVM_input_header *input_header = (LLVM_input_header*)self->input_header;
+	tmp = input_header->lookup_external_function(self, symbol_name, result);
+	return tmp;
+}
+
+extern "C" int input_external_function_get_size(struct self_s *self, int function_index, int *fields_size) {
+	int tmp;
+	LLVM_input_header *input_header = (LLVM_input_header*)self->input_header;
+	tmp = input_header->input_external_function_get_size(self, function_index, fields_size);
+	return tmp;
+}
+
+extern "C" int input_external_function_get_name(struct self_s *self, int function_index, char *function_name) {
+	int tmp;
+	LLVM_input_header *input_header = (LLVM_input_header*)self->input_header;
+	StringRef name = input_header->get_function_name(self, function_index);
+	char *name2 = strndup(name.data(), 1024);
+	function_name = name2;
+	return tmp;
+}
+
+extern "C" int input_external_function_get_return_type(struct self_s *self, int function_index, int *lab_pointer, int *size_bits) {
+	int tmp;
+	LLVM_input_header *input_header = (LLVM_input_header*)self->input_header;
+	tmp = input_header->input_external_function_get_return_type(self, function_index, lab_pointer, size_bits);
 	return tmp;
 }
