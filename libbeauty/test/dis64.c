@@ -129,70 +129,74 @@ void dbg_print(const char* file, int line, const char* func, int module, int lev
 {
 	va_list ap;
 	va_start(ap, format);
+	char *file2 = file;
+	if (strlen(file) > 30) {
+		file2 = &file[strlen(file)-30];
+	}
 	switch (module) {
 	case DEBUG_MAIN:
 		if (level <= debug_dis64) {
-			dprintf(STDERR_FILENO, "DEBUG_MAIN,0x%x %s:%d %s(): ", level, file, line, func);
+			dprintf(STDERR_FILENO, "DEBUG_MAIN,0x%x ...%s:%d %s(): ", level, file2, line, func);
 			vdprintf(STDERR_FILENO, format, ap);
 		}
 		break;
 	case DEBUG_INPUT_BFD:
 		if (level <= debug_input_bfd) {
-			dprintf(STDERR_FILENO, "DEBUG_INPUT_BFD,0x%x %s:%d %s(): ", level, file, line, func);
+			dprintf(STDERR_FILENO, "DEBUG_INPUT_BFD,0x%x ...%s:%d %s(): ", level, file2, line, func);
 			vdprintf(STDERR_FILENO, format, ap);
 		}
 		break;
 	case DEBUG_INPUT_DIS:
 		if (level <= debug_input_dis) {
-			dprintf(STDERR_FILENO, "DEBUG_INPUT_DIS,0x%x %s:%d %s(): ", level, file, line, func);
+			dprintf(STDERR_FILENO, "DEBUG_INPUT_DIS,0x%x ...%s:%d %s(): ", level, file2, line, func);
 			vdprintf(STDERR_FILENO, format, ap);
 		}
 		break;
 	case DEBUG_EXE:
 		if (level <= debug_exe) {
-			dprintf(STDERR_FILENO, "DEBUG_EXE,0x%x %s:%d %s(): ", level, file, line, func);
+			dprintf(STDERR_FILENO, "DEBUG_EXE,0x%x ...%s:%d %s(): ", level, file2, line, func);
 			vdprintf(STDERR_FILENO, format, ap);
 		}
 		break;
 	case DEBUG_ANALYSE:
 		if (level <= debug_analyse) {
-			dprintf(STDERR_FILENO, "DEBUG_ANALYSE,0x%x %s:%d %s(): ", level, file, line, func);
+			dprintf(STDERR_FILENO, "DEBUG_ANALYSE,0x%x ...%s:%d %s(): ", level, file2, line, func);
 			vdprintf(STDERR_FILENO, format, ap);
 		}
 		break;
 	case DEBUG_ANALYSE_PATHS:
 		if (level <= debug_analyse_paths) {
-			dprintf(STDERR_FILENO, "DEBUG_ANALYSE_PATHS,0x%x %s:%d %s(): ", level, file, line, func);
+			dprintf(STDERR_FILENO, "DEBUG_ANALYSE_PATHS,0x%x ...%s:%d %s(): ", level, file2, line, func);
 			vdprintf(STDERR_FILENO, format, ap);
 		}
 		break;
 	case DEBUG_ANALYSE_PHI:
 		if (level <= debug_analyse_phi) {
-			dprintf(STDERR_FILENO, "DEBUG_ANALYSE_PHI,0x%x %s:%d %s(): ", level, file, line, func);
+			dprintf(STDERR_FILENO, "DEBUG_ANALYSE_PHI,0x%x ...%s:%d %s(): ", level, file2, line, func);
 			vdprintf(STDERR_FILENO, format, ap);
 		}
 		break;
 	case DEBUG_ANALYSE_TIP:
 		if (level <= debug_analyse_tip) {
-			dprintf(STDERR_FILENO, "DEBUG_ANALYSE_TIP,0x%x %s:%d %s(): ", level, file, line, func);
+			dprintf(STDERR_FILENO, "DEBUG_ANALYSE_TIP,0x%x ...%s:%d %s(): ", level, file2, line, func);
 			vdprintf(STDERR_FILENO, format, ap);
 		}
 		break;
 	case DEBUG_OUTPUT:
 		if (level <= debug_output) {
-			dprintf(STDERR_FILENO, "DEBUG_OUTPUT,0x%x %s:%d %s(): ", level, file, line, func);
+			dprintf(STDERR_FILENO, "DEBUG_OUTPUT,0x%x ...%s:%d %s(): ", level, file2, line, func);
 			vdprintf(STDERR_FILENO, format, ap);
 		}
 		break;
 	case DEBUG_OUTPUT_LLVM:
 		if (level <= debug_output_llvm) {
-			dprintf(STDERR_FILENO, "DEBUG_OUTPUT_LLVM,0x%x %s:%d %s(): ", level, file, line, func);
+			dprintf(STDERR_FILENO, "DEBUG_OUTPUT_LLVM,0x%x ...%s:%d %s(): ", level, file2, line, func);
 			vdprintf(STDERR_FILENO, format, ap);
 		}
 		break;
 	case DEBUG_INPUT_HEADER:
 		if (level <= debug_input_header) {
-			dprintf(STDERR_FILENO, "DEBUG_INPUT_HEADER,0x%x %s:%d %s(): ", level, file, line, func);
+			dprintf(STDERR_FILENO, "DEBUG_INPUT_HEADER,0x%x ...%s:%d %s(): ", level, file2, line, func);
 			vdprintf(STDERR_FILENO, format, ap);
 		}
 		break;
@@ -2927,7 +2931,7 @@ int rule_add(struct self_s *self, int entry_point, int node, int inst, int phi, 
 		} else {
 			tip_this->rules[index].size_bits = size_bits;
 		}
-		debug_print(DEBUG_ANALYSE_TIP, 1, "0x%x:0x%lx node = 0x%x, inst = 0x%x:%s, phi = 0x%x, operand = 0x%x, tipA_derived_from = 0x%x, tipB_derived_from = 0x%x, tip_derived_from_this = 0x%x, pointer = 0x%x, pointer_to_tip2 = 0x%x, size_bits = 0x%x\n",
+		debug_print(DEBUG_ANALYSE_TIP, 1, "0x%x:0x%lx node = 0x%x, inst = 0x%04x:%s, phi = 0x%x, operand = 0x%x, tipA_derived_from = 0x%x, tipB_derived_from = 0x%x, tip_derived_from_this = 0x%x, pointer = 0x%x, pointer_to_tip2 = 0x%x, size_bits = 0x%x\n",
 			label_index,
 			label_redirect_index,
 			tip_this->rules[index].node,
