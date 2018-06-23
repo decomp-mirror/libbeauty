@@ -144,17 +144,16 @@ Type *import_alien_type(struct self_s *self, Module *mod, Type *type_alien) {
 		return ReturnTy;
 	} else if (type_alien->isPointerTy()) {
 		Type * type_alien2 = type_alien->getPointerElementType();
-		if (type_alien2->isIntegerTy()) {
-				ReturnTy = PointerType::get(
-						IntegerType::get(mod->getContext(),
-								type_alien2->getScalarSizeInBits()),
-						0); // Address space zero
-				llvm::outs() << *type_alien << "\n";
-				llvm::outs() << *type_alien2 << "\n";
-				llvm::outs() << *ReturnTy << "\n";
-				return ReturnTy;
-		}
-//				ReturnTy = IntegerType::get(mod->getContext(), type_alien->getScalarSizeInBits());
+		/* Recursive type creation */
+		Type * type_alien3 = import_alien_type(self, mod, type_alien2);
+		ReturnTy = PointerType::get(type_alien3, 0);
+		llvm::outs() << *type_alien << " - " << type_alien->getTypeID() << "\n";
+		llvm::outs() << *type_alien2 << " - " << type_alien2->getTypeID() << "\n";
+		llvm::outs() << *ReturnTy << " - " << ReturnTy->getTypeID() << "\n";
+		return ReturnTy;
+
+#if 0
+	//				ReturnTy = IntegerType::get(mod->getContext(), type_alien->getScalarSizeInBits());
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "Return/Param pointer type not handled yet\n");
 		llvm::outs() << *type_alien << "\n";
 		llvm::outs() << type_alien2->isAggregateType() << " - Aggregate\n";
@@ -170,6 +169,7 @@ Type *import_alien_type(struct self_s *self, Module *mod, Type *type_alien) {
 		llvm::outs() << type_alien2->isVoidTy() << " - Void\n";
 
 		exit(1);
+#endif
 	} else {
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "Return/Param type not handled yet\n");
 		llvm::outs() << *type_alien << "\n";
