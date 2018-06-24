@@ -3403,6 +3403,9 @@ int build_tip2_table(struct self_s *self, int entry_point, int node)
 			is_pointer = is_pointer1 | is_pointer2;
 			if (value_id1 == 3) is_pointer = 1;
 			if (value_id3 == 3) is_pointer = 1;
+			if (1 == instruction->srcA.relocated) {
+				is_pointer = 1;
+			}
 			tmp = rule_add(self, entry_point, node, inst, 0, 1, value_id1, 0, 0, value_id3, is_pointer, 0, size_bits1);
 			tmp = rule_add(self, entry_point, node, inst, 0, 3, value_id3, value_id1, 0, 0, is_pointer, 0, size_bits3);
 			ret = 0;
