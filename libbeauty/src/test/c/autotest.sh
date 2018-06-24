@@ -547,3 +547,52 @@ then
 else
 	echo "FAILED"
 fi
+echo -n test82:
+if ../../../test/dis64 test82.o 2>&1 | grep -q "END - FINISHED PROCESSING"
+then
+	echo "PASSED"
+else
+	echo "FAILED"
+fi
+echo -n test83:
+if ../../../test/dis64 test83.o 2>&1 | grep -q "END - FINISHED PROCESSING"
+then
+	echo "PASSED"
+else
+	echo "FAILED"
+fi
+echo -n test84:
+if ../../../test/dis64 test84.o 2>&1 | grep -q "END - FINISHED PROCESSING"
+then
+	echo "PASSED"
+else
+	echo "FAILED"
+fi
+echo -n test85:
+if ../../../test/dis64 test85.o 2>&1 | grep -q "END - FINISHED PROCESSING"
+then
+	echo "PASSED"
+else
+	echo "FAILED"
+fi
+echo -n test86:
+if ../../../test/dis64 test86.o 2>&1 | grep -q "END - FINISHED PROCESSING"
+then
+	echo "PASSED"
+else
+	echo "FAILED"
+fi
+echo -n test87:
+if ../../../test/dis64 test87.o 2>&1 | grep -q "END - FINISHED PROCESSING"
+then
+	echo "PASSED"
+else
+	echo "FAILED"
+fi
+echo -n test88:
+if ../../../test/dis64 test88.o 2>&1 | grep -q "END - FINISHED PROCESSING"
+then
+	echo "PASSED"
+else
+	echo "FAILED"
+fi
