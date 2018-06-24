@@ -190,8 +190,6 @@ Type *import_alien_type(struct self_s *self, Module *mod, Type *type_alien) {
 	return ReturnTy;
 }
 
-
-
 int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct declaration_s *declaration, Value **value, BasicBlock **bb, int node, int external_entry, int inst)
 {
 	struct inst_log_entry_s *inst_log_entry = self->inst_log_entry;
@@ -605,31 +603,36 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 				}
 				vector_params.push_back(value[value_id]);
 			}
-			/* Import the function declaration from an alien module */
-			auto CalleeTy_alien = input_header->get_function_type(function);
-			auto ReturnTy_alien = CalleeTy_alien->getReturnType();
-			Type *ReturnTy = import_alien_type(self, mod, ReturnTy_alien);
-
-			std::vector<Type*>FuncTy_puts_args;
-			int number_of_params = CalleeTy_alien->getFunctionNumParams();
-			for (n = 0; n < number_of_params; n++) {
-				Type *param_alien = CalleeTy_alien->getFunctionParamType(n);
-				Type *param = import_alien_type(self, mod, param_alien);
-				FuncTy_puts_args.push_back(param);
-			}
-			auto CalleeTy = FunctionType::get(
-					ReturnTy,
-					FuncTy_puts_args,
-					CalleeTy_alien->isVarArg());
-
 			StringRef name = input_header->get_function_name(self, function);
-			function_name = strndup(name.data(), 1024);
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "function_name = %p:%s\n", function_name, function_name);
-			llvm::outs() << function_name << " - function_name\n";
+			llvm::Function *Callee;
+			/* Use existing Callee if we have already used it before */
+			Callee = mod->getFunction(name);
 
-			auto Callee =
-				Function::Create(CalleeTy, Function::ExternalLinkage, function_name, mod);
+			if (!Callee) {
+				/* Import the function declaration from an alien module */
+				auto CalleeTy_alien = input_header->get_function_type(function);
+				auto ReturnTy_alien = CalleeTy_alien->getReturnType();
+				Type *ReturnTy = import_alien_type(self, mod, ReturnTy_alien);
 
+				std::vector<Type*>FuncTy_puts_args;
+				int number_of_params = CalleeTy_alien->getFunctionNumParams();
+				for (n = 0; n < number_of_params; n++) {
+					Type *param_alien = CalleeTy_alien->getFunctionParamType(n);
+					Type *param = import_alien_type(self, mod, param_alien);
+					FuncTy_puts_args.push_back(param);
+				}
+				auto CalleeTy = FunctionType::get(
+						ReturnTy,
+						FuncTy_puts_args,
+						CalleeTy_alien->isVarArg());
+
+				function_name = strndup(name.data(), 1024);
+				debug_print(DEBUG_OUTPUT_LLVM, 1, "function_name = %p:%s\n", function_name, function_name);
+				llvm::outs() << function_name << " - function_name\n";
+
+				Callee =
+					Function::Create(CalleeTy, Function::ExternalLinkage, function_name, mod);
+			}
 			llvm::outs() << *Callee << " - Callee\n";
 			llvm::outs() << &(*Callee->getParent()) << " - Callee-parent\n";
 			llvm::outs() << mod << " - mod\n";
