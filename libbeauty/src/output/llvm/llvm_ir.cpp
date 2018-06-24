@@ -610,7 +610,12 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 
 			if (!Callee) {
 				/* Import the function declaration from an alien module */
+				function_name = strndup(name.data(), 1024);
 				auto CalleeTy_alien = input_header->get_function_type(function);
+				if (!CalleeTy_alien) {
+					debug_print(DEBUG_OUTPUT_LLVM, 1, "alien function not found. %p:%s\n", function_name, function_name);
+					exit(1);
+				}
 				auto ReturnTy_alien = CalleeTy_alien->getReturnType();
 				Type *ReturnTy = import_alien_type(self, mod, ReturnTy_alien);
 
@@ -626,13 +631,17 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 						FuncTy_puts_args,
 						CalleeTy_alien->isVarArg());
 
-				function_name = strndup(name.data(), 1024);
 				debug_print(DEBUG_OUTPUT_LLVM, 1, "function_name = %p:%s\n", function_name, function_name);
 				llvm::outs() << function_name << " - function_name\n";
 
 				Callee =
 					Function::Create(CalleeTy, Function::ExternalLinkage, function_name, mod);
 			}
+			if (!Callee) {
+				debug_print(DEBUG_OUTPUT_LLVM, 1, "Callee failed to be created\n");
+				exit(1);
+			}
+
 			llvm::outs() << *Callee << " - Callee\n";
 			llvm::outs() << &(*Callee->getParent()) << " - Callee-parent\n";
 			llvm::outs() << mod << " - mod\n";
