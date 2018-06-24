@@ -232,7 +232,8 @@ int convert_operand(struct self_s *self, int section_id, int section_index, uint
 						debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocated 3 failed to find function %s\n", reloc_table_entry->name);
 						exit(1);
 					}
-				} else {
+				} else if ((reloc_table_entry->section_index == section_index) &&
+						(reloc_table_entry->section_id == section_id)) {
 					int result = 0;
 					inst_operand->relocated = 2; /* Internal function / variable */
 					//inst_operand->relocated_area = reloc_table_entry->relocated_area;
@@ -255,6 +256,20 @@ int convert_operand(struct self_s *self, int section_id, int section_index, uint
 						debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocated 2 failed to find function %s\n", reloc_table_entry->name);
 						//exit(1);
 					}
+				} else if (self->sections[reloc_table_entry->section_index].data) {
+					debug_print(DEBUG_INPUT_DIS, 1, "FIXME: reloc_table_entry pointing to DATA section\n");
+					// FIXME: TODO
+					//        This means that this operand is a pointer.
+					inst_operand->relocated = 1; /* Data pointer relocated */
+					inst_operand->relocated_section_id = reloc_table_entry->section_id;
+					inst_operand->relocated_section_index = reloc_table_entry->section_index;
+					inst_operand->relocated_index = reloc_table_entry->addend;
+					debug_print(DEBUG_INPUT_DIS, 1, "section_name:%s + 0x%x\n",
+							reloc_table_entry->name,
+							reloc_table_entry->addend);
+					//exit(1);
+				} else {
+					debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocated 2 failed to find function %s\n", reloc_table_entry->name);
 				}
 				//exit(1);
 			}
