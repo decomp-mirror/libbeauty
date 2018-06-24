@@ -5785,6 +5785,7 @@ int main(int argc, char *argv[])
 			debug_print(DEBUG_MAIN, 1, "rel[%d].name         = %s\n", m, reloc->name);
 			debug_print(DEBUG_MAIN, 1, "rel[%d].value_int    = 0x%lx\n", m, reloc->value_int);
 			debug_print(DEBUG_MAIN, 1, "rel[%d].value_uint   = 0x%lx\n", m, reloc->value_uint);
+			debug_print(DEBUG_MAIN, 1, "rel[%d].addend       = 0x%lx\n", m, reloc->addend);
 		}
 
 	}

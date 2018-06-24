@@ -205,7 +205,7 @@ int convert_operand(struct self_s *self, int section_id, int section_index, uint
 						tmp, reloc_index);
 			reloc_table_entry = &(self->sections[section_index].reloc_entry[reloc_index]);
 			if (!tmp) {
-				debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocate found index=0x%lx, type=0x%x, offset=0x%lx, size=0x%lx, section_id=0x%lx, section_index=0x%lx,name=%s, value_int = 0x%lx, value_uint = 0x%lx\n",
+				debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocate found index=0x%lx, type=0x%x, offset=0x%lx, size=0x%lx, section_id=0x%lx, section_index=0x%lx,name=%s, value_int = 0x%lx, value_uint = 0x%lx, addend = 0x%lx\n",
 					reloc_index,
 					reloc_table_entry->type,
 					reloc_table_entry->offset,
@@ -214,7 +214,8 @@ int convert_operand(struct self_s *self, int section_id, int section_index, uint
 					reloc_table_entry->section_index,
 					reloc_table_entry->name,
 					reloc_table_entry->value_int,
-					reloc_table_entry->value_uint);
+					reloc_table_entry->value_uint,
+					reloc_table_entry->addend);
 				if (self->sections[reloc_table_entry->section_index].section_id != reloc_table_entry->section_id) {
 					int result = 0;
 					inst_operand->relocated = 3; /* An external function / variable */

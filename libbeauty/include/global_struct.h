@@ -571,6 +571,7 @@ struct reloc_s {
 	   Use whichever value is non-zero */
 	int64_t value_int;
 	uint64_t value_uint;
+	uint64_t addend;
 };
 
 struct section_s {

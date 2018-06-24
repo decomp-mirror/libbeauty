@@ -536,7 +536,8 @@ int bf_get_reloc_table_section(void *handle_void, int index, struct reloc_s *rel
 		} else {
 			printf (" howto->type %-16d\n", rel->howto->type);
 		}
-
+		printf (" addend = 0x%x\n", rel->addend);
+		reloc_table[n].addend = rel->addend;
 		debug_print(DEBUG_INPUT_BFD, 1, "p1 %p\n",&rel->sym_ptr_ptr);
 		debug_print(DEBUG_INPUT_BFD, 1, "p2 %p\n",rel->sym_ptr_ptr);
 		reloc_table[n].type = 1; /* Only one type so far */
@@ -1195,7 +1196,7 @@ void bf_disassemble_callback_start(void *handle_void)
 void bf_disassemble_callback_end(void *handle_void)
 {
 	struct rev_eng *handle = (struct rev_eng*) handle_void;
-	debug_print(DEBUG_INPUT_DIS, 1, "%s\n", handle->disassemble_string);
+	printf("%s\n", handle->disassemble_string);
 }
 
 int bf_disassemble_print_callback(FILE *stream, const char *format, ...)
@@ -1259,7 +1260,7 @@ int bf_disassemble(void *handle_void, int offset)
 	struct disassemble_info *disasm_info = &(handle->disasm_info);
 	disassembler_ftype disassemble_fn = handle->disassemble_fn;
 	int octets = 0;
-	debug_print(DEBUG_MAIN, 1, "bf_disassemble_fn %p, %p offset = 0x%x\n", disassemble_fn, print_insn_i386, offset);
+	//debug_print(DEBUG_MAIN, 1, "bf_disassemble_fn %p, %p offset = 0x%x\n", disassemble_fn, print_insn_i386, offset);
 #if 0
 	for (n = 0; n < disasm_info->buffer_length; n++) {
 		printf("0x%x ", disasm_info->buffer[n]);
