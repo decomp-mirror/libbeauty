@@ -336,11 +336,18 @@ int LLVM_input_header::load_data_hints(struct self_s *self, char *filename) {
 			index = line.find(",",index_previous + 1);
 			size_t length = index - (index_previous + 1);
 			std::string token = line.substr(index_previous + 1, length);
+			int found = 0;
 			for(hints2_type_s & hint2_type : hints2_type) {
 				if ((hint2_type.type.compare(token)) == 0) {
 					hints2_local.type.push_back(hint2_type.index);
+					found = 1;
 					break;
 				}
+			}
+			if (!found) {
+				debug_print(DEBUG_INPUT_HEADER, 0, "Exiting. Token:%s not recognised in line:%s\n",
+						token.c_str(), line.c_str());
+				exit(1);
 			}
 		}
 		hints2.push_back(hints2_local);
