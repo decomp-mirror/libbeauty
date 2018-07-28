@@ -39,6 +39,8 @@
 #include "llvm/IRReader/IRReader.h"
 #include <system_error>
 #include <iostream>
+#include <fstream>
+#include <string>
 #include <vector>
 #include <global_struct.h>
 #include <debug_llvm.h>
@@ -103,13 +105,13 @@ static std::unique_ptr<Module> openInputFile(LLVMContext &Context) {
 }
 #endif
 
-int LLVM_input_header::input_dump_mod(struct self_s *self) {
+int LLVM_input_header::dump_mod(struct self_s *self) {
 	debug_print(DEBUG_INPUT_HEADER, 0, "Entered\n");
 	outs() << *Mod;
 	return 0;
 }
 
-int LLVM_input_header::input_find_types(struct self_s *self, char *filename, struct input_find_types_s *find_types) {
+int LLVM_input_header::find_types(struct self_s *self, char *filename, struct input_find_types_s *find_types) {
 
 	debug_print(DEBUG_INPUT_HEADER, 0, "Entered\n");
 	llvm::TypeFinder type_finder;
@@ -249,7 +251,7 @@ int LLVM_input_header::lookup_external_function(struct self_s *self, const char 
 	return found;
 }
 
-int LLVM_input_header::input_external_function_get_size(struct self_s *self, int function_index, int *fields_size) {
+int LLVM_input_header::external_function_get_size(struct self_s *self, int function_index, int *fields_size) {
 	int tmp = 0;
 	debug_print(DEBUG_INPUT_HEADER, 0, "Entered\n");
 	if (function_index > functions_size) {
@@ -270,7 +272,7 @@ StringRef LLVM_input_header::get_function_name(struct self_s *self, int function
 	return functions[function_index]->getName();
 }
 
-int LLVM_input_header::input_external_function_get_return_type(struct self_s *self, int function_index, int *lab_pointer, int *size_bits) {
+int LLVM_input_header::external_function_get_return_type(struct self_s *self, int function_index, int *lab_pointer, int *size_bits) {
 	int tmp = 0;
 	int integer_type = 0;
 	debug_print(DEBUG_INPUT_HEADER, 0, "Entered\n");
@@ -301,10 +303,70 @@ FunctionType *LLVM_input_header::get_function_type( int function_index) {
 
 
 }
+
+int LLVM_input_header::load_data_hints(struct self_s *self, char *filename) {
+	int tmp = 0;
+	debug_print(DEBUG_INPUT_HEADER, 0, "Entered\n");
+	debug_print(DEBUG_INPUT_HEADER, 0, "File:%s\n", filename);
+	std::ifstream file(filename);
+	std::vector<std::string> lines;
+	//t.resize(20);
+	if (!file) {
+		debug_print(DEBUG_INPUT_HEADER, 0, "Exiting. Probably File not found\n");
+		exit(1);
+	}
+	std::string str;
+	while (std::getline(file, str))
+	{
+		outs() << "FRED:" << str << "\n"; // Process str
+		if(str.size() > 0) {
+			lines.push_back(str);
+		}
+	}
+	struct hints2_s  hints2_local;
+
+	for(std::string & line : lines) {
+		hints2_local.function_name.clear();
+		hints2_local.type.clear();
+		size_t index = line.find(",",0);
+		hints2_local.function_name = line.substr(0, index);
+
+		while (index != (size_t)-1) {
+			size_t index_previous = index;
+			index = line.find(",",index_previous + 1);
+			size_t length = index - (index_previous + 1);
+			std::string token = line.substr(index_previous + 1, length);
+			for(hints2_type_s & hint2_type : hints2_type) {
+				if ((hint2_type.type.compare(token)) == 0) {
+					hints2_local.type.push_back(hint2_type.index);
+					break;
+				}
+			}
+		}
+		hints2.push_back(hints2_local);
+	}
+#if 0
+	for(hints2_type_s & hint2_type : hints2_type) {
+		outs() << "FRED4:" << hint2_type.index << "\n";
+		outs() << "FRED5:" << hint2_type.type << "\n";
+	}
+	for(hints2_s & hints2_item : hints2) {
+		outs() << "FRED6:" << hints2_item.function_name << "\n";
+		for(int & hints2_type_item : hints2_item.type) {
+			outs() << "FRED6A:" << hints2_type_item << "\n";
+		}
+	}
+#endif
+	debug_print(DEBUG_INPUT_HEADER, 0, "Exit\n");
+// TODO
+	return 0;
+}
+
+
 extern "C" int input_dump_mod(struct self_s *self) {
 	int tmp;
 	LLVM_input_header *input_header = (LLVM_input_header*)self->input_header;
-	tmp = input_header->input_dump_mod(self);
+	tmp = input_header->dump_mod(self);
 	return tmp;
 }
 
@@ -315,10 +377,18 @@ extern "C" int input_find_types(struct self_s *self, char *filename, struct inpu
 	void *ref = input_header;
 	self->input_header = ref;
 	debug_print(DEBUG_INPUT_HEADER, 0, "sizeof: %lu\n", sizeof(input_header));
-	tmp = input_header->input_find_types(self, filename, find_types);
+	tmp = input_header->find_types(self, filename, find_types);
 	debug_print(DEBUG_INPUT_HEADER, 0, "Ended\n");
 	return tmp;
 }
+
+extern "C" int input_load_data_hints(struct self_s *self, char *filename) {
+	int tmp;
+	LLVM_input_header *input_header = (LLVM_input_header*)self->input_header;
+	tmp = input_header->load_data_hints(self, filename);
+	return tmp;
+}
+
 
 extern "C" int lookup_external_function(struct self_s *self, const char *symbol_name, int *result)
 {
@@ -331,7 +401,7 @@ extern "C" int lookup_external_function(struct self_s *self, const char *symbol_
 extern "C" int input_external_function_get_size(struct self_s *self, int function_index, int *fields_size) {
 	int tmp;
 	LLVM_input_header *input_header = (LLVM_input_header*)self->input_header;
-	tmp = input_header->input_external_function_get_size(self, function_index, fields_size);
+	tmp = input_header->external_function_get_size(self, function_index, fields_size);
 	return tmp;
 }
 
@@ -347,6 +417,6 @@ extern "C" int input_external_function_get_name(struct self_s *self, int functio
 extern "C" int input_external_function_get_return_type(struct self_s *self, int function_index, int *lab_pointer, int *size_bits) {
 	int tmp;
 	LLVM_input_header *input_header = (LLVM_input_header*)self->input_header;
-	tmp = input_header->input_external_function_get_return_type(self, function_index, lab_pointer, size_bits);
+	tmp = input_header->external_function_get_return_type(self, function_index, lab_pointer, size_bits);
 	return tmp;
 }

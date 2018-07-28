@@ -63,20 +63,37 @@ class Module;
 class LLVM_input_header
 {
 	public:
-		int input_dump_mod(struct self_s *self);
-		int input_find_types(struct self_s *self, char *filename, struct input_find_types_s *find_types);
+		int dump_mod(struct self_s *self);
+		int find_types(struct self_s *self, char *filename, struct input_find_types_s *find_types);
 		int lookup_external_function(struct self_s *self, const char *symbol_name, int *result);
-		int input_external_function_get_size(struct self_s *self, int function_index, int *fields_size);
+		int external_function_get_size(struct self_s *self, int function_index, int *fields_size);
 		StringRef get_function_name(struct self_s *self, int function_index);
-		int input_external_function_get_return_type(struct self_s *self, int function_index, int *lab_pointer, int *size_bits);
+		int external_function_get_return_type(struct self_s *self, int function_index, int *lab_pointer, int *size_bits);
 		FunctionType *get_function_type(int function_index);
-
+		int load_data_hints(struct self_s *self, char *filename);
+		struct hints2_s {
+			std::string function_name;
+			std::vector<int> type;
+		};
 
 	private:
 		LLVMContext Context;
 		std::unique_ptr<Module> Mod;
 		int functions_size;
 		Module::const_iterator *functions;
+		int hints_size;
+		std::unique_ptr<int[]> *hints;
+		std::vector<hints2_s> hints2;
+
+		struct hints2_type_s {
+			int index;
+			std::string type;
+		};
+		std::vector <hints2_type_s> hints2_type = {
+				{0, "null"},
+				{1, "string-zero"},
+				{2, "format-string-zero"}
+		};
 
 };
 } // end namespace llvm
@@ -86,6 +103,7 @@ extern "C" int lookup_external_function(struct self_s *self, const char *symbol_
 extern "C" int input_external_function_get_size(struct self_s *self, int function_index, int *fields_size);
 extern "C" int input_external_function_get_name(struct self_s *self, int function_index, char **function_name);
 extern "C" int input_external_function_get_return_type(struct self_s *self, int function_index, int *lab_pointer, int *size_bits);
+extern "C" int input_load_data_hints(struct self_s *self, char *filename);
 #else
 int input_find_types(struct self_s *self, char *filename, struct input_find_types_s *find_types);
 int input_dump_mod(struct self_s *self);
@@ -93,6 +111,7 @@ int lookup_external_function(struct self_s *self, const char *symbol_name, int *
 int input_external_function_get_size(struct self_s *self, int function_index, int *fields_size);
 int input_external_function_get_name(struct self_s *self, int function_index, char **function_name);
 int input_external_function_get_return_type(struct self_s *self, int function_index, int *lab_pointer, int *size_bits);
+int input_load_data_hints(struct self_s *self, char *filename);
 #endif
 
 #endif /* INPUT_H */
