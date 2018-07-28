@@ -107,15 +107,24 @@ Module* makeLLVMModule(LLVMContext &Context, char *output_filename) {
  module->setTargetTriple("x86_64-pc-linux-gnu");
  // Type Definitions
  std::vector<Type*>FuncTy_0_args;
+ Constant *const_array_4 = ConstantDataArray::getString(module->getContext(), "hello world\n", true);
+ //std::cout << "TEST1:" << const_array_4->getType()->getArrayNumElements() << "\n";
+ ArrayType* Array_1 = ArrayType::get(IntegerType::get(module->getContext(), 8),
+		 const_array_4->getType()->getArrayNumElements());
  PointerType* PointerTy_1 = PointerType::get(IntegerType::get(module->getContext(), 32), 0);
  PointerType* PointerTy_2 = PointerType::get(IntegerType::get(module->getContext(), 8), 0);
+ PointerType* PointerTy_3 = PointerType::get(IntegerType::get(module->getContext(), 8), 0);
  PointerTy_1->print(llvm::errs());
  PointerTy_2->print(llvm::errs());
  if (PointerTy_1 == PointerTy_2) {
 	printf("Match\n");
  }
  IntegerType* IntegerTy_1 = IntegerType::get(module->getContext(), 32);
- // Constant Definitions
+ IntegerType* IntegerTy_8 = IntegerType::get(module->getContext(), 8);
+  // Constant Definitions
+ ConstantInt* const_int64_0 = ConstantInt::get(
+		 module->getContext(),
+		 APInt(32, StringRef("0"), 10));
  ConstantInt* const_int64_1 = ConstantInt::get(C, APInt(64, StringRef("10"), 10));
 // PointerType* const_ptr_int64_1 = PointerType::get(ConstantInt::get(C, APInt(64, StringRef("10"), 10)));
  Value* const_ptr_int64_1 = ConstantExpr::getIntToPtr(
@@ -151,12 +160,16 @@ FuncTy_0_args.push_back(IntegerType::get(module->getContext(), 32)); // Second a
  //gvar_ptr_mem->setAlignment(8);
 
  GlobalVariable* gvar_ptr_mem2 = new GlobalVariable(/*Module=*/*module,
- /*Type=*/PointerTy_1,
- /*isConstant=*/false,
- /*Linkage=*/GlobalValue::ExternalLinkage,
+ /*Type=*/Array_1,
+ /*isConstant=*/true,
+ /*Linkage=*/GlobalValue::PrivateLinkage,
  /*Initializer=*/0,
  /*Name=*/"mem2");
- gvar_ptr_mem2->setAlignment(4);
+ gvar_ptr_mem2->setAlignment(1);
+ gvar_ptr_mem2->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
+ //gvar_ptr_mem2->setInitializer(const_array_4);
+ //Constant* const_ptr_mem2 = ConstantArray::GetElementPtr(gvar_ptr_mem2, 0);
+
  
  ConstantInt* int64_1 = ConstantInt::get(IntegerType::get(module->getContext(), 32), 0x123);
  GlobalVariable* gvar_ptr_mem3 = new GlobalVariable(/*Module=*/*module,
@@ -211,28 +224,40 @@ FuncTy_0_args.push_back(IntegerType::get(module->getContext(), 32)); // Second a
 //  ptr_5->setAlignment(8);
  Value* ptr_6 = builder->CreateGEP(ptr_1, ConstantInt::get(C, APInt(32, 2)), "ptr_6");
  Value* ptr_7 = builder->CreateGEP(const_ptr_int64_1, const_int64_2, "ptr_7");
+ // Constant Definitions
+  std::vector<Value*> const_ptr_4_indices;
+  ConstantInt* const_int64_6 = ConstantInt::get(module->getContext(), APInt(64, StringRef("0"), 10));
+  // Need two indexes to de-reference to get i8* from the String Array.
+  const_ptr_4_indices.push_back(const_int64_6);
+  const_ptr_4_indices.push_back(const_int64_6);
+  //Constant* const_ptr_5 = ConstantExpr::getGetElementPtr(gvar_ptr_mem2, const_ptr_5_indices);
+  Value* ptr_8 = builder->CreateGEP(gvar_ptr_mem2, const_ptr_4_indices, "ptr_8");
+
+  // Global Variable Definitions
+//  gvar_array__str->setInitializer(const_array_4);
+ gvar_ptr_mem2->setInitializer(const_array_4);
+
+ // Value* ptr_8 = builder->CreateInBoundsGEP(IntegerTy_8, gvar_ptr_mem2, const_int64_0,"ptr_8");
  Value* int_6 = builder->CreateAlignedLoad(ptr_6, 8, "int_6");
  Value* int_7 = builder->CreateAlignedLoad(ptr_7, 8, "int_7");
 
  std::vector<Type*>FuncTy_puts_args;
- FuncTy_puts_args.push_back(IntegerType::get(module->getContext(), 32));
- FuncTy_puts_args.push_back(IntegerType::get(module->getContext(), 32));
+ FuncTy_puts_args.push_back(PointerTy_2);
+ //FuncTy_puts_args.push_back(IntegerType::get(module->getContext(), 32));
  auto CalleeTy = FunctionType::get(IntegerType::get(module->getContext(), 32),
 								   FuncTy_puts_args,
                                     /*isVarArg=*/false);
  auto Callee =
      Function::Create(CalleeTy, Function::ExternalLinkage, "puts", module);
- Value* Args[2];
- Args[0] = int_6;
- Args[1] = int_6;
- Value *FCall = builder->CreateCall(Callee, Args);
+ Value* Args[1];
+ Args[0] = ptr_8;
+ Value *FCall = builder->CreateCall(Callee, Args, "tmp");
 
  std::vector<Value*>args2;
- args2.push_back(int_6);
- args2.push_back(int_7);
- Value *FCall2 = builder->CreateCall(Callee, args2);
- std::cout << "\nFCall\n" << FCall << "\n";
- Args[1] = int_7; // Output only includes int_6,int_6
+ args2.push_back(ptr_8);
+ Value *FCall2 = builder->CreateCall(Callee, args2, "tmp");
+// std::cout << "\nFCall\n" << FCall << "\n";
+// Args[1] = int_7; // Output only includes int_6,int_6
 
 //  GetElementPtrInst* ptr_6 = GetElementPtrInst::Create(IntegerType::get(mod->getContext(), 32), ptr_5, {
 //   const_int64_3
