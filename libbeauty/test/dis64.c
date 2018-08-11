@@ -5884,7 +5884,7 @@ int main(int argc, char *argv[])
 	tmp = input_find_types(self, "test110.bc", &find_types);
 	tmp = input_load_data_hints(self, "test110.hints");
 	input_dump_mod(self);
-	exit(1);
+	//exit(1);
 #if 0
 	bf_get_reloc_table_code_section(handle_void);
 	

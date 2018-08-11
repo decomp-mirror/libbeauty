@@ -209,7 +209,7 @@ static int get_value_RTL_instruction(
 
 	if (info_id == 0) info = "srcA";
 	if (info_id == 1) info = "srcB";
-	debug_print(DEBUG_EXE, 1, "get_value_RTL_instruction:%p, %p, %i\n", source, destination, info_id);
+	debug_print(DEBUG_EXE, 1, "get_value_RTL_instruction:%p, %p, %i:%s\n", source, destination, info_id, info);
 	switch (source->indirect) {
 	case IND_DIRECT:
 		/* Not indirect */
@@ -219,11 +219,36 @@ static int get_value_RTL_instruction(
 			/* i - immediate */
 			debug_print(DEBUG_EXE, 1, "%s-immediate\n", info);
 			debug_print(DEBUG_EXE, 1, "%s-relocated=0x%x\n", info, source->relocated);
+			debug_print(DEBUG_EXE, 1, "section id:0x%x index:0x%x + 0x%x\n",
+					source->relocated_section_id,
+					source->relocated_section_index,
+					source->relocated_index);
+			switch (source->relocated) {
+			case 0:
+				destination->relocated = 0;
+				destination->relocated_section_id = 0;
+				destination->relocated_section_index = 0;
+				destination->relocated_index = 0;
+				break;
+			case 1:
+			case 3:
+				destination->relocated = source->relocated;
+				destination->relocated_section_id = source->relocated_section_id;
+				destination->relocated_section_index = source->relocated_section_index;
+				destination->relocated_index = source->relocated_index;
+				break;
+			default:
+				debug_print(DEBUG_EXE, 1, "exiting, relocated 0x%x not yet handled\n",
+						source->relocated);
+				exit(1);
+				break;
+			}
 			debug_print(DEBUG_EXE, 1, "index=%"PRIx64", size=%d\n",
 					source->index,
 					source->value_size);
 			destination->start_address = 0;
 			destination->length = source->value_size;
+
 			/* known */
 			destination->init_value_type = 1;
 			destination->init_value = source->index;

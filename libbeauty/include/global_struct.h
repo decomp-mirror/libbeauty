@@ -397,6 +397,12 @@ struct external_entry_point_s {
  * but if the method works, fast algorithms will be used. */
 
 struct memory_s {
+	/* The section that this value points to */
+	uint64_t relocated;
+	uint64_t relocated_section_id;
+	uint64_t relocated_section_index;
+	uint64_t relocated_index;
+
 	/* The section that this register or memory is pointing to */
 	uint64_t section_id;
 	uint64_t section_index;
