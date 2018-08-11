@@ -210,7 +210,7 @@ function(libbeauty_include_directories)
       include_directories(AFTER SYSTEM "${dir}")
     endif()
   endforeach()
-  include_directories(BEFORE ${libbeauty_SOURCE_DIR}/include /usr/include/llvm-5.0 /usr/include/llvm-c-5.0)
+  include_directories(BEFORE ${libbeauty_SOURCE_DIR}/include /usr/include/llvm-6.0 /usr/include/llvm-c-6.0)
   include_directories(BEFORE ${__add_before})
 endfunction()
 

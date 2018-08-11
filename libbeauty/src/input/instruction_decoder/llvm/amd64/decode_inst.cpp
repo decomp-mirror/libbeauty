@@ -42,7 +42,8 @@ class Target;
 using namespace llvm;
 
 void LLVMPrintTargets(void) {
-	TargetRegistry::printRegisteredTargetsForVersion();
+	raw_ostream &OS = outs();
+	TargetRegistry::printRegisteredTargetsForVersion(OS);
 }
 
 void LLVMDisasmInstructionPrint(int octets, uint8_t *buffer, int buffer_size, uint8_t *buffer1) {

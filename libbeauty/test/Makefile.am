@@ -47,11 +47,11 @@ llvm_test_SOURCES = \
 #	mem.cpp
 
 #dis64_LDADD = -L$(libdir) -lbeauty_input_bfd -lbeauty_decoder_amd64 -lopcodes -liberty -lbeauty_exe -lbeauty_analyse -lbeauty_output -lbeauty_llvm -lbfd -lz -ldl
-dis64_LDADD = -L$(libdir) -L/usr/lib/llvm-5.0/lib -lbeauty_input_bfd -lbeauty_exe \
+dis64_LDADD = -L$(libdir) -L/usr/lib/llvm-6.0/lib -lbeauty_input_bfd -lbeauty_exe \
 		-lbeauty_analyse -lbeauty_output_cfg -lbeauty_output_llvm \
 		-lbeauty_decoder_llvm_amd64 -lbeauty_ll_inst_to_rtl \
 		-lbeauty_input_header \
-		-lLLVM-5.0 \
+		-lLLVM-6.0 \
 		-lstdc++ -lz -lm -ldl -lpthread -lncurses
 #dis64_LDADD = -L/usr/local/lib -lbeauty_input_bfd -lbeauty_decoder_amd64 -lbeauty_exe \
 #		-lbeauty_analyse -lbeauty_output_cfg -lbeauty_output_llvm \
@@ -62,11 +62,11 @@ dis64_LDADD = -L$(libdir) -L/usr/lib/llvm-5.0/lib -lbeauty_input_bfd -lbeauty_ex
 #		-lLLVMBitWriter -lLLVMCore -lLLVMSupport \
 #		-lstdc++ -lz -lm -ldl -lpthread -lncurses
 #test_id_LDADD = -L$(libdir) -lbeauty_input_bfd -lbeauty_decoder_amd64 -lz -ldl -lLLVM-3.2 -L/usr/lib/llvm-3.2/lib -lstdc++
-test_id_LDADD = -L$(libdir) -L/usr/lib/llvm-5.0/lib -lbeauty_input_bfd -lbeauty_decoder_llvm_amd64  \
-		-lbeauty_ll_inst_to_rtl -lbeauty_output_cfg -lz -ldl -lLLVM-5.0
+test_id_LDADD = -L$(libdir) -L/usr/lib/llvm-6.0/lib -lbeauty_input_bfd -lbeauty_decoder_llvm_amd64  \
+		-lbeauty_ll_inst_to_rtl -lbeauty_output_cfg -lz -ldl -lLLVM-6.0
 
-test_llvm_builder_LDADD = -L$(libdir) -L/usr/lib/llvm-5.0/lib \
-		-lz -ldl -lLLVM-5.0 -lstdc++
+test_llvm_builder_LDADD = -L$(libdir) -L/usr/lib/llvm-6.0/lib \
+		-lz -ldl -lLLVM-6.0 -lstdc++
 
 #test_id_LDADD = -L/usr/local/lib -lz -ldl -lLLVMX86AsmParser -lLLVMX86Desc -lLLVMX86Info \
 #		-lLLVMMCDisassembler -lLLVMX86Disassembler -lbeauty_input_bfd \
@@ -75,8 +75,8 @@ test_llvm_builder_LDADD = -L$(libdir) -L/usr/lib/llvm-5.0/lib \
 #test_id_arm_LDADD = -L$(libdir) -lz -ldl -lLLVM-3.4svn -lbeauty_output -L/usr/local/lib/llvm/lib -lstdc++
 #test_case_LDADD = -L/usr/local/lib -lz -ldl -lLLVMX86AsmParser -lLLVMX86Desc -lLLVMX86Info \
 #		 -lLLVMMCDisassembler -lLLVMX86Disassembler -lLLVMSupport -L/usr/local/lib/ -lstdc++
-test_case_LDADD = -L$(libdir) -L/usr/lib/llvm-5.0/lib -lz -ldl -lLLVM-5.0 -lstdc++
-llvm_test_LDADD = -L$(libdir) -L/usr/lib/llvm-5.0/lib -lz -ldl -lLLVM-5.0 -lstdc++
+test_case_LDADD = -L$(libdir) -L/usr/lib/llvm-6.0/lib -lz -ldl -lLLVM-6.0 -lstdc++
+llvm_test_LDADD = -L$(libdir) -L/usr/lib/llvm-6.0/lib -lz -ldl -lLLVM-6.0 -lstdc++
 
 #build_reg_table_LDADD = -L$(libdir) -lz -ldl -lLLVM-3.5svn -L/usr/local/lib/ -lstdc++
 #mem_LDADD = -L$(libdir) -lz -ldl -lLLVM-3.2 -L/usr/lib/llvm-3.2/lib -lstdc++

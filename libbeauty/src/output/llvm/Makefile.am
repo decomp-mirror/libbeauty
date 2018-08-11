@@ -16,6 +16,6 @@ lib_LTLIBRARIES = libbeauty_output_llvm.la
 
 libbeauty_output_llvm_la_SOURCES = \
 	llvm_ir.cpp mytool.cpp
-libbeauty_output_llvm_la_LIBADD = -L/usr/lib/llvm-5.0/lib -lLLVM-5.0
+libbeauty_output_llvm_la_LIBADD = -L/usr/lib/llvm-6.0/lib -lLLVM-6.0
 libbeauty_output_llvm_la_LDFLAGS = \
 	 -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)

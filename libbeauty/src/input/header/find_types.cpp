@@ -54,7 +54,7 @@ static cl::opt<bool>
 	MaterializeMetadata("materialize-metadata",
 		cl::desc("Load module without materializing metadata, "
 				 "then materialize only the metadata"));
-
+#if 0
 static void diagnosticHandler(const DiagnosticInfo &DI, void *Context) {
 	raw_ostream &OS = outs();
 	OS << (char *)Context << ": ";
@@ -74,6 +74,30 @@ static void diagnosticHandler(const DiagnosticInfo &DI, void *Context) {
 		exit(1);
 	}
 }
+#endif
+
+struct libbeautyDiagnosticHandler : public DiagnosticHandler {
+  bool handleDiagnostics(const DiagnosticInfo &DI) override {
+		raw_ostream &OS = outs();
+		//OS << (char *)Context << ": ";
+		switch (DI.getSeverity()) {
+			case DS_Error: OS << "error: "; break;
+			case DS_Warning: OS << "warning: "; break;
+			case DS_Remark: OS << "remark: "; break;
+			case DS_Note: OS << "note: "; break;
+		}
+
+		DiagnosticPrinterRawOStream DP(OS);
+		DI.print(DP);
+		OS << '\n';
+
+		if (DI.getSeverity() == DS_Error) {
+			debug_print(DEBUG_INPUT_HEADER, 0, "Exiting\n");
+			exit(1);
+		}
+	return true;
+  }
+};
 
 static ExitOnError ExitOnErr;
 #if 0
@@ -117,7 +141,8 @@ int LLVM_input_header::find_types(struct self_s *self, char *filename, struct in
 	llvm::TypeFinder type_finder;
 	llvm_shutdown_obj Y;  // Call llvm_shutdown() on exit.
 	InputFilename = filename;
-	LLVM_input_header::Context.setDiagnosticHandler(diagnosticHandler, nullptr);
+//	LLVM_input_header::Context.setDiagnosticHandler(diagnosticHandler, nullptr);
+	LLVM_input_header::Context.setDiagnosticHandler(llvm::make_unique<libbeautyDiagnosticHandler>(), true);
 	SMDiagnostic error;
 	int n;
 	uint64_t size;

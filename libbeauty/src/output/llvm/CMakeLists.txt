@@ -8,7 +8,7 @@ set_target_properties(beauty_output_llvm PROPERTIES
       LINKER_LANGUAGE CXX
 )
 #SET_TARGET_PROPERTIES(beauty_output_llvm PROPERTIES LINKER_LANGUAGE CXX)
-target_link_libraries(beauty_output_llvm -L/usr/lib/llvm-5.0/lib -lLLVM-5.0 )
+target_link_libraries(beauty_output_llvm -L/usr/lib/llvm-6.0/lib -lLLVM-6.0 )
 target_include_directories(beauty_output_llvm PRIVATE "${libbeauty_INCLUDE_DIRS}")
 #target_include_directories(beauty_output_llvm PRIVATE "/home/jcd/libbeauty/libbeauty/libbeauty/include")
 install (TARGETS beauty_output_llvm DESTINATION lib/beauty)
