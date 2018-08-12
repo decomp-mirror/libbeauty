@@ -581,6 +581,20 @@ struct reloc_s {
 	uint64_t addend;
 };
 
+struct memory_log_s {
+	uint64_t address;
+	uint64_t length;
+	uint8_t *octets; /* Stores the value */
+	int action; /* 0 = none, 1 = Read, 2 = Write, 3 = Execute, 4 = Pointed To */
+	uint64_t function_index; /* Index into the function that created this. */
+	/* Index into the instruction within the function that caused this.
+	 * From this get to tip2 for type
+	 */
+	uint64_t instruction_index;
+	/* Type (if known). E.g. StringZero, Pointer, Int */
+	uint64_t type;
+};
+
 struct section_s {
 	int section_id;
 	char *section_name;
@@ -600,6 +614,9 @@ struct section_s {
 	struct memory_s *memory;
 	uint64_t reloc_size;
 	struct reloc_s *reloc_entry;
+	uint64_t memory_log_capacity;
+	uint64_t memory_log_size;
+	struct memory_log_s *memory_log;
 };
 
 struct self_s {
@@ -633,6 +650,10 @@ struct self_s {
 	int *external_function_reg_order;
 	uint64_t sections_size;
 	struct section_s *sections;
+	/* Offset into the sections table of the first section loaded from the binary */
+	int load_sections_offset;
+	/* The number of sections loaded */
+	int load_sections_length;
 	void *input_header;
 };
 

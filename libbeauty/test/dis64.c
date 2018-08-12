@@ -690,7 +690,7 @@ int print_mem(struct memory_s *memory, int location) {
 	return 0;
 }
 
-int external_entry_points_init(struct external_entry_point_s *external_entry_points, void *handle_void)
+int external_entry_points_init(struct external_entry_point_s *external_entry_points, int offset, void *handle_void)
 {
 	int tmp;
 	int n;
@@ -698,7 +698,7 @@ int external_entry_points_init(struct external_entry_point_s *external_entry_poi
 	struct memory_s *memory_reg;
 	struct memory_s *memory_data;
 
-	tmp = external_entry_points_init_bfl(external_entry_points, handle_void);
+	tmp = external_entry_points_init_bfl(external_entry_points, offset, handle_void);
 	for (n = 0; n < EXTERNAL_ENTRY_POINTS_MAX; n++) {
 		if (external_entry_points[n].valid != 0) {
 			debug_print(DEBUG_MAIN, 1, "init external entry point 0x%x\n",
@@ -5733,38 +5733,46 @@ int main(int argc, char *argv[])
 		debug_print(DEBUG_MAIN, 1, "Error getting sections_size\n");
 		exit(1);
 	}
-	self->sections = calloc(self->sections_size, sizeof(struct section_s));
+	/* 0: For NULL pointers
+	 * 1: REGS
+	 * 2: STACK
+	 * 3: Segments from .o file
+	 * 4: MALLOC
+	 */
+	self->load_sections_offset = 3;
+	self->sections = calloc(self->sections_size + self->load_sections_offset, sizeof(struct section_s));
 	for (n = 0; n < self->sections_size; n++) {
-		bf_get_section_id(handle_void, n, &(self->sections[n].section_id));
-		bf_get_section_name(handle_void, n, &(self->sections[n].section_name));
-		bf_get_content_size(handle_void, n, &(self->sections[n].content_size));
-		if ((self->sections[n].content_size) > 0) {
-			self->sections[n].content = malloc(self->sections[n].content_size);
-			tmp = bf_copy_section_contents(handle_void, n, self->sections[n].content, self->sections[n].content_size);
+		int offset = self->load_sections_offset = 3;
+		bf_get_section_id(handle_void, n, &(self->sections[n + offset].section_id));
+		bf_get_section_name(handle_void, n, &(self->sections[n + offset].section_name));
+		bf_get_content_size(handle_void, n, &(self->sections[n + offset].content_size));
+		if ((self->sections[n + offset].content_size) > 0) {
+			self->sections[n + offset].content = malloc(self->sections[n + offset].content_size);
+			tmp = bf_copy_section_contents(handle_void, n, self->sections[n + offset].content, self->sections[n + offset].content_size);
 			if (tmp) {
 				debug_print(DEBUG_MAIN, 1, "Error section content load failed\n");
 				exit(1);
 			}
 		}
-		bf_get_section_alignment(handle_void, n, &(self->sections[n].alignment));
-		self->sections[n].alloc = bf_section_is_alloc(handle_void, n);
-		self->sections[n].load = bf_section_is_load(handle_void, n);
-		self->sections[n].reloc = bf_section_is_reloc(handle_void, n);
-		self->sections[n].read_only = bf_section_is_readonly(handle_void, n);
-		self->sections[n].code = bf_section_is_code(handle_void, n);
-		self->sections[n].data = bf_section_is_data(handle_void, n);
-		bf_get_reloc_table_section_size(handle_void, n, &(self->sections[n].reloc_size));
-		debug_print(DEBUG_MAIN, 1, "section[%d].reloc_size = 0x%lx\n", n, self->sections[n].reloc_size);
-		if ((self->sections[n].reloc_size) > 0) {
-			self->sections[n].reloc_entry = calloc(self->sections[n].reloc_size, sizeof(struct reloc_s));
-		    tmp = bf_get_reloc_table_section(handle_void, n, self->sections[n].reloc_entry);
+		bf_get_section_alignment(handle_void, n, &(self->sections[n + offset].alignment));
+		self->sections[n + offset].alloc = bf_section_is_alloc(handle_void, n);
+		self->sections[n + offset].load = bf_section_is_load(handle_void, n);
+		self->sections[n + offset].reloc = bf_section_is_reloc(handle_void, n);
+		self->sections[n + offset].read_only = bf_section_is_readonly(handle_void, n);
+		self->sections[n + offset].code = bf_section_is_code(handle_void, n);
+		self->sections[n + offset].data = bf_section_is_data(handle_void, n);
+		bf_get_reloc_table_section_size(handle_void, n, &(self->sections[n + offset].reloc_size));
+		debug_print(DEBUG_MAIN, 1, "section[%d].reloc_size = 0x%lx\n", n, self->sections[n + offset].reloc_size);
+		if ((self->sections[n + offset].reloc_size) > 0) {
+			self->sections[n + offset].reloc_entry = calloc(self->sections[n + offset].reloc_size, sizeof(struct reloc_s));
+		    tmp = bf_get_reloc_table_section(handle_void, n, offset, self->sections[n + offset].reloc_entry);
 			if (tmp) {
 				debug_print(DEBUG_MAIN, 1, "Error section reloc load failed\n");
 				exit(1);
 			}
 		}
 	}
-
+	self->sections_size += self->load_sections_offset;
 	for (n = 0; n < self->sections_size; n++) {
 		int m;
 		debug_print(DEBUG_MAIN, 1, "id           = 0x%x\n", self->sections[n].section_id);
@@ -5924,7 +5932,7 @@ int main(int argc, char *argv[])
 	tmp = external_functions_init(self);
 	if (tmp) return 1;
 
-	tmp = external_entry_points_init(external_entry_points, handle_void);
+	tmp = external_entry_points_init(external_entry_points, self->load_sections_offset, handle_void);
 	if (tmp) return 1;
 
 #if 0

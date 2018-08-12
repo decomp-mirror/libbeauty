@@ -506,7 +506,7 @@ int bf_get_reloc_table_section_size(void *handle_void, int index, uint64_t *size
 	return 0;
 }
 
-int bf_get_reloc_table_section(void *handle_void, int index, struct reloc_s *reloc_table)
+int bf_get_reloc_table_section(void *handle_void, int index, int offset, struct reloc_s *reloc_table)
 {
 	struct rev_eng *handle = (struct rev_eng*) handle_void;
 	asection	*section;
@@ -550,7 +550,7 @@ int bf_get_reloc_table_section(void *handle_void, int index, struct reloc_s *rel
 		sym_name = bfd_asymbol_name(*rel->sym_ptr_ptr);
 		sym_val = bfd_asymbol_value(*rel->sym_ptr_ptr);
 		sym_sec = bfd_get_section(*rel->sym_ptr_ptr);
-		reloc_table[n].section_index = sym_sec->index;
+		reloc_table[n].section_index = sym_sec->index + offset;
 		reloc_table[n].section_id = sym_sec->id;
 		//reloc_table[n].section_name = strdup(sym_sec->name);
 		reloc_table[n].name = strdup(sym_name);
@@ -821,7 +821,7 @@ int bf_print_reloc_table_code_section(void *handle_void)
         return 0;
 }
 
-int external_entry_points_init_bfl(struct external_entry_point_s *external_entry_points, void *handle_void)
+int external_entry_points_init_bfl(struct external_entry_point_s *external_entry_points, int offset, void *handle_void)
 {
 	int n;
 	int l;
@@ -841,7 +841,7 @@ int external_entry_points_init_bfl(struct external_entry_point_s *external_entry
 		          one function per .o file. */
 		debug_print(DEBUG_MAIN, 1, "section_id = %d, section_index = %d, flags = 0x%04x, value = 0x%04"PRIx64"\n",
 			handle->symtab[l]->section->id,
-			handle->symtab[l]->section->index,
+			handle->symtab[l]->section->index + offset,
 			handle->symtab[l]->flags,
 			handle->symtab[l]->value);
 		if ((handle->symtab[l]->flags & 0x8) ||
@@ -860,7 +860,7 @@ int external_entry_points_init_bfl(struct external_entry_point_s *external_entry
 			external_entry_points[n].section_id = 
 				handle->symtab[l]->section->id;
 			external_entry_points[n].section_index = 
-				handle->symtab[l]->section->index;
+				handle->symtab[l]->section->index + offset;
 			external_entry_points[n].value = handle->symtab[l]->value;
 			external_entry_points[n].name = strdup(handle->symtab[l]->name);
 			//length = strlen(handle->symtab[l]->name);
