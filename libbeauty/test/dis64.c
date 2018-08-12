@@ -5727,8 +5727,8 @@ int main(int argc, char *argv[])
 	bf_init_section_number_mapping(handle_void, &section_number_mapping);
 
 	bf_print_sectiontab(handle_void);
-	tmp = bf_get_sections_size(handle_void, &(self->sections_size));
-	debug_print(DEBUG_MAIN, 1, "self->sections_size = 0x%lx\n", self->sections_size);
+	tmp = bf_get_sections_size(handle_void, &(self->load_sections_length));
+	debug_print(DEBUG_MAIN, 1, "self->load_sections_length = 0x%lx\n", self->load_sections_length);
 	if (tmp) {
 		debug_print(DEBUG_MAIN, 1, "Error getting sections_size\n");
 		exit(1);
@@ -5740,9 +5740,10 @@ int main(int argc, char *argv[])
 	 * 4: MALLOC
 	 */
 	self->load_sections_offset = 3;
-	self->sections = calloc(self->sections_size + self->load_sections_offset, sizeof(struct section_s));
-	for (n = 0; n < self->sections_size; n++) {
-		int offset = self->load_sections_offset = 3;
+	self->sections_size = self->load_sections_offset + self->load_sections_length;
+	self->sections = calloc(self->sections_size, sizeof(struct section_s));
+	for (n = 0; n < self->load_sections_length; n++) {
+		int offset = self->load_sections_offset;
 		bf_get_section_id(handle_void, n, &(self->sections[n + offset].section_id));
 		bf_get_section_name(handle_void, n, &(self->sections[n + offset].section_name));
 		bf_get_content_size(handle_void, n, &(self->sections[n + offset].content_size));
@@ -5772,7 +5773,6 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	self->sections_size += self->load_sections_offset;
 	for (n = 0; n < self->sections_size; n++) {
 		int m;
 		debug_print(DEBUG_MAIN, 1, "id           = 0x%x\n", self->sections[n].section_id);
