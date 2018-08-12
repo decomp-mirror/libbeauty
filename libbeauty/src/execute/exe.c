@@ -231,6 +231,7 @@ static int get_value_RTL_instruction(
 				destination->relocated_index = 0;
 				break;
 			case 1:
+			case 2:
 			case 3:
 				destination->relocated = source->relocated;
 				destination->relocated_section_id = source->relocated_section_id;
