@@ -140,7 +140,7 @@ static void print_code_section(struct rev_eng* ret)
 }
 #endif
 
-int bf_find_section(void *handle_void, char *name, int name_len, int *section_number)
+static int bf_find_section(void *handle_void, char *name, int name_len, int *section_number)
 {
 	struct rev_eng *ret = (struct rev_eng*) handle_void;
 	int n;
@@ -316,7 +316,7 @@ int64_t bf_get_rodata_size(void *handle_void)
 	return code_size;
 }
 
-int bf_get_reloc_table_size_code_section(void *handle_void, uint64_t *size)
+static int bf_get_reloc_table_size_code_section(void *handle_void, uint64_t *size)
 {
 	struct rev_eng *ret = (struct rev_eng*) handle_void;
 	asection          *section = ret->section[0];
