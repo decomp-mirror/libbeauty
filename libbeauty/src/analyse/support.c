@@ -49,6 +49,22 @@
 #include <convert_ll_inst_to_rtl.h>
 #include <execinfo.h>
 
+void stack_trace()
+{
+	void *trace[16];
+	char **messages = (char **)NULL;
+	int i, trace_size = 0;
+
+	trace_size = backtrace(trace, 16);
+	messages = backtrace_symbols(trace, trace_size);
+	printf("[stack trace]>>>\n");
+	for (i=0; i < trace_size; i++)
+		printf("%s\n", messages[i]);
+	printf("<<<[stack trace]\n");
+	free(messages);
+}
+
+#define EIP_START 0x40000000
 /* Search the used register table for the value ID to use. */
 int get_value_id_from_node_reg(struct self_s *self, int entry_point, int node, int reg, int *value_id)
 {
