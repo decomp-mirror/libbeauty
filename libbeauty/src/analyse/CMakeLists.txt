@@ -1,5 +1,5 @@
 set(the_description "Analyses")
-add_library(beauty_analyse analyse.c ast.c)
+add_library(beauty_analyse analyse.c ast.c support.c)
 set_target_properties(beauty_analyse PROPERTIES SOVERSION 1)
 set_target_properties(beauty_analyse PROPERTIES VERSION "1.0.0")
 target_link_libraries(beauty_analyse )
