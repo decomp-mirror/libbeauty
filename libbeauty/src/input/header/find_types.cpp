@@ -394,6 +394,36 @@ int LLVM_input_header::load_data_hints(struct self_s *self, char *filename) {
 	return 0;
 }
 
+int LLVM_input_header::find_hints(struct self_s *self, char *function_name, int *hint_index)
+{
+	int n = 0;
+	for(hints2_s & hints2_item : hints2) {
+		if (hints2_item.function_name.compare(function_name) == 0) {
+			*hint_index = n;
+			return 0;
+		}
+		n++;
+	}
+	return 1;
+}
+
+int LLVM_input_header::find_hint_array_from_index(struct self_s *self, int hint_index, int *hint_size, int **hint_array)
+{
+	*hint_size = hints2[hint_index].type.size();
+	*hint_array = hints2[hint_index].type.data();
+	return 0;
+}
+
+
+extern "C" int input_find_hints(struct self_s *self, char *function_name, int *hint_size, int **hint_array){
+	int tmp;
+	int hint_index;
+	LLVM_input_header *input_header = (LLVM_input_header*)self->input_header;
+	tmp = input_header->find_hints(self, function_name, &hint_index);
+	tmp = input_header->find_hint_array_from_index(self, hint_index, hint_size, hint_array);
+	return tmp;
+}
+
 
 extern "C" int input_dump_mod(struct self_s *self) {
 	int tmp;

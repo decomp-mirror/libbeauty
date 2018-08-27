@@ -183,6 +183,47 @@ static int source_equals_dest(struct operand_s *srcA, struct operand_s *dstA)
 	return ret;
 }
 
+static int log_section_access(struct self_s *self, uint64_t section_index,
+			uint64_t access_type,
+			uint64_t index,
+			uint64_t size,
+			uint64_t data_type)
+{
+	struct section_s *section;
+	uint64_t sections_size = self->sections_size;
+	if (section_index >= sections_size) {
+		debug_print(DEBUG_EXE, 1, "section_index too big. exiting\n");
+		exit(1);
+	}
+	section = &(self->sections[section_index]);
+	if (section->memory_log_capacity == 0) {
+		section->memory_log = calloc( 10, sizeof(struct memory_log_s));
+		section->memory_log_capacity = 10;
+	}
+	else if (section->memory_log_capacity <= section->memory_log_size) {
+		section->memory_log = realloc(
+				section->memory_log,
+				sizeof(struct memory_log_s) * (section->memory_log_capacity + 10));
+		section->memory_log_capacity += 10;
+	}
+	section->memory_log[section->memory_log_size].action = access_type;
+	section->memory_log[section->memory_log_size].address = index;
+	section->memory_log[section->memory_log_size].length = size;
+	section->memory_log[section->memory_log_size].type = data_type;
+	section->memory_log_size++;
+	debug_print(DEBUG_EXE, 1, "memory_log_capacity = 0x%lx, size = 0x%lx\n",
+			section->memory_log_capacity,
+			section->memory_log_size);
+	debug_print(DEBUG_EXE, 1, "log append: section_index=0x%lx, action=0x%lx, index = 0x%lx, size = 0x%lx, type = 0x%lx\n",
+			section_index,
+			access_type,
+			index,
+			size,
+			data_type);
+	return 0;
+}
+
+
 static int get_value_RTL_instruction(
 	struct self_s *self,
 	struct process_state_s *process_state,
@@ -229,14 +270,49 @@ static int get_value_RTL_instruction(
 				destination->relocated_section_id = 0;
 				destination->relocated_section_index = 0;
 				destination->relocated_index = 0;
+				destination->start_address = 0;
+				destination->length = source->value_size;
+
+				/* known */
+				destination->init_value_type = 1;
+				destination->init_value = source->index;
+				destination->offset_value = 0;
 				break;
 			case 1:
+				/* TODO: Handle other cases */
+				log_section_access(self, source->relocated_section_index, 4, source->relocated_index, 0, 0);
+				destination->section_id = source->relocated_section_id;
+				destination->section_index = source->relocated_section_index;
+				destination->start_address = 0;
+				destination->length = source->value_size;
+				/* known */
+				destination->init_value_type = 1;
+				destination->init_value = source->relocated_index;
+				destination->offset_value = 0;
+				break;
 			case 2:
+				destination->relocated = source->relocated;
+				destination->relocated_section_id = source->relocated_section_id;
+				destination->relocated_section_index = source->relocated_section_index;
+				destination->relocated_index = source->relocated_index;
+				destination->start_address = 0;
+				destination->length = source->value_size;
+				/* known */
+				destination->init_value_type = 1;
+				destination->init_value = source->index;
+				destination->offset_value = 0;
+				break;
 			case 3:
 				destination->relocated = source->relocated;
 				destination->relocated_section_id = source->relocated_section_id;
 				destination->relocated_section_index = source->relocated_section_index;
 				destination->relocated_index = source->relocated_index;
+				destination->start_address = 0;
+				destination->length = source->value_size;
+				/* known */
+				destination->init_value_type = 1;
+				destination->init_value = source->index;
+				destination->offset_value = 0;
 				break;
 			default:
 				debug_print(DEBUG_EXE, 1, "exiting, relocated 0x%x not yet handled\n",
@@ -247,13 +323,6 @@ static int get_value_RTL_instruction(
 			debug_print(DEBUG_EXE, 1, "index=%"PRIx64", size=%d\n",
 					source->index,
 					source->value_size);
-			destination->start_address = 0;
-			destination->length = source->value_size;
-
-			/* known */
-			destination->init_value_type = 1;
-			destination->init_value = source->index;
-			destination->offset_value = 0;
 			/* unknown */
 			destination->value_type = 0;
 			/* not set yet. */
@@ -607,6 +676,13 @@ static int put_value_RTL_instruction(
 				break;
 			}
 			
+			value->relocated = inst->value3.relocated;
+			value->relocated_section_id = inst->value3.relocated_section_id;
+			value->relocated_section_index = inst->value3.relocated_section_index;
+			value->relocated_index = inst->value3.relocated_index;
+			value->section_id = inst->value3.section_id;
+			value->section_index = inst->value3.section_index;
+
 			value->start_address = inst->value3.start_address;
 			value->init_value_type = inst->value3.init_value_type;
 			value->init_value = inst->value3.init_value;
@@ -810,6 +886,80 @@ exit_put_value:
 	return result;
 }
 
+int process_hints(struct self_s *self,
+		struct process_state_s *process_state,
+		int params_reg_size,
+		int *params_reg,
+		int hint_size,
+		int *hint_array)
+{
+	int n;
+	int tmp;
+	int reg;
+	int hint;
+	uint64_t offset;
+	uint64_t length;
+	int found;
+	struct memory_s *memory_stack;
+	struct memory_s *memory_reg;
+	struct memory_s *memory_data;
+	struct memory_s *value = NULL;
+	//int *memory_used;
+
+	//memory_text = process_state->memory_text;
+	memory_stack = process_state->memory_stack;
+	memory_reg = process_state->memory_reg;
+	memory_data = process_state->memory_data;
+	//memory_used = process_state->memory_used;
+
+	for (n = 0; n < hint_size; n++) {
+		hint = hint_array[n];
+		reg = params_reg[n];
+		debug_print(DEBUG_EXE, 1, "Hint[%d] = 0x%x, Reg[%d] = 0x%x\n", n, hint_array[n], n, reg);
+		value = search_store(memory_reg,
+				reg,
+				64);
+		if (!value) {
+			debug_print(DEBUG_EXE, 1, "value not found. exiting\n");
+			exit(1);
+		}
+		debug_print(DEBUG_EXE, 1, "value.relocated = 0x%lx\n", value->relocated);
+		debug_print(DEBUG_EXE, 1, "value.relocated_section_id = 0x%lx\n", value->relocated_section_id);
+		debug_print(DEBUG_EXE, 1, "value.relocated_section_index = 0x%lx\n", value->relocated_section_index);
+		debug_print(DEBUG_EXE, 1, "value.relocated_index = 0x%lx\n", value->relocated_index);
+		debug_print(DEBUG_EXE, 1, "value.section_id = 0x%lx\n", value->section_id);
+		debug_print(DEBUG_EXE, 1, "value.section_index = 0x%lx\n", value->section_index);
+		switch (hint) {
+		case 1: /* string-zero */
+			length = 0;
+			found = 0;
+			for(offset = value->init_value + value->offset_value;
+				offset < self->sections[value->section_index].content_size; offset++) {
+				length++;
+				if (self->sections[value->section_index].content[offset] == 0) {
+					found = 1;
+					break;
+				}
+			}
+			if (found) {
+				debug_print(DEBUG_EXE, 1, "string offset=0x%lx length=0x%lx\n",
+						value->init_value + value->offset_value,
+						length);
+				log_section_access(self, value->section_index, 1, value->init_value + value->offset_value, length, 1);
+			}
+			break;
+
+		default:
+			debug_print(DEBUG_EXE, 1, "Unknown hint type - exiting\n");
+			exit(1);
+		}
+
+	}
+	return 0;
+}
+
+
+
 int execute_instruction(struct self_s *self, struct process_state_s *process_state, struct inst_log_entry_s *inst)
 {
 	struct instruction_s *instruction;
@@ -830,6 +980,9 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 	int n;
 	struct extension_call_s *call;
 	struct external_function_s *external_function;
+	char *function_name;
+	int hint_size;
+	int *hint_array;
 	uint64_t eip;
 	int fields_size = 0;
 
@@ -935,13 +1088,27 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		break;
 	case MOV:
 		/* Get value of srcA */
-		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcA), &(inst->value1), 0); 
+		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcA), &(inst->value1), 0);
+		debug_print(DEBUG_EXE, 1, "MOVvalue.relocated = 0x%lx\n", inst->value1.relocated);
+		debug_print(DEBUG_EXE, 1, "MOVvalue.relocated_section_id = 0x%lx\n", inst->value1.relocated_section_id);
+		debug_print(DEBUG_EXE, 1, "MOVvalue.relocated_section_index = 0x%lx\n", inst->value1.relocated_section_index);
+		debug_print(DEBUG_EXE, 1, "MOVvalue.relocated_index = 0x%lx\n", inst->value1.relocated_index);
+		debug_print(DEBUG_EXE, 1, "MOVvalue.section_id = 0x%lx\n", inst->value1.section_id);
+		debug_print(DEBUG_EXE, 1, "MOVvalue.section_index = 0x%lx\n", inst->value1.section_index);
+
 		/* Create result */
 		debug_print(DEBUG_EXE, 1, "MOV\n");
 		debug_print(DEBUG_EXE, 1, "MOV dest length = %d %d\n", inst->value1.length, inst->value3.length);
 		inst->value3.start_address = instruction->dstA.index;
 		inst->value3.length = instruction->dstA.value_size;
 		//inst->value3.length = inst->value1.length;
+		inst->value3.relocated = inst->value1.relocated;
+		inst->value3.relocated_section_id = inst->value1.relocated_section_id;
+		inst->value3.relocated_section_index = inst->value1.relocated_section_index;
+		inst->value3.relocated_index = inst->value1.relocated_index;
+		inst->value3.section_id = inst->value1.section_id;
+		inst->value3.section_index = inst->value1.section_index;
+
 		inst->value3.init_value_type = inst->value1.init_value_type;
 		inst->value3.init_value = inst->value1.init_value;
 		inst->value3.offset_value = inst->value1.offset_value;
@@ -992,6 +1159,13 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 				inst->value3.offset_value,
 				inst->value3.init_value +
 					inst->value3.offset_value);
+		debug_print(DEBUG_EXE, 1, "pMOVvalue.relocated = 0x%lx\n", inst->value3.relocated);
+		debug_print(DEBUG_EXE, 1, "pMOVvalue.relocated_section_id = 0x%lx\n", inst->value3.relocated_section_id);
+		debug_print(DEBUG_EXE, 1, "pMOVvalue.relocated_section_index = 0x%lx\n", inst->value3.relocated_section_index);
+		debug_print(DEBUG_EXE, 1, "pMOVvalue.relocated_index = 0x%lx\n", inst->value3.relocated_index);
+		debug_print(DEBUG_EXE, 1, "pMOVvalue.section_id = 0x%lx\n", inst->value3.section_id);
+		debug_print(DEBUG_EXE, 1, "pMOVvalue.section_index = 0x%lx\n", inst->value3.section_index);
+
 		put_value_RTL_instruction(self, process_state, inst);
 		break;
 	case LOAD:
@@ -2035,7 +2209,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 			case 0:
 				/* Link the call destination to a valid external_entry_point if possible */
 				if (instruction->srcA.indirect == IND_DIRECT) {
-					debug_print(DEBUG_OUTPUT, 1, "CALL: SCANNING eip = 0x%lx, init_value = 0x%lx, offset_value = 0x%lx\n",
+					debug_print(DEBUG_EXE, 1, "CALL: SCANNING eip = 0x%lx, init_value = 0x%lx, offset_value = 0x%lx\n",
 						eip,
 						inst->value1.init_value,
 						inst->value1.offset_value);
@@ -2045,7 +2219,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 						if ((external_entry_points[n].valid != 0) &&
 							(external_entry_points[n].type == 1) &&
 							(external_entry_points[n].value == call_offset)) {
-							debug_print(DEBUG_OUTPUT, 1, "found call_offset entry_point = 0x%x\n", n);
+							debug_print(DEBUG_EXE, 1, "found call_offset entry_point = 0x%x\n", n);
 							instruction->srcA.index = n;
 							instruction->srcA.relocated = 1;
 							print_inst(self, instruction, 0x80000000, NULL);
@@ -2054,7 +2228,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 						if ((external_entry_points[n].valid != 0) &&
 							(external_entry_points[n].type == 2) &&
 							(external_entry_points[n].value == call_offset)) {
-							debug_print(DEBUG_OUTPUT, 1, "found call_offset entry_point = 0x%x\n", n);
+							debug_print(DEBUG_EXE, 1, "found call_offset entry_point = 0x%x\n", n);
 							instruction->srcA.index = n;
 							instruction->srcA.relocated = 1;
 							print_inst(self, instruction, 0x20000000, NULL);
@@ -2064,17 +2238,17 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 				}
 				break;
 			case 3:
-				debug_print(DEBUG_OUTPUT, 1, "CALL:External: relocated = 0x%x\n", instruction->srcA.relocated);
+				debug_print(DEBUG_EXE, 1, "CALL:External: relocated = 0x%x\n", instruction->srcA.relocated);
 				if (!inst->extension) {
 					inst->extension = calloc(1, sizeof(struct extension_call_s));
 				} else {
-					debug_print(DEBUG_OUTPUT, 1, "extension already allocated. Why? Exiting\n");
+					debug_print(DEBUG_EXE, 1, "extension already allocated. Why? Exiting\n");
 					exit(1);
 				}
 				call = inst->extension;
 				tmp = input_external_function_get_size(self, instruction->srcA.relocated_external_function, &fields_size);
 				if (tmp) {
-					debug_print(DEBUG_OUTPUT, 1, "external function not found. exiting\n");
+					debug_print(DEBUG_EXE, 1, "external function not found. exiting\n");
 					exit(1);
 				}
 				call->params_reg_size = fields_size;
@@ -2082,13 +2256,23 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 				for(n = 0; n < fields_size; n++) {
 					call->params_reg[n] = self->external_function_reg_order[n];
 				}
-				debug_print(DEBUG_OUTPUT, 1, "call->params_reg_size = %d\n", call->params_reg_size);
+				debug_print(DEBUG_EXE, 1, "call->params_reg_size = %d\n", call->params_reg_size);
+				debug_print(DEBUG_EXE, 1, "TODO Need to add support for param hints. Exiting\n");
+				tmp = input_external_function_get_name(self, instruction->srcA.relocated_external_function, &function_name);
+				debug_print(DEBUG_EXE, 1, "Function Name %p:%s\n", function_name, function_name);
+				tmp = input_find_hints(self, function_name, &hint_size, &hint_array);
+				debug_print(DEBUG_EXE, 1, "Hint size = 0x%x\n", hint_size);
+				for (n = 0; n < hint_size; n++) {
+					debug_print(DEBUG_EXE, 1, "Hint[%d] = 0x%x\n", n, hint_array[n]);
+				}
+				tmp = process_hints(self, process_state, call->params_reg_size, call->params_reg, hint_size, hint_array);
+
 				break;
 				/* FIXME: First expand printf format string to create a new specific printf
 				 */
 			default:
-				debug_print(DEBUG_OUTPUT, 1, "CALL:unknown: relocated = 0x%x\n", instruction->srcA.relocated);
-				debug_print(DEBUG_OUTPUT, 1, "Not implemented yet\n");
+				debug_print(DEBUG_EXE, 1, "CALL:unknown: relocated = 0x%x\n", instruction->srcA.relocated);
+				debug_print(DEBUG_EXE, 1, "Not implemented yet\n");
 				exit(1);
 				break;
 		}

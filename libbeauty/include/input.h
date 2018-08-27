@@ -71,6 +71,8 @@ class LLVM_input_header
 		int external_function_get_return_type(struct self_s *self, int function_index, int *lab_pointer, int *size_bits);
 		FunctionType *get_function_type(int function_index);
 		int load_data_hints(struct self_s *self, char *filename);
+		int find_hints(struct self_s *self, char *function_name, int *hint_index);
+		int find_hint_array_from_index(struct self_s *self, int hint_index, int *hint_size, int **hint_array);
 		struct hints2_s {
 			std::string function_name;
 			std::vector<int> type;
@@ -104,6 +106,7 @@ extern "C" int input_external_function_get_size(struct self_s *self, int functio
 extern "C" int input_external_function_get_name(struct self_s *self, int function_index, char **function_name);
 extern "C" int input_external_function_get_return_type(struct self_s *self, int function_index, int *lab_pointer, int *size_bits);
 extern "C" int input_load_data_hints(struct self_s *self, char *filename);
+extern "C" int input_find_hints(struct self_s *self, char *function_name, int *hint_size, int **hint_array);
 #else
 int input_find_types(struct self_s *self, char *filename, struct input_find_types_s *find_types);
 int input_dump_mod(struct self_s *self);
@@ -112,6 +115,7 @@ int input_external_function_get_size(struct self_s *self, int function_index, in
 int input_external_function_get_name(struct self_s *self, int function_index, char **function_name);
 int input_external_function_get_return_type(struct self_s *self, int function_index, int *lab_pointer, int *size_bits);
 int input_load_data_hints(struct self_s *self, char *filename);
+int input_find_hints(struct self_s *self, char *function_name, int *hint_size, int **hint_array);
 #endif
 
 #endif /* INPUT_H */
