@@ -210,7 +210,8 @@ static int log_section_access(struct self_s *self, uint64_t section_index,
 	section->memory_log[section->memory_log_size].address = index;
 	section->memory_log[section->memory_log_size].length = size;
 	section->memory_log[section->memory_log_size].type = data_type;
-	section->memory_log_size++;
+	section->memory_log[section->memory_log_size].octets = malloc(size);
+	memcpy(section->memory_log[section->memory_log_size].octets, &(section->content[index]), size);
 	debug_print(DEBUG_EXE, 1, "memory_log_capacity = 0x%lx, size = 0x%lx\n",
 			section->memory_log_capacity,
 			section->memory_log_size);
@@ -220,6 +221,10 @@ static int log_section_access(struct self_s *self, uint64_t section_index,
 			index,
 			size,
 			data_type);
+	if (data_type == 1) {
+		debug_print(DEBUG_EXE, 1, "log append: octets = %s\n", section->memory_log[section->memory_log_size].octets);
+	}
+	section->memory_log_size++;
 	return 0;
 }
 
