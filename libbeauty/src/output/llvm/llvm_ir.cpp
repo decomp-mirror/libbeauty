@@ -1459,14 +1459,18 @@ int LLVM_ir_export::output(struct self_s *self)
 
 	for (l = 0; l < self->sections_size; l++) {
 		if (self->sections[l].memory_log_size > 0) {
-			for (m = 0; m < self->sections[l].memory_log_size; m++) {
-				if (self->sections[l].memory_log[m].type == 1) {
+			for (m = 0; m < self->sections[l].content_size; m++) {
+				if ((self->sections[l].memory_struct[m].valid == 1) &&
+						(self->sections[l].memory_struct[m].sizes_size > 0)) {
 					debug_print(DEBUG_OUTPUT_LLVM, 1, "Adding GLOBAL: Section:0x%x Addr:0x%lx size:0x%lx\n",
 												l,
-												self->sections[l].memory_log[m].address,
-												self->sections[l].memory_log[m].length);
-					const char *string1 = strndup((const char*)self->sections[l].memory_log[m].octets, self->sections[l].memory_log[m].length);
-					llvm::StringRef string2(string1, self->sections[l].memory_log[m].length);
+												m,
+												self->sections[l].memory_struct[m].sizes[0]);
+					const char *string1 = strndup(
+							(const char*)self->sections[l].memory_log[self->sections[l].memory_struct[m].log_index[0]].octets,
+							self->sections[l].memory_log[self->sections[l].memory_struct[m].log_index[0]].length);
+					tmp = snprintf(buffer, 1024, "mem%08x", m);
+					llvm::StringRef string2(string1, self->sections[l].memory_log[self->sections[l].memory_struct[m].log_index[0]].length);
 					Constant *const_array_4 = ConstantDataArray::getString(mod->getContext(), string2, false);
 					ArrayType* Array_1 = ArrayType::get(IntegerType::get(mod->getContext(), 8),
 					         const_array_4->getType()->getArrayNumElements());
@@ -1475,7 +1479,7 @@ int LLVM_ir_export::output(struct self_s *self)
 					/*isConstant=*/true,
 					/*Linkage=*/GlobalValue::PrivateLinkage,
 					/*Initializer=*/0,
-					/*Name=*/"mem3");
+					/*Name=*/buffer);
 					gvar_ptr_mem2->setAlignment(1);
 					gvar_ptr_mem2->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
 					gvar_ptr_mem2->setInitializer(const_array_4);

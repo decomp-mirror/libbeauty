@@ -721,6 +721,77 @@ int external_entry_points_init(struct external_entry_point_s *external_entry_poi
 	return tmp;
 }
 
+int analyse_memory_log(struct self_s *self)
+{
+	uint64_t l, m, n;
+	for (l = 0; l < self->sections_size; l++) {
+		debug_print(DEBUG_MAIN, 1, "Scanning section 0x%x\n", l);
+		if (self->sections[l].memory_log_size > 0) {
+			debug_print(DEBUG_MAIN, 1, "Processing section 0x%lx, content_size 0x%lx\n",
+					l,
+					self->sections[l].content_size);
+
+			self->sections[l].memory_struct = calloc(self->sections[l].content_size, sizeof(struct memory_struct_s));
+			self->sections[l].memory_struct_size = self->sections[l].content_size;
+			for (m = 0; m < self->sections[l].memory_log_size; m++) {
+				debug_print(DEBUG_MAIN, 1, "memory_log_size = 0x%lx of 0x%lx\n", m, self->sections[l].memory_log_size);
+				if (self->sections[l].memory_log[m].type == 1) {
+					debug_print(DEBUG_MAIN, 1, "Processing GLOBAL: Section:0x%lx Addr:0x%lx size:0x%lx\n",
+							l,
+							self->sections[l].memory_log[m].address,
+							self->sections[l].memory_log[m].length);
+					uint64_t offset = self->sections[l].memory_log[m].address;
+					debug_print(DEBUG_MAIN, 1, "offset = 0x%lx\n", offset);
+					if (self->sections[l].memory_struct[offset].sizes_size == 0) {
+						self->sections[l].memory_struct[offset].sizes = calloc(1, sizeof(uint64_t));
+						self->sections[l].memory_struct[offset].sizes_type = calloc(1, sizeof(uint64_t));
+						self->sections[l].memory_struct[offset].log_index = calloc(1, sizeof(uint64_t));
+						self->sections[l].memory_struct[offset].sizes[0] = self->sections[l].memory_log[m].length;
+						self->sections[l].memory_struct[offset].sizes_type[0] = self->sections[l].memory_log[m].type;
+						self->sections[l].memory_struct[offset].log_index[0] = m;
+						self->sections[l].memory_struct[offset].sizes_size = 1;
+						self->sections[l].memory_struct[offset].limit_low = offset;
+						self->sections[l].memory_struct[offset].limit_high =
+								offset + self->sections[l].memory_log[m].length;
+						self->sections[l].memory_struct[offset].value_index = 0;
+						self->sections[l].memory_struct[offset].valid = 1;
+					} else {
+						int found = 0;
+						for (n = 0; n < self->sections[l].memory_struct[offset].sizes_size; n++) {
+							if (self->sections[l].memory_struct[offset].sizes[n] == self->sections[l].memory_log[m].length) {
+								found = 1;
+								debug_print(DEBUG_MAIN, 1, "Found size\n");
+								break;
+							}
+						}
+						if (found == 0) {
+							self->sections[l].memory_struct[offset].sizes = realloc(
+									self->sections[l].memory_struct[offset].sizes,
+									(self->sections[l].memory_struct[offset].sizes_size + 1) * sizeof(uint64_t));
+							self->sections[l].memory_struct[offset].sizes_type = realloc(
+									self->sections[l].memory_struct[offset].sizes,
+									(self->sections[l].memory_struct[offset].sizes_size + 1) * sizeof(uint64_t));
+							self->sections[l].memory_struct[offset].sizes[self->sections[l].memory_struct[offset].sizes_size] =
+									self->sections[l].memory_log[m].length;
+							self->sections[l].memory_struct[offset].sizes_type[self->sections[l].memory_struct[offset].sizes_size] =
+									self->sections[l].memory_log[m].type;
+							self->sections[l].memory_struct[offset].log_index[self->sections[l].memory_struct[offset].sizes_size] =
+									m;
+							self->sections[l].memory_struct[offset].limit_low = offset;
+							self->sections[l].memory_struct[offset].limit_high =
+									offset + self->sections[l].memory_log[m].length;
+							self->sections[l].memory_struct[offset].value_index = 0;
+							self->sections[l].memory_struct[offset].valid = 1;
+							self->sections[l].memory_struct[offset].sizes_size++;
+						}
+					}
+				}
+			}
+		}
+	}
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
 	int n = 0;
@@ -2706,6 +2777,9 @@ int main(int argc, char *argv[])
 	}
 
 #endif
+
+	tmp = analyse_memory_log(self);
+	debug_print(DEBUG_MAIN, 1, "analyse_memory_log done\n");
 
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 		if ((external_entry_points[l].valid) && (external_entry_points[l].type == 1)) {

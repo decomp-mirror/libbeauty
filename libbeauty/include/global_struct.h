@@ -595,6 +595,19 @@ struct memory_log_s {
 	uint64_t type;
 };
 
+struct memory_struct_s {
+	uint64_t valid;  /* 0 = Not used. 1 = Uses */
+	uint64_t type;
+	uint64_t sizes_size;
+	uint64_t *sizes;  /* Size in bits */
+	uint64_t *sizes_type; /* 0 = unknown */
+	uint64_t *log_index; /* Index to the memory_log that created this record. Useful for the octets stored */
+	uint64_t limit_low;
+	uint64_t limit_high;
+	uint64_t value_index;
+};
+
+
 struct section_s {
 	int section_id;
 	char *section_name;
@@ -617,6 +630,8 @@ struct section_s {
 	uint64_t memory_log_capacity;
 	uint64_t memory_log_size;
 	struct memory_log_s *memory_log;
+	uint64_t memory_struct_size;
+	struct memory_struct_s *memory_struct;
 };
 
 struct self_s {
