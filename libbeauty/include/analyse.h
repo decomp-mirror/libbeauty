@@ -85,6 +85,7 @@ extern int tip_process_label(struct self_s *self, int entry_point, int label_ind
 extern int dis64_copy_operand(struct self_s *self, int inst_from, int operand_from, int inst_to, int operand_to, int size);
 extern int tip_add_zext(struct self_s *self, int entry_point, int label_index);
 extern int tip_print_label(struct self_s *self, int entry_point, int label_index);
+extern int tip_result_print_from_label(struct self_s *self, int entry_point, int label);
 extern int redirect_mov_reg_reg_labels(struct self_s *self, struct external_entry_point_s *external_entry_point, int node);
 extern int change_add_to_gep1(struct self_s *self, struct external_entry_point_s *external_entry_point, int node);
 extern int discover_pointer_types(struct self_s *self, struct external_entry_point_s *external_entry_point, int node);

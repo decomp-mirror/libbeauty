@@ -632,6 +632,7 @@ struct section_s {
 	struct memory_log_s *memory_log;
 	uint64_t memory_struct_size;
 	struct memory_struct_s *memory_struct;
+	void** llvm_global_value;
 };
 
 struct self_s {

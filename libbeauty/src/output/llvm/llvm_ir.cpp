@@ -189,6 +189,41 @@ Type *import_alien_type(struct self_s *self, Module *mod, Type *type_alien) {
 	}
 	return ReturnTy;
 }
+int create_gep(struct self_s *self, Module *mod, IRBuilder<> *builder,
+		uint64_t section, uint64_t index,
+		Value *value_src, Type *type_intended, Value **value_result) {
+	uint64_t type = self->sections[section].memory_struct[index].sizes_type[0];
+	uint64_t valid = self->sections[section].memory_struct[index].valid;
+	uint64_t limit_low = self->sections[section].memory_struct[index].limit_low;
+	if (index != limit_low) {
+		/* this is an offset within the structure. Not yet handled. */
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "Offset within structure not yet handled.\n");
+		exit(1);
+	}
+	if (type_intended != PointerType::get(IntegerType::get(mod->getContext(), 8), 0)) {
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "Only type_intended:*I8 currently handled.\n");
+		exit(1);
+	}
+	if ((llvm::Type::TypeID::PointerTyID == value_src->getType()->getTypeID()) &&
+			(1 == value_src->getType()->getNumContainedTypes()) &&
+			(llvm::Type::TypeID::ArrayTyID == value_src->getType()->getContainedType(0)->getTypeID())) {
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "Found the right type.\n");
+		uint64_t array_num_elements = value_src->getType()->getContainedType(0)->getArrayNumElements();
+		// Constant Definitions
+		std::vector<Value*> const_ptr_4_indices;
+		ConstantInt* const_int64_6 = ConstantInt::get(mod->getContext(), APInt(64, StringRef("0"), 10));
+		// Need two indexes to de-reference to get i8* from the String Array.
+		const_ptr_4_indices.push_back(const_int64_6);
+		const_ptr_4_indices.push_back(const_int64_6);
+		//Constant* const_ptr_5 = ConstantExpr::getGetElementPtr(gvar_ptr_mem2, const_ptr_5_indices);
+		Value* ptr_8 = builder->CreateGEP(value_src, const_ptr_4_indices, "ptr_8");
+		*value_result = ptr_8;
+		return 0;
+	}
+	debug_print(DEBUG_OUTPUT_LLVM, 1, "Found the wrong type.\n");
+	exit(1);
+	return 0;
+}
 
 int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct declaration_s *declaration, Value **value, BasicBlock **bb, int node, int external_entry, int inst)
 {
@@ -237,6 +272,61 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			inst_log1->value3.value_id,
 			external_entry_point->label_redirect[inst_log1->value3.value_id].domain,
 			external_entry_point->label_redirect[inst_log1->value3.value_id].index);
+		if (inst_log1->instruction.srcA.relocated) {
+			uint64_t section;
+			uint64_t index;
+			uint64_t type;
+			uint64_t valid;
+			Type *type_intended;
+			Value *value_src;
+			Value *value_result;
+			/* FIXME: Implement global memory GEP/BITCAST */
+			tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
+			value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
+			section = inst_log1->instruction.srcA.relocated_section_index;
+			index = inst_log1->instruction.srcA.relocated_index;
+			type = self->sections[section].memory_struct[index].sizes_type[0];
+			valid = self->sections[section].memory_struct[index].valid;
+			debug_print(DEBUG_OUTPUT_LLVM, 0, "relocated_section = 0x%lx, index = 0x%lx, valid = 0x%lx, type = 0x%lx\n",
+					section, index, valid, type);
+			debug_print(DEBUG_OUTPUT_LLVM, 0, "size = 0x%lx, size_type = 0x%lx\n",
+					self->sections[section].memory_struct[index].sizes[0],
+					self->sections[section].memory_struct[index].sizes_type[0]);
+			if (1 == type) {
+				type_intended = PointerType::get(IntegerType::get(mod->getContext(), 8), 0);
+			}
+			value_src = (Value*)self->sections[section].llvm_global_value[index];
+			sprint_value(OS1, value_src);
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "srcA: %s\n", Buf1.c_str());
+			Buf1.clear();
+			//sprint_value(OS1, value_tmp->);
+			//debug_print(DEBUG_OUTPUT_LLVM, 1, "srcA-type: %s\n", Buf1.c_str());
+			llvm::outs() << value_src->getType()->getTypeID() << "\n";
+			llvm::outs() << value_src->getType()->getNumContainedTypes() << "\n";
+			llvm::outs() << value_src->getType()->getContainedType(0)->getTypeID() << "\n";
+			llvm::outs() << value_src->getType()->getContainedType(0)->getArrayNumElements() << "\n";
+			//value_tmp->getType()->print(OS1);
+			//debug_print(DEBUG_OUTPUT_LLVM, 1, "srcA-type: %s\n", Buf1.c_str());
+			Buf1.clear();
+			tmp = create_gep(self, mod, builder, section, index, value_src, type_intended, &value_result);
+			sprint_value(OS1, value_result);
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "value_result: %s\n", Buf1.c_str());
+			Buf1.clear();
+			value[value_id] = value_result;
+			if (!value[value_id]) {
+				tmp = tip_result_print_from_label(self, external_entry, value_id);
+				debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: failed LLVM Value is NULL. srcA value_id = 0x%x\n", value_id);
+				exit(1);
+				tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
+				if (tmp) {
+					debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: failed LLVM Value is NULL. dstA value_id = 0x%x\n", value_id);
+					exit(1);
+				}
+			}
+			sprint_value(OS1, value[value_id]);
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
+			Buf1.clear();
+		}
 		if (inst_log1->instruction.srcA.store == 0) {  /* IMM */
 			tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
 			value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
@@ -248,7 +338,7 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 				}
 			}
 			sprint_value(OS1, value[value_id]);
-			debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "srcA: %s\n", Buf1.c_str());
 			Buf1.clear();
 		}
 		break;
@@ -1443,8 +1533,16 @@ int LLVM_ir_export::output(struct self_s *self)
 			external_entry_points[l].llvm_basic_blocks = (void**)bb;
 		}
 	}
+// TODO: Add init of llvm_global_value here.
+	for (l = 0; l < self->sections_size; l++) {
+		if (self->sections[l].memory_log_size > 0) {
+			Value **value = (Value**) calloc(self->sections[l].content_size + 1, sizeof(Value*));
+			self->sections[l].llvm_global_value = (void**)value;
+		}
+	}
 
 	// Global Variables
+#if 0
 	PointerType* PointerTy_1 = PointerType::get(IntegerType::get(mod->getContext(), 32), 0);
 	GlobalVariable* gvar_ptr_mem = new GlobalVariable(/*Module=*/*mod,
 	/*Type=*/PointerTy_1,
@@ -1456,38 +1554,58 @@ int LLVM_ir_export::output(struct self_s *self)
 
 	//mod->dump();
 	mod->print(llvm::errs(), nullptr);
-
+#endif
+	// Global Variables
 	for (l = 0; l < self->sections_size; l++) {
 		if (self->sections[l].memory_log_size > 0) {
+			Value **global_value = (Value**)self->sections[l].llvm_global_value;
 			for (m = 0; m < self->sections[l].content_size; m++) {
 				if ((self->sections[l].memory_struct[m].valid == 1) &&
 						(self->sections[l].memory_struct[m].sizes_size > 0)) {
-					debug_print(DEBUG_OUTPUT_LLVM, 1, "Adding GLOBAL: Section:0x%x Addr:0x%lx size:0x%lx\n",
+					uint64_t index = self->sections[l].memory_struct[m].log_index[0];
+					/* FIXME: Add support for other types. */
+					debug_print(DEBUG_OUTPUT_LLVM, 1, "Adding GLOBAL: Section:0x%x Addr:0x%lx size:0x%lx type:0x%lx\n",
 												l,
 												m,
-												self->sections[l].memory_struct[m].sizes[0]);
-					const char *string1 = strndup(
-							(const char*)self->sections[l].memory_log[self->sections[l].memory_struct[m].log_index[0]].octets,
-							self->sections[l].memory_log[self->sections[l].memory_struct[m].log_index[0]].length);
-					tmp = snprintf(buffer, 1024, "mem%08x", m);
-					llvm::StringRef string2(string1, self->sections[l].memory_log[self->sections[l].memory_struct[m].log_index[0]].length);
-					Constant *const_array_4 = ConstantDataArray::getString(mod->getContext(), string2, false);
-					ArrayType* Array_1 = ArrayType::get(IntegerType::get(mod->getContext(), 8),
-					         const_array_4->getType()->getArrayNumElements());
-					GlobalVariable* gvar_ptr_mem2 = new GlobalVariable(/*Module=*/*mod,
-					/*Type=*/Array_1,
-					/*isConstant=*/true,
-					/*Linkage=*/GlobalValue::PrivateLinkage,
-					/*Initializer=*/0,
-					/*Name=*/buffer);
-					gvar_ptr_mem2->setAlignment(1);
-					gvar_ptr_mem2->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
-					gvar_ptr_mem2->setInitializer(const_array_4);
+												self->sections[l].memory_struct[m].sizes[0],
+												self->sections[l].memory_log[index].type);
+					switch (self->sections[l].memory_log[index].type) {
+					case 1: { // StringZero
+						const char *string1 = strndup(
+								(const char*)self->sections[l].memory_log[index].octets,
+								self->sections[l].memory_log[index].length);
+						tmp = snprintf(buffer, 1024, "mem%08x", m);
+						llvm::StringRef string2(string1, self->sections[l].memory_log[index].length);
+						Constant *const_array_4 = ConstantDataArray::getString(mod->getContext(), string2, false);
+						ArrayType* Array_1 = ArrayType::get(IntegerType::get(mod->getContext(), 8),
+								const_array_4->getType()->getArrayNumElements());
+						GlobalVariable* gvar_ptr_mem2 = new GlobalVariable(/*Module=*/*mod,
+								/*Type=*/Array_1,
+								/*isConstant=*/true,
+								/*Linkage=*/GlobalValue::PrivateLinkage,
+								/*Initializer=*/0,
+								/*Name=*/buffer);
+						gvar_ptr_mem2->setAlignment(1);
+						gvar_ptr_mem2->setUnnamedAddr(llvm::GlobalValue::UnnamedAddr::Global);
+						gvar_ptr_mem2->setInitializer(const_array_4);
+						sprint_value(OS1, gvar_ptr_mem2);
+						debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+						Buf1.clear();
+						global_value[m] = gvar_ptr_mem2;
+						break;
+					}
+					default: {
+						debug_print(DEBUG_OUTPUT_LLVM, 1, "Unknown type 0x%l\n",
+								self->sections[l].memory_log[index].type);
+						exit(1);
+						break;
+					}
+					};
 				}
 			}
 		}
 	}
-
+#if 0
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 		if ((external_entry_points[l].valid != 0) &&
 			(external_entry_points[l].type == 1) && 
@@ -1513,8 +1631,9 @@ int LLVM_ir_export::output(struct self_s *self)
 					size_bits = 8;
 				}
 				if ((3 == label->scope) && (2 == label->type)) {
-					debug_print(DEBUG_OUTPUT_LLVM, 1, "Adding GLOBAL: Label:0x%x: &data found. size=0x%lx, pointer=0x%lx\n",
-							m, size_bits,
+					/* FIXME: Need to redo the values to produce GEPs etc. */
+					debug_print(DEBUG_OUTPUT_LLVM, 1, "Adding GLOBAL: Label:0x%x Index:0x%x &data found. size=0x%lx, pointer=0x%lx\n",
+							m, index, size_bits,
 							tip2[labels[index].tip2].pointer);
 					tmp = label_to_string(&(labels[index]), buffer, 1023);
 					GlobalVariable* gvar_mem1 = new GlobalVariable(/*Module=*/*mod,
@@ -1530,7 +1649,7 @@ int LLVM_ir_export::output(struct self_s *self)
 			}
 		}
 	}
-
+#endif
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 		if ((external_entry_points[l].valid != 0) &&
 			(external_entry_points[l].type == 1)) {

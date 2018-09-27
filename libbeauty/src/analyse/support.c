@@ -849,7 +849,7 @@ int fill_phi_node_list(struct self_s *self, struct control_flow_node_s *nodes, i
 			/* Only output nodes that are valid */
 			continue;
 		}
-		printf("node = 0x%x\n", node);
+		debug_print(DEBUG_ANALYSE_PHI, 1, "node = 0x%x\n", node);
 		if (nodes[node].phi_size > 0) {
 			debug_print(DEBUG_ANALYSE_PHI, 1, "nodes[node].phi_size = 0x%x, nodes[node].prev_size = 0x%x\n",
 				nodes[node].phi_size,
@@ -913,26 +913,26 @@ int fill_phi_src_value_id(struct self_s *self, int entry_point)
 	int value_id;
 	int reg;
 	int tmp;
-	printf("fill_phi_src_value_id: entered\n");
+	debug_print(DEBUG_ANALYSE_PHI, 1, "fill_phi_src_value_id: entered\n");
 
 	for (node = 1; node < nodes_size; node++) {
 		if (!nodes[node].valid) {
 			/* Only output nodes that are valid */
 			continue;
 		}
-		printf("node = 0x%x\n", node);
+		debug_print(DEBUG_ANALYSE_PHI, 1, "node = 0x%x\n", node);
 		if (nodes[node].phi_size > 0) {
-			printf("nodes[node].phi_size = 0x%x, nodes[node].prev_size = 0x%x\n", nodes[node].phi_size, nodes[node].prev_size);
+			debug_print(DEBUG_ANALYSE_PHI, 1, "nodes[node].phi_size = 0x%x, nodes[node].prev_size = 0x%x\n", nodes[node].phi_size, nodes[node].prev_size);
 			for (n = 0; n < nodes[node].phi_size; n++) {
 				reg = nodes[node].phi[n].reg;
-				printf("n = 0x%x, nodes[node].phi[n].reg = 0x%x, phi_node_size = 0x%x\n", n, reg, nodes[node].phi[n].phi_node_size);
+				debug_print(DEBUG_ANALYSE_PHI, 1, "n = 0x%x, nodes[node].phi[n].reg = 0x%x, phi_node_size = 0x%x\n", n, reg, nodes[node].phi[n].phi_node_size);
 				for (m = 0; m < nodes[node].phi[n].phi_node_size; m++) {
 					node_source = nodes[node].phi[n].phi_node[m].node;
-					printf("m = 0x%x, node_source = 0x%x\n", m, node_source);
+					debug_print(DEBUG_ANALYSE_PHI, 1, "m = 0x%x, node_source = 0x%x\n", m, node_source);
 					/* FIXME: What to do if node_source == 0 ? */
 					if (node_source > 0) {
 						inst = nodes[node_source].used_register[reg].dst;
-						printf("inst = nodes[node_source].used_register[reg].dst = 0x%x\n", inst);
+						debug_print(DEBUG_ANALYSE_PHI, 1, "inst = nodes[node_source].used_register[reg].dst = 0x%x\n", inst);
 						if (inst == 0) {
 							/* Use the node_source phi instead. */
 							for (l = 0; l < nodes[node_source].phi_size; l++) {
@@ -942,7 +942,7 @@ int fill_phi_src_value_id(struct self_s *self, int entry_point)
 									break;
 								}
 							}
-							printf("fill_phi_src_value_id inst = 0x%x, value_id = 0x%x\n", inst, value_id);
+							debug_print(DEBUG_ANALYSE_PHI, 1, "fill_phi_src_value_id inst = 0x%x, value_id = 0x%x\n", inst, value_id);
 						} else {
 							/* FIXME: Check that value3 is the same reg */
 							inst_log1 =  &inst_log_entry[inst];
@@ -952,7 +952,8 @@ int fill_phi_src_value_id(struct self_s *self, int entry_point)
 								(instruction->dstA.index == reg)) {
 								value_id = inst_log1->value3.value_id;
 							} else {
-								printf("JCD:VALUE3:fill_phi_src_value_id inst = 0x%x, value_id = 0x%x, reg = 0x0%x\n", inst, value_id, reg);
+								debug_print(DEBUG_ANALYSE_PHI, 1, "VALUE3:fill_phi_src_value_id inst = 0x%x, value_id = 0x%x, reg = 0x0%x\n",
+										inst, value_id, reg);
 								print_inst(self, instruction, inst, labels);
 								debug_print(DEBUG_ANALYSE_PHI, 1,
 									"FAILED: fill_phi_src_value_id: src reg does not equal dst reg\n");
@@ -960,7 +961,7 @@ int fill_phi_src_value_id(struct self_s *self, int entry_point)
 							}
 						}
 						if (value_id == 0) {
-							printf("FAILED: fill_phi_src_value_id value_id should not be 0\n");
+							debug_print(DEBUG_ANALYSE_PHI, 1, "FAILED: fill_phi_src_value_id value_id should not be 0\n");
 							exit(1);
 						}
 						nodes[node].phi[n].phi_node[m].value_id = value_id;
@@ -969,7 +970,7 @@ int fill_phi_src_value_id(struct self_s *self, int entry_point)
 			}
 		}
 	}
-	printf("fill_phi_src_value_id: exit\n");
+	debug_print(DEBUG_ANALYSE_PHI, 1, "fill_phi_src_value_id: exit\n");
 	return 0;
 }
 
@@ -987,16 +988,16 @@ int fill_phi_dst_size_from_src_size(struct self_s *self, int entry_point)
 	int first_size = 0;
 	uint64_t size_bits;
 	struct label_s *label;
-	printf("fill_phi_dst_size: entered\n");
+	debug_print(DEBUG_ANALYSE_PHI, 1, "fill_phi_dst_size: entered\n");
 
 	for (node = 1; node < nodes_size; node++) {
 		if (!nodes[node].valid) {
 			/* Only output nodes that are valid */
 			continue;
 		}
-		printf("node = 0x%x\n", node);
+		debug_print(DEBUG_ANALYSE_PHI, 1, "node = 0x%x\n", node);
 		if (nodes[node].phi_size > 0) {
-			printf("phi_size = 0x%x, prev_size = 0x%x\n", nodes[node].phi_size, nodes[node].prev_size);
+			debug_print(DEBUG_ANALYSE_PHI, 1, "phi_size = 0x%x, prev_size = 0x%x\n", nodes[node].phi_size, nodes[node].prev_size);
 			for (n = 0; n < nodes[node].phi_size; n++) {
 				first_size = 0;
 				for (m = 0; m < nodes[node].phi[n].phi_node_size; m++) {
@@ -1006,7 +1007,7 @@ int fill_phi_dst_size_from_src_size(struct self_s *self, int entry_point)
 					} else {
 						size_bits = 0;
 					}
-					printf("fill_phi_dst_size node = 0x%x, phi_reg = 0x%x, value_id = 0x%x, size = 0x%lx, label_redirect = 0x%lx:0x%lx\n",
+					debug_print(DEBUG_ANALYSE_PHI, 1, "fill_phi_dst_size node = 0x%x, phi_reg = 0x%x, value_id = 0x%x, size = 0x%lx, label_redirect = 0x%lx:0x%lx\n",
 						node, nodes[node].phi[n].reg, value_id, size_bits,
 						label_redirect[value_id].domain, label_redirect[value_id].index);
 					if (size_bits == 0) {
@@ -1015,19 +1016,19 @@ int fill_phi_dst_size_from_src_size(struct self_s *self, int entry_point)
 					if ((first_size == 0) && (size_bits != 0)) {
 						first_size = size_bits;
 					} else if (first_size != size_bits) {
-						printf("fill_phi_dst_size src sized do not match first_size 0x%x\n", first_size);
+						debug_print(DEBUG_ANALYSE_PHI, 1, "fill_phi_dst_size src sized do not match first_size 0x%x\n", first_size);
 						exit(1);
 					}
 				}
 				value_id = nodes[node].phi[n].value_id;
 				//label = &labels[nodes[node].phi[n].value_id];
-				printf("fill_phi_dst_size setting phi dst value_id = 0x%x size_bits to 0x%x\n", value_id, first_size);
+				debug_print(DEBUG_ANALYSE_PHI, 1, "fill_phi_dst_size setting phi dst value_id = 0x%x size_bits to 0x%x\n", value_id, first_size);
 				self->external_entry_points[entry_point].tip2[labels[value_id].tip2].integer_size = first_size;
 				//label->size_bits = first_size;
 			}
 		}
 	}
-	printf("fill_phi_dst_size: exit\n");
+	debug_print(DEBUG_ANALYSE_PHI, 1, "fill_phi_dst_size: exit\n");
 	return 0;
 }
 
@@ -1206,6 +1207,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 	struct memory_s *memory;
 	struct extension_call_s *call;
 	int tmp;
+	int domain;
 
 	/* n is the node to process */
 	int inst;
@@ -1245,11 +1247,18 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 					//label.lab_pointer = 1;
 					label.value = instruction->srcA.index;
 					//label.size_bits = instruction->srcA.value_size;
+					domain = 1;
 				} else if (instruction->srcA.relocated) {
 					label.scope = 3;
 					label.type = 2;
 					//label.lab_pointer = 0;
 					label.value = instruction->srcA.index;
+					debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x:MOV srcA direct given value_id = 0x%"PRIx64", section_index=0x%"PRIx64"\n",
+										entry_point, node, inst,
+										inst_log1->value1.value_id,
+										inst_log1->value1.section_index);
+					debug_print(DEBUG_MAIN, 1, "srcA.relocated. exiting\n");
+					domain = 1;
 					//label.size_bits = instruction->srcA.value_size;
 				} else {
 					label.scope = 3;
@@ -1257,20 +1266,40 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 					//label.lab_pointer = 0;
 					label.value = instruction->srcA.index;
 					//label.size_bits = instruction->srcA.value_size;
+					domain = 1;
 				}
-				
-				inst_log1->value1.value_id = variable_id;
-				label_redirect[variable_id].domain = 1;
-				label_redirect[variable_id].index = variable_id;
-				labels[variable_id].scope = label.scope;
-				labels[variable_id].type = label.type;
-				//labels[variable_id].lab_pointer += label.lab_pointer;
-				labels[variable_id].value = label.value;
-				//labels[variable_id].size_bits = label.size_bits;
-				debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x:MOV srcA direct given value_id = 0x%"PRIx64"\n",
-					entry_point, node, inst,
-					inst_log1->value1.value_id); 
-				variable_id++;
+				switch (domain) {
+				case 4:
+					inst_log1->value1.value_id = variable_id;
+					label_redirect[variable_id].domain = 4;
+					label_redirect[variable_id].index = variable_id;
+					labels[variable_id].scope = label.scope;
+					labels[variable_id].type = label.type;
+					//labels[variable_id].lab_pointer += label.lab_pointer;
+					labels[variable_id].value = label.value;
+					//labels[variable_id].size_bits = label.size_bits;
+					debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x:MOV srcA direct given value_id = 0x%"PRIx64", section_index=0x%"PRIx64"\n",
+							entry_point, node, inst,
+							inst_log1->value1.value_id,
+							inst_log1->value1.section_index);
+					variable_id++;
+					break;
+				default:
+					inst_log1->value1.value_id = variable_id;
+					label_redirect[variable_id].domain = 1;
+					label_redirect[variable_id].index = variable_id;
+					labels[variable_id].scope = label.scope;
+					labels[variable_id].type = label.type;
+					//labels[variable_id].lab_pointer += label.lab_pointer;
+					labels[variable_id].value = label.value;
+					//labels[variable_id].size_bits = label.size_bits;
+					debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x:MOV srcA direct given value_id = 0x%"PRIx64", section_index=0x%"PRIx64"\n",
+							entry_point, node, inst,
+							inst_log1->value1.value_id,
+							inst_log1->value1.section_index);
+					variable_id++;
+					break;
+				}
 				break;
 			case STORE_REG:
 				/* FIXME: TODO*/
@@ -1654,9 +1683,10 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				//labels[variable_id].lab_pointer += label.lab_pointer;
 				labels[variable_id].value = label.value;
 				//labels[variable_id].size_bits = label.size_bits;
-				debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x:STORE srcA direct given value_id = 0x%"PRIx64"\n",
+				debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x:STORE srcA direct given value_id = 0x%"PRIx64", section_index=0x%"PRIx64"\n",
 					entry_point, node, inst,
-					inst_log1->value1.value_id); 
+					inst_log1->value1.value_id,
+					inst_log1->value1.section_index);
 				variable_id++;
 				break;
 			case STORE_REG:
@@ -1813,9 +1843,10 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				//labels[variable_id].lab_pointer += label.lab_pointer;
 				labels[variable_id].value = label.value;
 				//labels[variable_id].size_bits = label.size_bits;
-				debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x: ARITH srcA direct given value_id = 0x%"PRIx64"\n",
+				debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x: ARITH srcA direct given value_id = 0x%"PRIx64", section_index=0x%"PRIx64"\n",
 					entry_point, node, inst,
-					inst_log1->value1.value_id); 
+					inst_log1->value1.value_id,
+					inst_log1->value1.section_index);
 				variable_id++;
 				break;
 			case STORE_REG:
@@ -1824,9 +1855,10 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				case IND_DIRECT:
 					inst_log1->value1.value_id = 
 						reg_tracker[instruction->srcA.index];
-					debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x: ARITH srcA given value_id = 0x%"PRIx64"\n",
+					debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x: ARITH srcA given value_id = 0x%"PRIx64", section_index=0x%"PRIx64"\n",
 						entry_point, node, inst,
-						inst_log1->value1.value_id);
+						inst_log1->value1.value_id,
+						inst_log1->value1.section_index);
 					break;
 				case IND_STACK:
 					stack_address = inst_log1->value1.indirect_init_value + inst_log1->value1.indirect_offset_value;
@@ -1877,9 +1909,10 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				//labels[variable_id].lab_pointer += label.lab_pointer;
 				labels[variable_id].value = label.value;
 				//labels[variable_id].size_bits = label.size_bits;
-				debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x: ARITH srcB direct given value_id = 0x%"PRIx64"\n",
+				debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x: ARITH srcB direct given value_id = 0x%"PRIx64", section_index=0x%"PRIx64"\n",
 					entry_point, node, inst,
-					inst_log1->value2.value_id); 
+					inst_log1->value2.value_id,
+					inst_log1->value2.section_index);
 				variable_id++;
 				break;
 			case STORE_REG:
@@ -1888,9 +1921,10 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				case IND_DIRECT:
 					inst_log1->value2.value_id = 
 						reg_tracker[instruction->srcB.index];
-					debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x: ARITH srcB given value_id = 0x%"PRIx64"\n",
+					debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x: ARITH srcB given value_id = 0x%"PRIx64", section_index=0x%"PRIx64"\n",
 						entry_point, node, inst,
-						inst_log1->value2.value_id);
+						inst_log1->value2.value_id,
+						inst_log1->value2.section_index);
 					break;
 				case IND_STACK:
 					stack_address = inst_log1->value2.indirect_init_value + inst_log1->value2.indirect_offset_value;
@@ -1902,9 +1936,10 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 					if (memory) {
 						if (memory->value_id) {
 							inst_log1->value2.value_id = memory->value_id;
-							debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x: ARITH srcB direct given value_id = 0x%"PRIx64"\n",
+							debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x: ARITH srcB direct given value_id = 0x%"PRIx64", section_index=0x%"PRIx64"\n",
 								entry_point, node, inst,
-								inst_log1->value2.value_id); 
+								inst_log1->value2.value_id,
+								inst_log1->value2.section_index);
 						}
 					}
 				}
@@ -1917,10 +1952,11 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 				switch(instruction->dstA.indirect) {
 				case IND_DIRECT:
 					reg_tracker[instruction->dstA.index] = inst_log1->value3.value_id;
-					debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x: ARITH dstA reg 0x%"PRIx64" given value_id = 0x%"PRIx64"\n",
+					debug_print(DEBUG_MAIN, 1, "Inst 0x%x:0x%x:0x%04x: ARITH dstA reg 0x%"PRIx64" given value_id = 0x%"PRIx64", section_index=0x%"PRIx64"\n",
 						entry_point, node, inst,
 						instruction->dstA.index,
-						inst_log1->value3.value_id); 
+						inst_log1->value3.value_id,
+						inst_log1->value3.section_index);
 					break;
 				case IND_STACK:
 					break;
@@ -2205,7 +2241,6 @@ int check_domain(struct label_redirect_s *label_redirect)
 {
 	if (1 != label_redirect->domain) {
 		debug_print(DEBUG_MAIN, 1, "check_domain failed 0x%lx\n", label_redirect->domain);
-		printf("check_domain failed\n");
 		//assert(0);
 		exit(1);
 	}
@@ -2321,6 +2356,59 @@ int rule_print(struct self_s *self, int entry_point)
 				tip[l].rules[m].pointer,
 				tip[l].rules[m].pointer_to_tip2,
 				tip[l].rules[m].size_bits);
+		}
+	}
+	return 0;
+}
+
+int tip_result_print_from_label(struct self_s *self, int entry_point, int label)
+{
+	struct external_entry_point_s *external_entry_point = &(self->external_entry_points[entry_point]);
+	struct control_flow_node_s *nodes = external_entry_point->nodes;
+	struct inst_log_entry_s *inst_log_entry = self->inst_log_entry;
+	struct label_redirect_s *label_redirect = external_entry_point->label_redirect;
+	struct label_s *labels = external_entry_point->labels;
+	struct tip2_s *tip = external_entry_point->tip2;
+	struct tip2_s *tip_this;
+	struct rule_s *rule_this;
+	struct inst_log_entry_s *inst_log1;
+	struct instruction_s *instruction;
+	int l,m;
+	int tmp;
+	char buffer[1024];
+
+	debug_print(DEBUG_ANALYSE_TIP, 1, "entered function 0x%x:%s\n", entry_point, external_entry_point->name);
+
+	for(l = 0; l < 1000; l++) {
+		tip_this = &(tip[l]);
+		if (tip_this->associated_label != label) {
+			//debug_print(DEBUG_ANALYSE_TIP, 1, "0x%x empty\n", l);
+			continue;
+		}
+		tmp = label_to_string(&(labels[tip_this->associated_label]), &(buffer[0]), 1023);
+		debug_print(DEBUG_ANALYSE_TIP, 1, "tip:0x%x, associated_label = 0x%lx:%s, integer = 0x%lx, integer_size = 0x%lx, pointer = 0x%lx, pointer_to_tip = 0x%lx, probability = 0x%x, rule_size = 0x%lx\n",
+			l,
+			tip_this->associated_label,
+			buffer,
+			tip_this->integer,
+			tip_this->integer_size,
+			tip_this->pointer,
+			tip_this->pointer_to_tip,
+			tip_this->probability,
+			tip_this->rule_size);
+		for (m = 0; m < tip_this->rule_size; m++) {
+			debug_print(DEBUG_ANALYSE_TIP, 1, "    Rule 0x%x node = 0x%x, inst = 0x%x, phi = 0x%x, operand = 0x%x, tipA_derived_from = 0x%x, tipB_derived_from = 0x%x, tip_derived_from_this = 0x%x, pointer = 0x%x, pointer_to_tip2 = 0x%x, size_bits = 0x%x\n",
+				m,
+				tip_this->rules[m].node,
+				tip_this->rules[m].inst_number,
+				tip_this->rules[m].phi_number,
+				tip_this->rules[m].operand,
+				tip_this->rules[m].tipA_derived_from,
+				tip_this->rules[m].tipB_derived_from,
+				tip_this->rules[m].tip_derived_from_this,
+				tip_this->rules[m].pointer,
+				tip_this->rules[m].pointer_to_tip2,
+				tip_this->rules[m].size_bits);
 		}
 	}
 	return 0;
@@ -2867,6 +2955,8 @@ int build_tip2_table(struct self_s *self, int entry_point, int node)
 
 		case CALL:
 			/* FIXME: No info yet. */
+			/* FIXME: Add rule_add for function params, if we have useful info */
+			/*        For example, with puts( *i8 ), we could rule_add pointer to i8 */
 			value_id3 = inst_log1->value3.value_id;
 			//size_bits3 = instruction->dstA.value_size;
 			size_bits3 = 0; // FIXME. Need to derive this

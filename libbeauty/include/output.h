@@ -30,6 +30,7 @@ extern "C" int output_cfg_dot(struct self_s *self,
 extern "C" int output_cfg_dot_basic(struct self_s *self, struct control_flow_node_s *nodes, int nodes_size);
 extern "C" int output_cfg_dot_basic2(struct self_s *self, struct external_entry_point_s *external_entry_point);
 extern "C" int output_cfg_dot_simple(struct self_s *self, struct external_entry_point_s *external_entry_point, int index);
+extern "C" int tip_result_print_from_label(struct self_s *self, int entry_point, int label);
 #else
 extern int label_to_string(struct label_s *label, char *string, int size);
 int output_cfg_dot(struct self_s *self,
@@ -37,6 +38,7 @@ int output_cfg_dot(struct self_s *self,
 int output_cfg_dot_basic(struct self_s *self, struct control_flow_node_s *nodes, int nodes_size);
 int output_cfg_dot_basic2(struct self_s *self, struct external_entry_point_s *external_entry_point, int index);
 int output_cfg_dot_simple(struct self_s *self, struct external_entry_point_s *external_entry_point, int index);
+int tip_result_print_from_label(struct self_s *self, int entry_point, int label);
 #endif
 
 #endif /* OUTPUT_H */

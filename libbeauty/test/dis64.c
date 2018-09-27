@@ -725,7 +725,7 @@ int analyse_memory_log(struct self_s *self)
 {
 	uint64_t l, m, n;
 	for (l = 0; l < self->sections_size; l++) {
-		debug_print(DEBUG_MAIN, 1, "Scanning section 0x%x\n", l);
+		debug_print(DEBUG_MAIN, 1, "Scanning section 0x%lx\n", l);
 		if (self->sections[l].memory_log_size > 0) {
 			debug_print(DEBUG_MAIN, 1, "Processing section 0x%lx, content_size 0x%lx\n",
 					l,
@@ -791,6 +791,34 @@ int analyse_memory_log(struct self_s *self)
 	}
 	return 0;
 }
+
+int print_memory_log(struct self_s *self)
+{
+	uint64_t l, m, n;
+	for (l = 0; l < self->sections_size; l++) {
+		debug_print(DEBUG_MAIN, 1, "Scanning section 0x%lx\n", l);
+		if (self->sections[l].memory_struct_size > 0) {
+			for (m = 0; m < self->sections[l].memory_struct_size; m++) {
+				if (1 == self->sections[l].memory_struct[m].valid) {
+					debug_print(DEBUG_MAIN, 1, "memory_struct:0x%lx: sizes_size=0x%lx, limit_low=0x%lx, limit_high=0x%lx, value_index=0x%lx\n",
+							m,
+							self->sections[l].memory_struct[m].sizes_size,
+							self->sections[l].memory_struct[m].limit_low,
+							self->sections[l].memory_struct[m].limit_high,
+							self->sections[l].memory_struct[m].value_index);
+					for (n = 0; n < self->sections[l].memory_struct[m].sizes_size; n++) {
+						debug_print(DEBUG_MAIN, 1, "   0x%lx: memory_struct: sizes=0x%lx, sizes_type=0x%lx\n",
+								n,
+								self->sections[l].memory_struct[m].sizes[n],
+								self->sections[l].memory_struct[m].sizes_type[n]);
+					}
+				}
+			}
+		}
+	}
+	return 0;
+}
+
 
 int main(int argc, char *argv[])
 {
@@ -1375,7 +1403,7 @@ int main(int argc, char *argv[])
 				exit(1);
 			}
 			for (n = 1; n < external_entry_points[l].nodes_size; n++) {
-				debug_print(DEBUG_MAIN, 1, "JCD10: node:0x%x: next_size = 0x%x\n", n, external_entry_points[l].nodes[n].next_size);
+				debug_print(DEBUG_MAIN, 1, "TEST10: node:0x%x: next_size = 0x%x\n", n, external_entry_points[l].nodes[n].next_size);
 			};
 				
 
@@ -1397,7 +1425,7 @@ int main(int argc, char *argv[])
 				}
 			}
 			for (n = 1; n < external_entry_points[l].nodes_size; n++) {
-				debug_print(DEBUG_MAIN, 1, "JCD10: node:0x%x: next_size = 0x%x\n", n, external_entry_points[l].nodes[n].next_size);
+				debug_print(DEBUG_MAIN, 1, "TEST10: node:0x%x: next_size = 0x%x\n", n, external_entry_points[l].nodes[n].next_size);
 			};
 			//tmp = print_control_flow_paths(self, paths, &paths_size);
 
@@ -1743,9 +1771,9 @@ int main(int argc, char *argv[])
 					/* Only output nodes that are valid */
 					continue;
 				}
-				printf("JCD: scanning node phi 0x%x\n", n);
+				debug_print(DEBUG_ANALYSE_PHI, 1, "TEST: scanning node phi 0x%x\n", n);
 				if (external_entry_points[l].nodes[n].phi_size) {
-					printf("JCD: phi insts found at node 0x%x\n", n);
+					debug_print(DEBUG_ANALYSE_PHI, 1, "TEST: phi insts found at node 0x%x\n", n);
 					for (m = 0; m < external_entry_points[l].nodes[n].phi_size; m++) {
 						external_entry_points[l].nodes[n].phi[m].value_id = external_entry_points[l].variable_id;
 						external_entry_points[l].label_redirect[external_entry_points[l].variable_id].domain = 1;
@@ -2044,7 +2072,7 @@ int main(int argc, char *argv[])
 	/* FIXME: +1 added as a result of running valgrind, but need a proper fix */
 //	label_redirect = calloc(self->local_counter + 1, sizeof(struct label_redirect_s));
 //	labels = calloc(self->local_counter + 1, sizeof(struct label_s));
-//	debug_print(DEBUG_MAIN, 1, "JCD6: self->local_counter=%d\n", self->local_counter);
+//	debug_print(DEBUG_MAIN, 1, "TEST6: self->local_counter=%d\n", self->local_counter);
 //	FIXME:  Move the EIP, ESP, EBP pointer tagging to the TIP processing.
 #if 0
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
@@ -2592,13 +2620,13 @@ int main(int argc, char *argv[])
 	 ***************************************************/
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 		if (external_entry_points[l].valid) {
-			debug_print(DEBUG_MAIN, 1, "JCD5: entry point valid 0x%x\n", l);
+			debug_print(DEBUG_MAIN, 1, "TEST5: entry point valid 0x%x\n", l);
 			for (m = 0; m < REG_PARAMS_ORDER_MAX; m++) {
 			struct label_s *label;
 				for (n = 0; n < external_entry_points[l].params_size; n++) {
 					uint64_t tmp_param;
 					tmp_param = external_entry_points[l].params[n];
-					debug_print(DEBUG_MAIN, 1, "JCD5: labels 0x%lx, params_size=%d\n", tmp_param, external_entry_points[l].params_size);
+					debug_print(DEBUG_MAIN, 1, "TEST5: labels 0x%lx, params_size=%d\n", tmp_param, external_entry_points[l].params_size);
 					/* Sanity check */
 					if (tmp_param >= external_entry_points[l].variable_id) {
 						debug_print(DEBUG_MAIN, 1, "Invalid entry point 0x%x, l=%d, m=%d, n=%d, params_size=%d\n",
@@ -2606,8 +2634,8 @@ int main(int argc, char *argv[])
 						return 1;
 					}
 					label = &(external_entry_points[l].labels[tmp_param]);
-					debug_print(DEBUG_MAIN, 1, "JCD5: labels 0x%x\n", external_entry_points[l].params[n]);
-					debug_print(DEBUG_MAIN, 1, "JCD5: label=%p, l=%d, m=%d, n=%d\n", label, l, m, n);
+					debug_print(DEBUG_MAIN, 1, "TEST5: labels 0x%x\n", external_entry_points[l].params[n]);
+					debug_print(DEBUG_MAIN, 1, "TEST5: label=%p, l=%d, m=%d, n=%d\n", label, l, m, n);
 					debug_print(DEBUG_MAIN, 1, "reg_params_order = 0x%x,", reg_params_order[m]);
 					debug_print(DEBUG_MAIN, 1, " label->value = 0x%"PRIx64"\n", label->value);
 					if ((label->scope == 2) &&
@@ -2720,7 +2748,7 @@ int main(int argc, char *argv[])
 				labels[value_id3].lab_pointer += labels[value_id].lab_pointer;
 				labels[value_id].lab_pointer = labels[value_id3].lab_pointer;
 			}
-			debug_print(DEBUG_MAIN, 1, "JCD4: value_id = 0x%"PRIx64", lab_pointer = 0x%"PRIx64", value_id3 = 0x%"PRIx64", lab_pointer = 0x%"PRIx64"\n",
+			debug_print(DEBUG_MAIN, 1,TEST4: value_id = 0x%"PRIx64", lab_pointer = 0x%"PRIx64", value_id3 = 0x%"PRIx64", lab_pointer = 0x%"PRIx64"\n",
 				value_id, labels[value_id].lab_pointer, value_id3, labels[value_id3].lab_pointer);
 			break;
 
@@ -2767,7 +2795,7 @@ int main(int argc, char *argv[])
 				labels[value_id3].lab_pointer += labels[value_id].lab_pointer;
 				labels[value_id].lab_pointer = labels[value_id3].lab_pointer;
 			}
-			debug_print(DEBUG_MAIN, 1, "JCD4: value_id = 0x%"PRIx64", lab_pointer = 0x%"PRIx64", value_id3 = 0x%"PRIx64", lab_pointer = 0x%"PRIx64"\n",
+			debug_print(DEBUG_MAIN, 1, "TEST4: value_id = 0x%"PRIx64", lab_pointer = 0x%"PRIx64", value_id3 = 0x%"PRIx64", lab_pointer = 0x%"PRIx64"\n",
 				value_id, labels[value_id].lab_pointer, value_id3, labels[value_id3].lab_pointer);
 			break;
 
@@ -2779,6 +2807,7 @@ int main(int argc, char *argv[])
 #endif
 
 	tmp = analyse_memory_log(self);
+	tmp = print_memory_log(self);
 	debug_print(DEBUG_MAIN, 1, "analyse_memory_log done\n");
 
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
@@ -2994,7 +3023,7 @@ int main(int argc, char *argv[])
 		if (external_entry_points[l].valid &&
 			external_entry_points[l].type == 1) {
 			for (n = 1; n < external_entry_points[l].nodes_size; n++) {
-				debug_print(DEBUG_MAIN, 1, "JCD11: node:0x%x: next_size = 0x%x\n", n, external_entry_points[l].nodes[n].next_size);
+				debug_print(DEBUG_MAIN, 1, "TEST11: node:0x%x: next_size = 0x%x\n", n, external_entry_points[l].nodes[n].next_size);
 			};
 		}
 	}
