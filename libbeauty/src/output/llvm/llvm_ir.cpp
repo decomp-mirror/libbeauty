@@ -464,6 +464,12 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		Buf1.clear();
 		break;
 	case 7:  // XOR
+		/* FIXME: XOR at assembler level includes regs and flags.
+		 *        XOR at LLVM IR level includes only REGS.
+		 *        We really need to check whether the flags are used,
+		 *        before allowing this step.
+		 */
+
 		debug_print(DEBUG_OUTPUT_LLVM, 1, "LLVM 0x%x: OPCODE = 0x%x:XOR\n", inst, inst_log1->instruction.opcode);
 //		if (inst_log1->instruction.dstA.index == 0x28) {
 //			/* Skip the 0x28 reg as it is the SP reg */
