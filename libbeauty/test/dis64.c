@@ -735,7 +735,8 @@ int analyse_memory_log(struct self_s *self)
 			self->sections[l].memory_struct_size = self->sections[l].content_size;
 			for (m = 0; m < self->sections[l].memory_log_size; m++) {
 				debug_print(DEBUG_MAIN, 1, "memory_log_size = 0x%lx of 0x%lx\n", m, self->sections[l].memory_log_size);
-				if (self->sections[l].memory_log[m].type == 1) {
+				if ((self->sections[l].memory_log[m].type == 1) ||
+						(self->sections[l].memory_log[m].type == 2)) {
 					debug_print(DEBUG_MAIN, 1, "Processing GLOBAL: Section:0x%lx Addr:0x%lx size:0x%lx\n",
 							l,
 							self->sections[l].memory_log[m].address,
@@ -785,6 +786,9 @@ int analyse_memory_log(struct self_s *self)
 							self->sections[l].memory_struct[offset].sizes_size++;
 						}
 					}
+				} else {
+					debug_print(DEBUG_MAIN, 1, "Unknown type:0x%lx\n",
+							self->sections[l].memory_log[m].type);
 				}
 			}
 		}

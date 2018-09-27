@@ -2113,11 +2113,15 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 					function_name);
 				tmp = input_external_function_get_size(self, l, &size);
 
-				debug_print(DEBUG_MAIN, 1, "fields_size = %d\n",
-					size);
+				debug_print(DEBUG_MAIN, 1, "fields_size = %d, size previously = %d\n",
+					size, call->params_reg_size);
 				//    self->external_functions[2].field_type 
-				call->params_reg = calloc(size, sizeof(int));
-				call->params_reg_size = size;
+				if (call->params_reg_size < size) {
+					call->params_reg = realloc(call->params_reg, size * sizeof(int));
+					call->params_reg_size = size;
+				} else {
+					size = call->params_reg_size;
+				}
 				for (n = 0; n < size; n++) {
 					int reg = reg_params_order[2 + n];
 					int tmp_label = call->reg_tracker[reg];

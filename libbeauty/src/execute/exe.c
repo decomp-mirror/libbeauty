@@ -222,7 +222,10 @@ static int log_section_access(struct self_s *self, uint64_t section_index,
 			size,
 			data_type);
 	if (data_type == 1) {
-		debug_print(DEBUG_EXE, 1, "log append: octets = %s\n", section->memory_log[section->memory_log_size].octets);
+		debug_print(DEBUG_EXE, 1, "log append1: octets = %s\n", section->memory_log[section->memory_log_size].octets);
+	}
+	if (data_type == 2) {
+		debug_print(DEBUG_EXE, 1, "log append2: octets = %s\n", section->memory_log[section->memory_log_size].octets);
 	}
 	section->memory_log_size++;
 	return 0;
@@ -893,8 +896,7 @@ exit_put_value:
 
 int process_hints(struct self_s *self,
 		struct process_state_s *process_state,
-		int params_reg_size,
-		int *params_reg,
+		struct extension_call_s *call,
 		int hint_size,
 		int *hint_array)
 {
@@ -916,6 +918,9 @@ int process_hints(struct self_s *self,
 	memory_reg = process_state->memory_reg;
 	memory_data = process_state->memory_data;
 	//memory_used = process_state->memory_used;
+	int params_reg_size = call->params_reg_size;
+	int *params_reg = call->params_reg;
+
 
 	for (n = 0; n < hint_size; n++) {
 		hint = hint_array[n];
@@ -947,10 +952,42 @@ int process_hints(struct self_s *self,
 				}
 			}
 			if (found) {
-				debug_print(DEBUG_EXE, 1, "string offset=0x%lx length=0x%lx\n",
+				debug_print(DEBUG_EXE, 1, "string1 offset=0x%lx length=0x%lx\n",
 						value->init_value + value->offset_value,
 						length);
 				log_section_access(self, value->section_index, 1, value->init_value + value->offset_value, length, 1);
+			}
+			break;
+
+		case 2: /* format-string-zero */
+			length = 0;
+			found = 0;
+			for(offset = value->init_value + value->offset_value;
+				offset < self->sections[value->section_index].content_size; offset++) {
+				length++;
+				if (self->sections[value->section_index].content[offset] == 0) {
+					found = 1;
+					break;
+				}
+			}
+			if (found) {
+				debug_print(DEBUG_EXE, 1, "string2 offset=0x%lx length=0x%lx\n",
+						value->init_value + value->offset_value,
+						length);
+				tmp = format_count_params(length, &(self->sections[value->section_index].content[value->init_value + value->offset_value]));
+				debug_print(DEBUG_EXE, 1, "string2a param count=0x%x reg_param_size=0x%x\n",
+						tmp, params_reg_size);
+				call->params_reg_size = call->params_reg_size + tmp;
+				call->params_reg = realloc(call->params_reg, call->params_reg_size * sizeof(int));
+				for(n = 0; n < call->params_reg_size; n++) {
+					call->params_reg[n] = self->external_function_reg_order[n];
+				}
+				debug_print(DEBUG_EXE, 1, "string2b param count=0x%x reg_param_size=0x%x\n",
+						tmp, call->params_reg_size);
+				log_section_access(self, value->section_index, 1, value->init_value + value->offset_value, length, 2);
+			} else {
+				debug_print(DEBUG_EXE, 1, "format string not found\n");
+				exit(1);
 			}
 			break;
 
@@ -2270,7 +2307,8 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 				for (n = 0; n < hint_size; n++) {
 					debug_print(DEBUG_EXE, 1, "Hint[%d] = 0x%x\n", n, hint_array[n]);
 				}
-				tmp = process_hints(self, process_state, call->params_reg_size, call->params_reg, hint_size, hint_array);
+				tmp = process_hints(self, process_state, call, hint_size, hint_array);
+				debug_print(DEBUG_EXE, 1, "call->params_reg_size = %d\n", call->params_reg_size);
 
 				break;
 				/* FIXME: First expand printf format string to create a new specific printf

@@ -285,15 +285,29 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
 			section = inst_log1->instruction.srcA.relocated_section_index;
 			index = inst_log1->instruction.srcA.relocated_index;
-			type = self->sections[section].memory_struct[index].sizes_type[0];
+			if (self->sections[section].memory_struct[index].sizes_size > 0) {
+				type = self->sections[section].memory_struct[index].sizes_type[0];
+			} else {
+				type = 0;
+			}
 			valid = self->sections[section].memory_struct[index].valid;
 			debug_print(DEBUG_OUTPUT_LLVM, 0, "relocated_section = 0x%lx, index = 0x%lx, valid = 0x%lx, type = 0x%lx\n",
 					section, index, valid, type);
-			debug_print(DEBUG_OUTPUT_LLVM, 0, "size = 0x%lx, size_type = 0x%lx\n",
+			if (self->sections[section].memory_struct[index].sizes_size > 0) {
+				debug_print(DEBUG_OUTPUT_LLVM, 0, "size = 0x%lx, size_type = 0x%lx\n",
 					self->sections[section].memory_struct[index].sizes[0],
 					self->sections[section].memory_struct[index].sizes_type[0]);
-			if (1 == type) {
+			} else {
+				debug_print(DEBUG_OUTPUT_LLVM, 0, "sizes_size = 0\n");
+			}
+			switch (type) {
+			case 1:
+			case 2:
 				type_intended = PointerType::get(IntegerType::get(mod->getContext(), 8), 0);
+				break;
+			default:
+				debug_print(DEBUG_OUTPUT_LLVM, 0, "type not yet handled: 0x%lx\n", type);
+				exit(1);
 			}
 			value_src = (Value*)self->sections[section].llvm_global_value[index];
 			sprint_value(OS1, value_src);
@@ -314,9 +328,9 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			Buf1.clear();
 			value[value_id] = value_result;
 			if (!value[value_id]) {
-				tmp = tip_result_print_from_label(self, external_entry, value_id);
 				debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: failed LLVM Value is NULL. srcA value_id = 0x%x\n", value_id);
-				exit(1);
+				exit(3);
+				tmp = tip_result_print_from_label(self, external_entry, value_id);
 				tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
 				if (tmp) {
 					debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: failed LLVM Value is NULL. dstA value_id = 0x%x\n", value_id);
@@ -690,7 +704,8 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 				//value_id = external_entry_point->label_redirect[reg_value].index;
 				tmp = check_domain(&(external_entry_point->label_redirect[call_info->params_reg[n]]));
 				value_id = external_entry_point->label_redirect[call_info->params_reg[n]].index;
-				debug_print(DEBUG_OUTPUT_LLVM, 1, "call_info_params = 0x%x->0x%x, %p\n", call_info->params_reg[n], value_id, value[value_id]);
+				debug_print(DEBUG_OUTPUT_LLVM, 1, "call_info_params = 0x%x:0x%x->0x%x, %p\n",
+						call_info->params_reg_size, call_info->params_reg[n], value_id, value[value_id]);
 				if (!value_id) {
 					debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: invalid call_info_param\n");
 					exit(1);
@@ -1482,6 +1497,9 @@ int LLVM_ir_export::fill_value(struct self_s *self, Value **value, int value_id,
 			value[value_id] = ConstantInt::get(Type::getInt32Ty(Context), label->value);
 		} else if (size_bits == 64) {
 			value[value_id] = ConstantInt::get(Type::getInt64Ty(Context), label->value);
+		/* FIXME: Deal with EAX and AL values */
+		} else if (size_bits == 8) {
+			value[value_id] = ConstantInt::get(Type::getInt8Ty(Context), label->value);
 		} else {
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "ERROR: LLVM fill_value() failed with size_bits = 0x%lx\n", size_bits);
 			return 1;
@@ -1570,13 +1588,14 @@ int LLVM_ir_export::output(struct self_s *self)
 						(self->sections[l].memory_struct[m].sizes_size > 0)) {
 					uint64_t index = self->sections[l].memory_struct[m].log_index[0];
 					/* FIXME: Add support for other types. */
-					debug_print(DEBUG_OUTPUT_LLVM, 1, "Adding GLOBAL: Section:0x%x Addr:0x%lx size:0x%lx type:0x%lx\n",
+					debug_print(DEBUG_OUTPUT_LLVM, 1, "Adding GLOBAL: Section:0x%x Addr:0x%x size:0x%lx type:0x%lx\n",
 												l,
 												m,
 												self->sections[l].memory_struct[m].sizes[0],
 												self->sections[l].memory_log[index].type);
 					switch (self->sections[l].memory_log[index].type) {
-					case 1: { // StringZero
+					case 1:
+					case 2: { // StringZero
 						const char *string1 = strndup(
 								(const char*)self->sections[l].memory_log[index].octets,
 								self->sections[l].memory_log[index].length);
@@ -1601,7 +1620,7 @@ int LLVM_ir_export::output(struct self_s *self)
 						break;
 					}
 					default: {
-						debug_print(DEBUG_OUTPUT_LLVM, 1, "Unknown type 0x%l\n",
+						debug_print(DEBUG_OUTPUT_LLVM, 1, "Unknown type 0x%lx\n",
 								self->sections[l].memory_log[index].type);
 						exit(1);
 						break;

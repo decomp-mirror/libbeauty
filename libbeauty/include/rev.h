@@ -198,6 +198,7 @@ extern int print_inst_short(struct self_s *self, struct instruction_s *instructi
 extern int disassemble(struct self_s *self, int section_id, int section_index, struct dis_instructions_s *dis_instructions, uint8_t *base_address, uint64_t buffer_size, uint64_t offset);
 extern void disassemble_callback_start(struct self_s *self);
 extern void disassemble_callback_end(struct self_s *self);
+extern int format_count_params(int length, uint8_t *format_string);
 
 #include <bfl.h>
 #include <analyse.h>

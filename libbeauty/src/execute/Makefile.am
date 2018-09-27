@@ -15,7 +15,7 @@ lib_LTLIBRARIES = libbeauty_exe.la
 #	exe.h
 
 libbeauty_exe_la_SOURCES = \
-	exe.c process_block.c
+	exe.c process_block.c format_strings.c
 
 libbeauty_exe_la_LIBADD = -L$(libdir) 
 

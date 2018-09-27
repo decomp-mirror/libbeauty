@@ -1,5 +1,5 @@
 set(the_description "Execute")
-add_library(beauty_exe exe.c process_block.c)
+add_library(beauty_exe exe.c process_block.c format_strings.c)
 set_target_properties(beauty_exe PROPERTIES SOVERSION 1)
 set_target_properties(beauty_exe PROPERTIES VERSION "1.0.0")
 target_link_libraries(beauty_exe -L${LIBRARY_OUTPUT_PATH} -lbeauty_input_bfd -lbeauty_output_cfg)
