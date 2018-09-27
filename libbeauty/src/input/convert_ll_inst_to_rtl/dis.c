@@ -776,7 +776,7 @@ int copy_operand(struct operand_low_level_s *src, struct operand_low_level_s *ds
 
 int convert_ll_inst_to_rtl(struct self_s *self, int section_id, int section_index, struct instruction_low_level_s *ll_inst, struct dis_instructions_s *dis_instructions) {
 	int tmp;
-	//int n;
+	int n;
 	int result = 1;
 	int8_t rel8;
 	int16_t rel16;
@@ -1236,6 +1236,26 @@ int convert_ll_inst_to_rtl(struct self_s *self, int section_id, int section_inde
 	case XOR:
 		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
 		result = tmp;
+		for (n = 0; n < dis_instructions->instruction_number; n++) {
+			instruction = &dis_instructions->instruction[n];
+			if ((instruction->opcode == XOR) &&
+				(instruction->srcA.store == STORE_REG) &&
+				(instruction->srcB.store == STORE_REG) &&
+				(instruction->srcA.indirect == IND_DIRECT) &&
+				(instruction->srcB.indirect == IND_DIRECT) &&
+				(instruction->srcA.indirect_size == instruction->srcB.indirect_size) &&
+				(instruction->srcA.index == instruction->srcB.index) &&  // REG index
+				(instruction->srcA.relocated == 0) &&
+				(instruction->srcB.relocated == 0) &&
+				(instruction->srcA.value_size == instruction->srcB.value_size) ) {
+				debug_print(DEBUG_INPUT_DIS, 1, "convert: XOR self found\n");
+				/* Change REG to IMM value of 0 */
+				instruction->srcA.store = STORE_DIRECT;
+				instruction->srcA.index = 0;
+				instruction->srcB.store = STORE_DIRECT;
+				instruction->srcB.index = 0;
+			}
+		}
 		break;
 	case rAND:
 		tmp  = convert_base(self, section_id, section_index, ll_inst, 1, dis_instructions);
