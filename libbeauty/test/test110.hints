@@ -1,0 +1,4 @@
+puts,string-zero
+printf,format-string-zero
+fred,format-string-zero,null,string-zero
+
