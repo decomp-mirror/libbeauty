@@ -540,7 +540,7 @@ int bf_get_reloc_table_section(void *handle_void, int index, int offset, struct 
 		reloc_table[n].addend = rel->addend;
 		debug_print(DEBUG_INPUT_BFD, 1, "p1 %p\n",&rel->sym_ptr_ptr);
 		debug_print(DEBUG_INPUT_BFD, 1, "p2 %p\n",rel->sym_ptr_ptr);
-		reloc_table[n].type = 1; /* Only one type so far */
+		reloc_table[n].type = rel->howto->type; /* Only one type so far */
 		reloc_table[n].offset = rel->address;
 		reloc_table[n].offset_size = (uint64_t) bfd_get_reloc_size (rel->howto);
 		if (rel->sym_ptr_ptr == NULL) {

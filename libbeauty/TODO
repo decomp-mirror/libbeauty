@@ -69,4 +69,8 @@ DONE
 11) Need to implement a dominator tree in order to fix 10).
 13) Implement loop detection. How? Done with the path listing method. Any unique path that touches itself is a loop path.
 
+TODO: test91.c
+4: 8b 05 00 00 00 00   mov    0x0(%rip),%eax        # a <test91+0xa>
+6:                     R_X86_64_PC32  value1-0x4
+
 

@@ -263,10 +263,25 @@ int convert_operand(struct self_s *self, int section_id, int section_index, uint
 					inst_operand->relocated = 1; /* Data pointer relocated */
 					inst_operand->relocated_section_id = reloc_table_entry->section_id;
 					inst_operand->relocated_section_index = reloc_table_entry->section_index;
-					inst_operand->relocated_index = reloc_table_entry->addend;
-					debug_print(DEBUG_INPUT_DIS, 1, "section_name:%s + 0x%x\n",
-							reloc_table_entry->name,
-							reloc_table_entry->addend);
+					switch(reloc_table_entry->type) {
+					case 0x1:
+						inst_operand->relocated_index = reloc_table_entry->addend;
+						debug_print(DEBUG_INPUT_DIS, 1, "section_name:%s + 0x%x\n",
+								reloc_table_entry->name,
+								reloc_table_entry->addend);
+						break;
+
+					case 0xb:
+						inst_operand->relocated_index = reloc_table_entry->value_uint;
+						debug_print(DEBUG_INPUT_DIS, 1, "section_name:%s + 0x%x\n",
+								reloc_table_entry->name,
+								reloc_table_entry->value_uint);
+						break;
+
+					default:
+						debug_print(DEBUG_INPUT_DIS, 1, "type not handled\n");
+						exit(1);
+					}
 					//exit(1);
 				} else {
 					debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocated 2 failed to find function %s\n", reloc_table_entry->name);
