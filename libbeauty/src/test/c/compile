@@ -83,3 +83,4 @@ clang-5.0 -c -g -O0 -o test86.o test86.c
 clang-5.0 -c -g -O0 -o test87.o test87.c
 clang-5.0 -c -g -O0 -o test88.o test88.c
 clang-5.0 -c -g -O0 -o test89.o test89.c
+clang-5.0 -c -g -O0 -o test91.o test91.c

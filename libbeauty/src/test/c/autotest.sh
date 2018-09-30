@@ -596,3 +596,17 @@ then
 else
 	echo "FAILED"
 fi
+echo -n test89:
+if ../../../test/dis64 test89.o 2>&1 | grep -q "END - FINISHED PROCESSING"
+then
+	echo "PASSED"
+else
+	echo "FAILED"
+fi
+echo -n test91:
+if ../../../test/dis64 test89.o 2>&1 | grep -q "END - FINISHED PROCESSING"
+then
+	echo "PASSED"
+else
+	echo "FAILED"
+fi
