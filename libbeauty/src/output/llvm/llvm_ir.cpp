@@ -225,7 +225,8 @@ int create_gep(struct self_s *self, Module *mod, IRBuilder<> *builder,
 			break;
 
 		case llvm::Type::TypeID::IntegerTyID:
-			*value_result = value_src;
+			ptr_8 = builder->CreateBitCast(value_src, PointerType::get(IntegerType::get(mod->getContext(), 8), 0), "0");
+			*value_result = ptr_8;
 			break;
 
 		default:
