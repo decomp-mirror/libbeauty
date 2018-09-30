@@ -205,23 +205,38 @@ int create_gep(struct self_s *self, Module *mod, IRBuilder<> *builder,
 		exit(1);
 	}
 	if ((llvm::Type::TypeID::PointerTyID == value_src->getType()->getTypeID()) &&
-			(1 == value_src->getType()->getNumContainedTypes()) &&
-			(llvm::Type::TypeID::ArrayTyID == value_src->getType()->getContainedType(0)->getTypeID())) {
-		debug_print(DEBUG_OUTPUT_LLVM, 1, "Found the right type.\n");
-		uint64_t array_num_elements = value_src->getType()->getContainedType(0)->getArrayNumElements();
-		// Constant Definitions
+			(1 == value_src->getType()->getNumContainedTypes())) {
+		uint64_t array_num_elements;
 		std::vector<Value*> const_ptr_4_indices;
-		ConstantInt* const_int64_6 = ConstantInt::get(mod->getContext(), APInt(64, StringRef("0"), 10));
-		// Need two indexes to de-reference to get i8* from the String Array.
-		const_ptr_4_indices.push_back(const_int64_6);
-		const_ptr_4_indices.push_back(const_int64_6);
-		//Constant* const_ptr_5 = ConstantExpr::getGetElementPtr(gvar_ptr_mem2, const_ptr_5_indices);
-		Value* ptr_8 = builder->CreateGEP(value_src, const_ptr_4_indices, "ptr_8");
-		*value_result = ptr_8;
-		return 0;
+		ConstantInt* const_int64_6;
+		Value* ptr_8;
+		switch (value_src->getType()->getContainedType(0)->getTypeID()) {
+		case llvm::Type::TypeID::ArrayTyID:
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "Found the right type.\n");
+			array_num_elements = value_src->getType()->getContainedType(0)->getArrayNumElements();
+			// Constant Definitions
+			const_int64_6 = ConstantInt::get(mod->getContext(), APInt(64, StringRef("0"), 10));
+			// Need two indexes to de-reference to get i8* from the String Array.
+			const_ptr_4_indices.push_back(const_int64_6);
+			const_ptr_4_indices.push_back(const_int64_6);
+			//Constant* const_ptr_5 = ConstantExpr::getGetElementPtr(gvar_ptr_mem2, const_ptr_5_indices);
+			ptr_8 = builder->CreateGEP(value_src, const_ptr_4_indices, "ptr_8");
+			*value_result = ptr_8;
+			break;
+
+		case llvm::Type::TypeID::IntegerTyID:
+			*value_result = value_src;
+			break;
+
+		default:
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "Found the wrong type. 0x%x\n",
+					value_src->getType()->getContainedType(0)->getTypeID());
+			exit(1);
+		}
+	} else {
+		debug_print(DEBUG_OUTPUT_LLVM, 1, "Found the wrong type.\n");
+		exit(1);
 	}
-	debug_print(DEBUG_OUTPUT_LLVM, 1, "Found the wrong type.\n");
-	exit(1);
 	return 0;
 }
 
@@ -1238,7 +1253,86 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 		if (inst_log1->instruction.srcB.relocated) {
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "srcB.relocated=0x%x\n",
 					inst_log1->instruction.srcB.relocated);
-			exit(1);
+			uint64_t section;
+			uint64_t index;
+			uint64_t type;
+			uint64_t valid;
+			Type *type_intended;
+			Value *value_src;
+			Value *value_result;
+			/* FIXME: Implement global memory GEP/BITCAST */
+			tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value2.value_id]));
+			value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].index;
+			section = inst_log1->instruction.srcB.relocated_section_index;
+			index = inst_log1->instruction.srcB.relocated_index;
+			if (self->sections[section].memory_struct[index].sizes_size > 0) {
+				type = self->sections[section].memory_struct[index].sizes_type[0];
+			} else {
+				type = 0;
+			}
+			valid = self->sections[section].memory_struct[index].valid;
+			debug_print(DEBUG_OUTPUT_LLVM, 0, "relocated_section = 0x%lx, index = 0x%lx, valid = 0x%lx, type = 0x%lx\n",
+					section, index, valid, type);
+			if (self->sections[section].memory_struct[index].sizes_size > 0) {
+				debug_print(DEBUG_OUTPUT_LLVM, 0, "size = 0x%lx, size_type = 0x%lx\n",
+					self->sections[section].memory_struct[index].sizes[0],
+					self->sections[section].memory_struct[index].sizes_type[0]);
+			} else {
+				debug_print(DEBUG_OUTPUT_LLVM, 0, "sizes_size = 0\n");
+			}
+			switch (type) {
+			case 1:
+			case 2:
+				type_intended = PointerType::get(IntegerType::get(mod->getContext(), 8), 0);
+				break;
+			case 3:
+				type_intended = PointerType::get(IntegerType::get(mod->getContext(), 8), 0);
+				break;
+			default:
+				debug_print(DEBUG_OUTPUT_LLVM, 0, "type not yet handled: 0x%lx\n", type);
+				exit(1);
+			}
+			value_src = (Value*)self->sections[section].llvm_global_value[index];
+			sprint_value(OS1, value_src);
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "srcA: %s\n", Buf1.c_str());
+			Buf1.clear();
+			//sprint_value(OS1, value_tmp->);
+			//debug_print(DEBUG_OUTPUT_LLVM, 1, "srcA-type: %s\n", Buf1.c_str());
+			tmp = value_src->getType()->getTypeID();
+			llvm::outs() << tmp << "\n";
+			if (tmp == 15) {
+				tmp = value_src->getType()->getNumContainedTypes();
+				llvm::outs() << tmp << "\n";
+				if (tmp > 0) {
+					tmp = value_src->getType()->getContainedType(0)->getTypeID();
+					llvm::outs() << tmp << "\n";
+					if (tmp == 14) {
+						llvm::outs() << value_src->getType()->getContainedType(0)->getArrayNumElements() << "\n";
+					}
+				}
+			}
+
+			//value_tmp->getType()->print(OS1);
+			//debug_print(DEBUG_OUTPUT_LLVM, 1, "srcA-type: %s\n", Buf1.c_str());
+			Buf1.clear();
+			tmp = create_gep(self, mod, builder, section, index, value_src, type_intended, &value_result);
+			sprint_value(OS1, value_result);
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "value_result: %s\n", Buf1.c_str());
+			Buf1.clear();
+			value[value_id] = value_result;
+			if (!value[value_id]) {
+				debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: failed LLVM Value is NULL. srcA value_id = 0x%x\n", value_id);
+				exit(3);
+				tmp = tip_result_print_from_label(self, external_entry, value_id);
+				tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
+				if (tmp) {
+					debug_print(DEBUG_OUTPUT_LLVM, 0, "ERROR: failed LLVM Value is NULL. dstA value_id = 0x%x\n", value_id);
+					exit(1);
+				}
+			}
+			sprint_value(OS1, value[value_id]);
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "dstA: %s\n", Buf1.c_str());
+			Buf1.clear();
 		}
 
 		if (!value[value_id]) {
@@ -1629,6 +1723,52 @@ int LLVM_ir_export::output(struct self_s *self)
 						debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
 						Buf1.clear();
 						global_value[m] = gvar_ptr_mem2;
+						break;
+					}
+					case 3: {
+						IntegerType* IntegerTy_32;
+						ConstantInt* int64_32;
+						IntegerType* IntegerTy_64;
+						ConstantInt* int64_64;
+						uint64_t value_int = 0;
+						uint8_t *octet = self->sections[l].memory_log[index].octets;
+						GlobalVariable* gvar_ptr_mem3;
+						tmp = snprintf(buffer, 1024, "mem%08x", m);
+						switch (self->sections[l].memory_log[index].length) {
+						case 8:
+							value_int = octet[0] | octet[1] << 8 | octet[2] << 16 | octet[3] << 24 |
+									octet[4] << 32 | octet[5] << 40 | octet[6] << 48 | octet[7] << 56;
+							IntegerTy_64 = IntegerType::get(mod->getContext(), 64);
+							int64_64 = ConstantInt::get(IntegerTy_64, value_int);
+							gvar_ptr_mem3 = new GlobalVariable(/*Module=*/*mod,
+									/*Type=*/IntegerTy_64,
+									/*isConstant=*/false,
+									/*Linkage=*/GlobalValue::ExternalLinkage,
+									/*Initializer=*/int64_64,
+							/*Name=*/buffer);
+							gvar_ptr_mem3->setAlignment(8);
+							break;
+						case 4:
+							value_int = octet[0] | octet[1] << 8 | octet[2] << 16 | octet[3] << 24;
+							IntegerTy_32 = IntegerType::get(mod->getContext(), 32);
+							int64_32 = ConstantInt::get(IntegerTy_32, value_int);
+							gvar_ptr_mem3 = new GlobalVariable(/*Module=*/*mod,
+									/*Type=*/IntegerTy_32,
+									/*isConstant=*/false,
+									/*Linkage=*/GlobalValue::ExternalLinkage,
+									/*Initializer=*/int64_32,
+							/*Name=*/buffer);
+							gvar_ptr_mem3->setAlignment(4);
+							break;
+						default:
+							debug_print(DEBUG_OUTPUT_LLVM, 1, "Unknown GLOBAL length=0x%x\n",
+									self->sections[l].memory_log[index].length);
+							exit(1);
+						}
+						sprint_value(OS1, gvar_ptr_mem3);
+						debug_print(DEBUG_OUTPUT_LLVM, 1, "%s\n", Buf1.c_str());
+						Buf1.clear();
+						global_value[m] = gvar_ptr_mem3;
 						break;
 					}
 					default: {
