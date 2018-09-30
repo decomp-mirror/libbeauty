@@ -133,6 +133,12 @@ struct memory_s *add_new_store(
 	}
 	result = &memory[n];
 	debug_print(DEBUG_EXE, 1, "Found empty entry %d in table %p, %p\n", n, memory, result);
+	result->relocated = 0;
+	result->relocated_section_id = 0;
+	result->relocated_section_index = 0;
+	result->relocated_index = 0;
+	result->section_id = 0;
+	result->section_index = 0;
 	result->start_address = index;
 	result->length = size;
 	/* unknown */
@@ -186,7 +192,7 @@ static int source_equals_dest(struct operand_s *srcA, struct operand_s *dstA)
 static int log_section_access(struct self_s *self, uint64_t section_index,
 			uint64_t access_type,
 			uint64_t index,
-			uint64_t size,
+			uint64_t size, // size in octets
 			uint64_t data_type)
 {
 	struct section_s *section;
@@ -268,7 +274,7 @@ static int get_value_RTL_instruction(
 			/* i - immediate */
 			debug_print(DEBUG_EXE, 1, "%s-immediate\n", info);
 			debug_print(DEBUG_EXE, 1, "%s-relocated=0x%x\n", info, source->relocated);
-			debug_print(DEBUG_EXE, 1, "section id:0x%x index:0x%x + 0x%x\n",
+			debug_print(DEBUG_EXE, 1, "relocated_section_id:0x%x relocated_section_index:0x%x + 0x%x\n",
 					source->relocated_section_id,
 					source->relocated_section_index,
 					source->relocated_index);
@@ -278,6 +284,8 @@ static int get_value_RTL_instruction(
 				destination->relocated_section_id = 0;
 				destination->relocated_section_index = 0;
 				destination->relocated_index = 0;
+				destination->section_id = 0;
+				destination->section_index = 0;
 				destination->start_address = 0;
 				destination->length = source->value_size;
 
@@ -303,6 +311,8 @@ static int get_value_RTL_instruction(
 				destination->relocated_section_id = source->relocated_section_id;
 				destination->relocated_section_index = source->relocated_section_index;
 				destination->relocated_index = source->relocated_index;
+				destination->section_id = source->relocated_section_id;
+				destination->section_index = source->relocated_section_index;
 				destination->start_address = 0;
 				destination->length = source->value_size;
 				/* known */
@@ -315,6 +325,8 @@ static int get_value_RTL_instruction(
 				destination->relocated_section_id = source->relocated_section_id;
 				destination->relocated_section_index = source->relocated_section_index;
 				destination->relocated_index = source->relocated_index;
+				destination->section_id = source->relocated_section_id;
+				destination->section_index = source->relocated_section_index;
 				destination->start_address = 0;
 				destination->length = source->value_size;
 				/* known */
@@ -381,6 +393,11 @@ static int get_value_RTL_instruction(
 				return 1;
 				break;
 			}
+			destination->relocated = value->relocated;
+			destination->relocated_section_id = value->relocated_section_id;
+			destination->relocated_section_index = value->relocated_section_index;
+			destination->section_id = value->section_id;
+			destination->section_index = value->section_index;
 			destination->start_address = value->start_address;
 			destination->length = value->length;
 			destination->init_value_type = value->init_value_type;
@@ -416,6 +433,16 @@ static int get_value_RTL_instruction(
 				source->index,
 				source->indirect_size,
 				source->value_size);
+		debug_print(DEBUG_EXE, 1, "%s-relocated=0x%x\n", info, source->relocated);
+		debug_print(DEBUG_EXE, 1, "relocated_section_id:0x%x relocated_section_index:0x%x + 0x%x\n",
+				source->relocated_section_id,
+				source->relocated_section_index,
+				source->relocated_index);
+#if 0
+		debug_print(DEBUG_EXE, 1, "section_id:0x%x section_index:0x%x\n",
+				source->section_id,
+				source->section_index);
+#endif
 		switch (source->store) {
 		case STORE_DIRECT:
 			data_index = source->index;
@@ -437,7 +464,17 @@ static int get_value_RTL_instruction(
 				return 1;
 				break;
 			}
+			debug_print(DEBUG_EXE, 1, "relocated=0x%x\n", value->relocated);
+			debug_print(DEBUG_EXE, 1, "relocated_section_id:0x%x relocated_section_index:0x%x + 0x%x\n",
+					value->relocated_section_id,
+					value->relocated_section_index,
+					value->relocated_index);
+			debug_print(DEBUG_EXE, 1, "section_id:0x%x section_index:0x%x\n",
+					value->section_id,
+					value->section_index);
 			data_index = value->init_value + value->offset_value;
+			log_section_access(self, value->section_index, 1,
+					data_index, source->value_size >> 3, 3);
 			destination->value_id = value->value_id;
 			break;
 		default:
@@ -469,6 +506,11 @@ static int get_value_RTL_instruction(
 			return 1;
 			break;
 		}
+		destination->relocated = value_data->relocated;
+		destination->relocated_section_id = value_data->relocated_section_id;
+		destination->relocated_section_index = value_data->relocated_section_index;
+		destination->section_id = value_data->section_id;
+		destination->section_index = value_data->section_index;
 		destination->start_address = value_data->start_address;
 		destination->length = value_data->length;
 		destination->init_value_type = value_data->init_value_type;
@@ -557,6 +599,11 @@ static int get_value_RTL_instruction(
 			return 1;
 			break;
 		}
+		destination->relocated = value_stack->relocated;
+		destination->relocated_section_id = value_stack->relocated_section_id;
+		destination->relocated_section_index = value_stack->relocated_section_index;
+		destination->section_id = value_stack->section_id;
+		destination->section_index = value_stack->section_index;
 		destination->start_address = 0;
 		destination->length = value_stack->length;
 		destination->init_value_type = value_stack->init_value_type;
@@ -710,6 +757,14 @@ static int put_value_RTL_instruction(
 				value->init_value,
 				value->offset_value,
 				value->init_value + value->offset_value);
+			debug_print(DEBUG_EXE, 1, "relocated=0x%x\n", value->relocated);
+			debug_print(DEBUG_EXE, 1, "relocated_section_id:0x%x relocated_section_index:0x%x + 0x%x\n",
+					value->relocated_section_id,
+					value->relocated_section_index,
+					value->relocated_index);
+			debug_print(DEBUG_EXE, 1, "section_id:0x%x section_index:0x%x\n",
+					value->section_id,
+					value->section_index);
 			result = 0;
 			break;
 		default:
@@ -809,6 +864,14 @@ static int put_value_RTL_instruction(
 			value_data->init_value,
 			value_data->offset_value,
 			value_data->init_value + value_data->offset_value);
+		debug_print(DEBUG_EXE, 1, "relocated=0x%x\n", value_data->relocated);
+		debug_print(DEBUG_EXE, 1, "relocated_section_id:0x%x relocated_section_index:0x%x + 0x%x\n",
+				value_data->relocated_section_id,
+				value_data->relocated_section_index,
+				value_data->relocated_index);
+		debug_print(DEBUG_EXE, 1, "section_id:0x%x section_index:0x%x\n",
+				value_data->section_id,
+				value_data->section_index);
 		result = 0;
 		break;
 	case IND_STACK:
@@ -879,6 +942,15 @@ static int put_value_RTL_instruction(
 			value_stack->init_value,
 			value_stack->offset_value,
 			value_stack->init_value + value_stack->offset_value);
+		debug_print(DEBUG_EXE, 1, "relocated=0x%x\n", value_stack->relocated);
+		debug_print(DEBUG_EXE, 1, "relocated_section_id:0x%x relocated_section_index:0x%x + 0x%x\n",
+				value_stack->relocated_section_id,
+				value_stack->relocated_section_index,
+				value_stack->relocated_index);
+		debug_print(DEBUG_EXE, 1, "section_id:0x%x section_index:0x%x\n",
+				value_stack->section_id,
+				value_stack->section_index);
+
 		result = 0;
 		break;
 	default:
@@ -1503,6 +1575,14 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		/* Create result */
 		debug_print(DEBUG_EXE, 1, "ADD\n");
 		debug_print(DEBUG_EXE, 1, "ADD dest length = %d %d %d\n", inst->value1.length, inst->value2.length, inst->value3.length);
+		if (inst->value1.section_id) {
+			inst->value3.section_id = inst->value1.section_id;
+			inst->value3.section_index = inst->value1.section_index;
+		}
+		if (inst->value2.section_id) {
+			inst->value3.section_id = inst->value2.section_id;
+			inst->value3.section_index = inst->value2.section_index;
+		}
 		inst->value3.start_address = instruction->dstA.index;
 		inst->value3.length = instruction->dstA.value_size;
 		//inst->value3.length = inst->value1.length;
@@ -1538,6 +1618,16 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 				inst->value3.init_value +
 					inst->value3.offset_value);
 		put_value_RTL_instruction(self, process_state, inst);
+#if 0
+		if (instruction->srcA.relocated) {
+			debug_print(DEBUG_EXE, 1, "ADD srcA relocated. exiting\n");
+			exit(1);
+		}
+		if (instruction->srcB.relocated) {
+			debug_print(DEBUG_EXE, 1, "ADD srcB relocated. exiting\n");
+			exit(1);
+		}
+#endif
 		break;
 	case ADC:
 		/* Get value of srcA */
@@ -2481,6 +2571,11 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 			value->length = instruction->dstA.value_size;
 		}
 		debug_print(DEBUG_EXE, 1, "BITCAST dest length = %d %d\n", inst->value1.length, inst->value3.length);
+		inst->value3.relocated = inst->value1.relocated;
+		inst->value3.relocated_section_id = inst->value1.relocated_section_id;
+		inst->value3.relocated_section_index = inst->value1.relocated_section_index;
+		inst->value3.section_id = inst->value1.section_id;
+		inst->value3.section_index = inst->value1.section_index;
 		inst->value3.init_value_type = inst->value1.init_value_type;
 		inst->value3.init_value = inst->value1.init_value;
 		inst->value3.offset_value = inst->value1.offset_value;

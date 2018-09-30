@@ -1217,6 +1217,12 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 //
 		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value1.value_id]));
 		value_id = external_entry_point->label_redirect[inst_log1->value1.value_id].index;
+		if (inst_log1->instruction.srcA.relocated) {
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "srcA.relocated=0x%x\n",
+					inst_log1->instruction.srcA.relocated);
+			exit(1);
+		}
+
 		if (!value[value_id]) {
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "fill_value: value_id = 0x%x\n", value_id);
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);
@@ -1229,6 +1235,12 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 
 		tmp = check_domain(&(external_entry_point->label_redirect[inst_log1->value2.value_id]));
 		value_id = external_entry_point->label_redirect[inst_log1->value2.value_id].index;
+		if (inst_log1->instruction.srcB.relocated) {
+			debug_print(DEBUG_OUTPUT_LLVM, 1, "srcB.relocated=0x%x\n",
+					inst_log1->instruction.srcB.relocated);
+			exit(1);
+		}
+
 		if (!value[value_id]) {
 			debug_print(DEBUG_OUTPUT_LLVM, 1, "fill_value: value_id = 0x%x\n", value_id);
 			tmp = LLVM_ir_export::fill_value(self, value, value_id, external_entry);

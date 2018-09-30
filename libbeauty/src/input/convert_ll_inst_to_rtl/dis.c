@@ -167,6 +167,9 @@ int convert_operand(struct self_s *self, int section_id, int section_index, uint
 		inst_operand->indirect_size = 0;
 		inst_operand->index = 0;
 		inst_operand->relocated = 0;
+		inst_operand->relocated_section_id = 0;
+		inst_operand->relocated_section_index = 0;
+		inst_operand->relocated_index = 0;
 		inst_operand->value_size = 0;
 		break;
 	case KIND_REG:
@@ -175,6 +178,9 @@ int convert_operand(struct self_s *self, int section_id, int section_index, uint
 		inst_operand->indirect_size = ll_operand->size;
 		inst_operand->index = ll_operand->operand[operand_number].value;
 		inst_operand->relocated = 0;
+		inst_operand->relocated_section_id = 0;
+		inst_operand->relocated_section_index = 0;
+		inst_operand->relocated_index = 0;
 		inst_operand->value_size = ll_operand->operand[operand_number].size;
 		break;
 	case KIND_IMM:
@@ -183,6 +189,9 @@ int convert_operand(struct self_s *self, int section_id, int section_index, uint
 		inst_operand->indirect_size = ll_operand->size;
 		inst_operand->index = ll_operand->operand[operand_number].value;
 		inst_operand->relocated = 0;
+		inst_operand->relocated_section_id = 0;
+		inst_operand->relocated_section_index = 0;
+		inst_operand->relocated_index = 0;
 //		inst_operand->value_size = ll_operand->operand[operand_number].size;
 		inst_operand->value_size = ll_operand->size;
 		debug_print(DEBUG_INPUT_DIS, 1, "convert_operand: relocate: base_address = 0x%lx, offset = 0x%lx, size = 0x%x\n",
@@ -271,6 +280,7 @@ int convert_operand(struct self_s *self, int section_id, int section_index, uint
 								reloc_table_entry->addend);
 						break;
 
+					case 0x2:
 					case 0xb:
 						inst_operand->relocated_index = reloc_table_entry->value_uint;
 						debug_print(DEBUG_INPUT_DIS, 1, "section_name:%s + 0x%x\n",

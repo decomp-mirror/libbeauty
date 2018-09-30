@@ -736,7 +736,8 @@ int analyse_memory_log(struct self_s *self)
 			for (m = 0; m < self->sections[l].memory_log_size; m++) {
 				debug_print(DEBUG_MAIN, 1, "memory_log_size = 0x%lx of 0x%lx\n", m, self->sections[l].memory_log_size);
 				if ((self->sections[l].memory_log[m].type == 1) ||
-						(self->sections[l].memory_log[m].type == 2)) {
+						(self->sections[l].memory_log[m].type == 2) ||
+						(self->sections[l].memory_log[m].type == 3)) {
 					debug_print(DEBUG_MAIN, 1, "Processing GLOBAL: Section:0x%lx Addr:0x%lx size:0x%lx\n",
 							l,
 							self->sections[l].memory_log[m].address,
