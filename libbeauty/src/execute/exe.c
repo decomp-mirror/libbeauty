@@ -1699,6 +1699,14 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcB), &(inst->value2), 1); 
 		/* Create result */
 		debug_print(DEBUG_EXE, 1, "SUB\n");
+		if (inst->value1.section_id) {
+			inst->value3.section_id = inst->value1.section_id;
+			inst->value3.section_index = inst->value1.section_index;
+		}
+		if (inst->value2.section_id) {
+			inst->value3.section_id = inst->value2.section_id;
+			inst->value3.section_index = inst->value2.section_index;
+		}
 		inst->value3.start_address = instruction->dstA.index;
 		inst->value3.length = instruction->dstA.value_size;
 		//inst->value3.length = inst->value1.length;
@@ -1739,6 +1747,14 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcB), &(inst->value2), 1); 
 		/* Create result */
 		debug_print(DEBUG_EXE, 1, "SUB\n");
+		if (inst->value1.section_id) {
+			inst->value3.section_id = inst->value1.section_id;
+			inst->value3.section_index = inst->value1.section_index;
+		}
+		if (inst->value2.section_id) {
+			inst->value3.section_id = inst->value2.section_id;
+			inst->value3.section_index = inst->value2.section_index;
+		}
 		inst->value3.start_address = instruction->dstA.index;
 		inst->value3.length = instruction->dstA.value_size;
 		//inst->value3.length = inst->value1.length;
@@ -1778,6 +1794,14 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcB), &(inst->value2), 1); 
 		/* Create result */
 		debug_print(DEBUG_EXE, 1, "TEST \n");
+		if (inst->value1.section_id) {
+			inst->value3.section_id = inst->value1.section_id;
+			inst->value3.section_index = inst->value1.section_index;
+		}
+		if (inst->value2.section_id) {
+			inst->value3.section_id = inst->value2.section_id;
+			inst->value3.section_index = inst->value2.section_index;
+		}
 		inst->value3.start_address = instruction->dstA.index;
 		inst->value3.length = instruction->dstA.value_size;
 		//inst->value3.length = inst->value1.length;
@@ -1819,6 +1843,14 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcB), &(inst->value2), 1); 
 		/* Create result */
 		debug_print(DEBUG_EXE, 1, "AND \n");
+		if (inst->value1.section_id) {
+			inst->value3.section_id = inst->value1.section_id;
+			inst->value3.section_index = inst->value1.section_index;
+		}
+		if (inst->value2.section_id) {
+			inst->value3.section_id = inst->value2.section_id;
+			inst->value3.section_index = inst->value2.section_index;
+		}
 		inst->value3.start_address = instruction->dstA.index;
 		inst->value3.length = instruction->dstA.value_size;
 		//inst->value3.length = inst->value1.length;
@@ -1859,6 +1891,14 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcB), &(inst->value2), 1); 
 		/* Create result */
 		debug_print(DEBUG_EXE, 1, "OR \n");
+		if (inst->value1.section_id) {
+			inst->value3.section_id = inst->value1.section_id;
+			inst->value3.section_index = inst->value1.section_index;
+		}
+		if (inst->value2.section_id) {
+			inst->value3.section_id = inst->value2.section_id;
+			inst->value3.section_index = inst->value2.section_index;
+		}
 		inst->value3.start_address = instruction->dstA.index;
 		inst->value3.length = instruction->dstA.value_size;
 		//inst->value3.length = inst->value1.length;
@@ -1907,6 +1947,14 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcB), &(inst->value2), 1); 
 		/* Create result */
 		debug_print(DEBUG_EXE, 1, "XOR\n");
+		if (inst->value1.section_id) {
+			inst->value3.section_id = inst->value1.section_id;
+			inst->value3.section_index = inst->value1.section_index;
+		}
+		if (inst->value2.section_id) {
+			inst->value3.section_id = inst->value2.section_id;
+			inst->value3.section_index = inst->value2.section_index;
+		}
 		inst->value3.start_address = instruction->dstA.index;
 		inst->value3.length = instruction->dstA.value_size;
 		//inst->value3.length = inst->value1.length;
@@ -1946,6 +1994,14 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcA), &(inst->value1), 0); 
 		/* Create result */
 		debug_print(DEBUG_EXE, 1, "NOT\n");
+		if (inst->value1.section_id) {
+			inst->value3.section_id = inst->value1.section_id;
+			inst->value3.section_index = inst->value1.section_index;
+		}
+		if (inst->value2.section_id) {
+			inst->value3.section_id = inst->value2.section_id;
+			inst->value3.section_index = inst->value2.section_index;
+		}
 		inst->value3.start_address = instruction->dstA.index;
 		inst->value3.length = instruction->dstA.value_size;
 		//inst->value3.length = inst->value1.length;
@@ -1983,6 +2039,14 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcA), &(inst->value1), 0); 
 		/* Create result */
 		debug_print(DEBUG_EXE, 1, "NOT\n");
+		if (inst->value1.section_id) {
+			inst->value3.section_id = inst->value1.section_id;
+			inst->value3.section_index = inst->value1.section_index;
+		}
+		if (inst->value2.section_id) {
+			inst->value3.section_id = inst->value2.section_id;
+			inst->value3.section_index = inst->value2.section_index;
+		}
 		inst->value3.start_address = instruction->dstA.index;
 		inst->value3.length = instruction->dstA.value_size;
 		//inst->value3.length = inst->value1.length;
@@ -2023,6 +2087,14 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcB), &(inst->value2), 1); 
 		/* Create result */
 		debug_print(DEBUG_EXE, 1, "SHL\n");
+		if (inst->value1.section_id) {
+			inst->value3.section_id = inst->value1.section_id;
+			inst->value3.section_index = inst->value1.section_index;
+		}
+		if (inst->value2.section_id) {
+			inst->value3.section_id = inst->value2.section_id;
+			inst->value3.section_index = inst->value2.section_index;
+		}
 		inst->value3.start_address = instruction->dstA.index;
 		inst->value3.length = instruction->dstA.value_size;
 		//inst->value3.length = inst->value1.length;
@@ -2064,6 +2136,14 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcB), &(inst->value2), 1); 
 		/* Create result */
 		debug_print(DEBUG_EXE, 1, "SHR\n");
+		if (inst->value1.section_id) {
+			inst->value3.section_id = inst->value1.section_id;
+			inst->value3.section_index = inst->value1.section_index;
+		}
+		if (inst->value2.section_id) {
+			inst->value3.section_id = inst->value2.section_id;
+			inst->value3.section_index = inst->value2.section_index;
+		}
 		inst->value3.start_address = instruction->dstA.index;
 		inst->value3.length = instruction->dstA.value_size;
 		//inst->value3.length = inst->value1.length;
@@ -2105,6 +2185,14 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcB), &(inst->value2), 1); 
 		/* Create result */
 		debug_print(DEBUG_EXE, 1, "SAL\n");
+		if (inst->value1.section_id) {
+			inst->value3.section_id = inst->value1.section_id;
+			inst->value3.section_index = inst->value1.section_index;
+		}
+		if (inst->value2.section_id) {
+			inst->value3.section_id = inst->value2.section_id;
+			inst->value3.section_index = inst->value2.section_index;
+		}
 		inst->value3.start_address = instruction->dstA.index;
 		inst->value3.length = instruction->dstA.value_size;
 		//inst->value3.length = inst->value1.length;
@@ -2147,6 +2235,14 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcB), &(inst->value2), 0); 
 		/* Create result */
 		debug_print(DEBUG_EXE, 1, "SAR\n");
+		if (inst->value1.section_id) {
+			inst->value3.section_id = inst->value1.section_id;
+			inst->value3.section_index = inst->value1.section_index;
+		}
+		if (inst->value2.section_id) {
+			inst->value3.section_id = inst->value2.section_id;
+			inst->value3.section_index = inst->value2.section_index;
+		}
 		inst->value3.start_address = instruction->dstA.index;
 		inst->value3.length = instruction->dstA.value_size;
 		//inst->value3.length = inst->value1.length;
@@ -2571,9 +2667,9 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 			value->length = instruction->dstA.value_size;
 		}
 		debug_print(DEBUG_EXE, 1, "BITCAST dest length = %d %d\n", inst->value1.length, inst->value3.length);
-		inst->value3.relocated = inst->value1.relocated;
-		inst->value3.relocated_section_id = inst->value1.relocated_section_id;
-		inst->value3.relocated_section_index = inst->value1.relocated_section_index;
+		inst->value3.relocated = 0;
+		inst->value3.relocated_section_id = 0;
+		inst->value3.relocated_section_index = 0;
 		inst->value3.section_id = inst->value1.section_id;
 		inst->value3.section_index = inst->value1.section_index;
 		inst->value3.init_value_type = inst->value1.init_value_type;
