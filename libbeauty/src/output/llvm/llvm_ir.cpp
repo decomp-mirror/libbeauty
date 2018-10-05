@@ -321,6 +321,9 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			case 2:
 				type_intended = PointerType::get(IntegerType::get(mod->getContext(), 8), 0);
 				break;
+			case 3:
+				type_intended = PointerType::get(IntegerType::get(mod->getContext(), 8), 0);
+				break;
 			default:
 				debug_print(DEBUG_OUTPUT_LLVM, 0, "type not yet handled: 0x%lx\n", type);
 				exit(1);
@@ -331,10 +334,20 @@ int LLVM_ir_export::add_instruction(struct self_s *self, Module *mod, struct dec
 			Buf1.clear();
 			//sprint_value(OS1, value_tmp->);
 			//debug_print(DEBUG_OUTPUT_LLVM, 1, "srcA-type: %s\n", Buf1.c_str());
-			llvm::outs() << value_src->getType()->getTypeID() << "\n";
-			llvm::outs() << value_src->getType()->getNumContainedTypes() << "\n";
-			llvm::outs() << value_src->getType()->getContainedType(0)->getTypeID() << "\n";
-			llvm::outs() << value_src->getType()->getContainedType(0)->getArrayNumElements() << "\n";
+			tmp = value_src->getType()->getTypeID();
+			llvm::outs() << tmp << "\n";
+			if (tmp == 15) {
+				tmp = value_src->getType()->getNumContainedTypes();
+				llvm::outs() << tmp << "\n";
+				if (tmp > 0) {
+					tmp = value_src->getType()->getContainedType(0)->getTypeID();
+					llvm::outs() << tmp << "\n";
+					if (tmp == 14) {
+						llvm::outs() << value_src->getType()->getContainedType(0)->getArrayNumElements() << "\n";
+					}
+				}
+			}
+
 			//value_tmp->getType()->print(OS1);
 			//debug_print(DEBUG_OUTPUT_LLVM, 1, "srcA-type: %s\n", Buf1.c_str());
 			Buf1.clear();
@@ -1737,8 +1750,10 @@ int LLVM_ir_export::output(struct self_s *self)
 						tmp = snprintf(buffer, 1024, "mem%08x", m);
 						switch (self->sections[l].memory_log[index].length) {
 						case 8:
-							value_int = octet[0] | octet[1] << 8 | octet[2] << 16 | octet[3] << 24 |
-									octet[4] << 32 | octet[5] << 40 | octet[6] << 48 | octet[7] << 56;
+							value_int = (uint64_t)octet[0] | (uint64_t)octet[1] << 8 |
+									(uint64_t)octet[2] << 16 | (uint64_t)octet[3] << 24 |
+									(uint64_t)octet[4] << 32 | (uint64_t)octet[5] << 40 |
+									(uint64_t)octet[6] << 48 | (uint64_t)octet[7] << 56;
 							IntegerTy_64 = IntegerType::get(mod->getContext(), 64);
 							int64_64 = ConstantInt::get(IntegerTy_64, value_int);
 							gvar_ptr_mem3 = new GlobalVariable(/*Module=*/*mod,
@@ -1750,7 +1765,8 @@ int LLVM_ir_export::output(struct self_s *self)
 							gvar_ptr_mem3->setAlignment(8);
 							break;
 						case 4:
-							value_int = octet[0] | octet[1] << 8 | octet[2] << 16 | octet[3] << 24;
+							value_int = (uint64_t)octet[0] | (uint64_t)octet[1] << 8 |
+									(uint64_t)octet[2] << 16 | (uint64_t)octet[3] << 24;
 							IntegerTy_32 = IntegerType::get(mod->getContext(), 32);
 							int64_32 = ConstantInt::get(IntegerTy_32, value_int);
 							gvar_ptr_mem3 = new GlobalVariable(/*Module=*/*mod,

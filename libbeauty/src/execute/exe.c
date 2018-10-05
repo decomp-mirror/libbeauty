@@ -217,7 +217,6 @@ static int log_section_access(struct self_s *self, uint64_t section_index,
 	section->memory_log[section->memory_log_size].length = size;
 	section->memory_log[section->memory_log_size].type = data_type;
 	section->memory_log[section->memory_log_size].octets = malloc(size);
-	memcpy(section->memory_log[section->memory_log_size].octets, &(section->content[index]), size);
 	debug_print(DEBUG_EXE, 1, "memory_log_capacity = 0x%lx, size = 0x%lx\n",
 			section->memory_log_capacity,
 			section->memory_log_size);
@@ -227,6 +226,11 @@ static int log_section_access(struct self_s *self, uint64_t section_index,
 			index,
 			size,
 			data_type);
+	if (index > section->content_size) {
+		debug_print(DEBUG_EXE, 1, "index too big. Exiting\n");
+		exit(1);
+	}
+	memcpy(section->memory_log[section->memory_log_size].octets, &(section->content[index]), size);
 	if (data_type == 1) {
 		debug_print(DEBUG_EXE, 1, "log append1: octets = %s\n", section->memory_log[section->memory_log_size].octets);
 	}
@@ -1575,48 +1579,162 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		/* Create result */
 		debug_print(DEBUG_EXE, 1, "ADD\n");
 		debug_print(DEBUG_EXE, 1, "ADD dest length = %d %d %d\n", inst->value1.length, inst->value2.length, inst->value3.length);
-		if (inst->value1.section_id) {
-			inst->value3.section_id = inst->value1.section_id;
-			inst->value3.section_index = inst->value1.section_index;
-		}
-		if (inst->value2.section_id) {
+		/* If the instruction is a RIP + Relocated, turn it into a MOVABS. */
+		debug_print(DEBUG_EXE, 1, "ADD 0x%x 0x%x 0x%x    0x%x 0x%x 0x%x\n",
+				instruction->srcA.indirect == IND_DIRECT,
+				instruction->srcA.store == STORE_REG,
+				instruction->srcA.index == 0x48,
+				instruction->srcB.indirect == IND_DIRECT,
+				instruction->srcB.store == STORE_DIRECT,
+				instruction->srcB.relocated);
+
+		if ((instruction->srcA.indirect == IND_DIRECT) &&
+				(instruction->srcA.store == STORE_REG) &&
+				(instruction->srcA.index == 0x48) &&
+				(instruction->srcB.indirect == IND_DIRECT) &&
+				(instruction->srcB.store == STORE_DIRECT) &&
+								(instruction->srcB.relocated)) {
+/* Convert to a MOV instruction */
+			instruction->opcode = MOV;
+			instruction->srcA.store = instruction->srcB.store;
+			instruction->srcA.relocated = instruction->srcB.relocated;
+			instruction->srcA.relocated_section_id = instruction->srcB.relocated_section_id;
+			instruction->srcA.relocated_section_index = instruction->srcB.relocated_section_index;
+			instruction->srcA.relocated_external_function = instruction->srcB.relocated_external_function;
+			instruction->srcA.relocated_index = instruction->srcB.relocated_index;
+			instruction->srcA.indirect = instruction->srcB.indirect;
+			instruction->srcA.indirect_size = instruction->srcB.indirect_size;
+			instruction->srcA.index = instruction->srcB.index;
+			instruction->srcA.value = instruction->srcB.value;
+			instruction->srcA.value_size = instruction->srcB.value_size;
+
+			inst->value1.start_address = inst->value2.start_address;
+			inst->value1.length = inst->value2.length;
+			inst->value1.relocated = inst->value2.relocated;
+			inst->value1.relocated_section_id = inst->value2.relocated_section_id;
+			inst->value1.relocated_section_index = inst->value2.relocated_section_index;
+			inst->value1.relocated_index = inst->value2.relocated_index;
+			inst->value1.section_id = inst->value2.section_id;
+			inst->value1.section_index = inst->value2.section_index;
+			inst->value1.init_value_type = inst->value2.init_value_type;
+			inst->value1.init_value = inst->value2.init_value;
+			inst->value1.offset_value = inst->value2.offset_value;
+			inst->value1.value_type = inst->value2.value_type;
+			inst->value1.ref_memory = inst->value2.ref_memory;
+			inst->value1.ref_log = inst->value2.ref_log;
+			inst->value1.value_scope = inst->value2.value_scope;
+			inst->value1.value_id = 0;
+
+			inst->value3.start_address = instruction->dstA.index;
+			inst->value3.length = instruction->dstA.value_size;
+			//inst->value3.length = inst->value1.length;
+			inst->value3.relocated = inst->value2.relocated;
+			inst->value3.relocated_section_id = inst->value2.relocated_section_id;
+			inst->value3.relocated_section_index = inst->value2.relocated_section_index;
+			inst->value3.relocated_index = inst->value2.relocated_index;
 			inst->value3.section_id = inst->value2.section_id;
 			inst->value3.section_index = inst->value2.section_index;
-		}
-		inst->value3.start_address = instruction->dstA.index;
-		inst->value3.length = instruction->dstA.value_size;
-		//inst->value3.length = inst->value1.length;
-		inst->value3.init_value_type = inst->value1.init_value_type;
-		inst->value3.init_value = inst->value1.init_value;
-		inst->value3.offset_value =
-			inst->value1.offset_value + inst->value2.init_value;
-		inst->value3.value_type = inst->value1.value_type;
-		if (inst->instruction.dstA.indirect) {
-			inst->value3.indirect_init_value =
-				inst->value1.indirect_init_value;
-			inst->value3.indirect_offset_value =
-				inst->value1.indirect_offset_value;
-			inst->value3.value_id =
-				inst->value1.value_id;
-		}
-		inst->value3.ref_memory =
-			inst->value1.ref_memory;
-		inst->value3.ref_log =
-			inst->value1.ref_log;
-		inst->value3.value_scope = inst->value1.value_scope;
-		if (inst->value3.value_scope == 0) {
-			debug_print(DEBUG_EXE, 1, "ERROR: value_scope == 0, BAD\n");
-			exit(1);
-		}
-		/* Counter */
-		inst->value3.value_id = inst->value1.value_id;
-		/* 1 - Entry Used */
-		inst->value3.valid = 1;
+
+			inst->value3.init_value_type = inst->value2.init_value_type;
+			inst->value3.init_value = inst->value2.init_value;
+			inst->value3.offset_value = inst->value2.offset_value;
+			inst->value3.value_type = inst->value2.value_type;
+			if (inst->instruction.dstA.indirect) {
+				debug_print(DEBUG_EXE, 1, "ERROR: MOV set to dstA.indirect\n");
+				exit(1);
+			}
+			inst->value3.ref_memory =
+				inst->value2.ref_memory;
+			inst->value3.ref_log =
+				inst->value2.ref_log;
+			/* Note: value_scope stays from the dst, not the src. */
+			/* FIXME Maybe Exception is the MOV instruction */
+			debug_print(DEBUG_EXE, 1, "ADD relocated EXE value_scope: 2 = 0x%x, 3 = 0x%x\n",
+				inst->value2.value_scope, inst->value3.value_scope);
+			inst->value3.value_scope = inst->value2.value_scope;
+			/* MOV param to local */
+			/* When the destination is a param_reg,
+			 * Change it to a local_reg */
+			if ((inst->value3.value_scope == 1) &&
+				(STORE_REG == instruction->dstA.store) &&
+				(1 == inst->value2.value_scope) &&
+				(0 == instruction->dstA.indirect)) {
+				inst->value3.value_scope = 2;
+			}
+			/* MOV imm to local */
+			if ((inst->value3.value_scope == 0) &&
+				(STORE_DIRECT == instruction->srcB.store) &&
+				(0 == instruction->dstA.indirect)) {
+				inst->value3.value_scope = 2;
+			}
+			if (inst->value3.value_scope == 0) {
+				debug_print(DEBUG_EXE, 1, "ERROR: MOV value_scope == 0, BAD\n");
+				exit(1);
+			}
+			/* Counter */
+			//if (inst->value3.value_scope == 2) {
+				/* Only value_id preserves the value2 values */
+			//inst->value3.value_id = inst->value2.value_id;
+			inst->value3.value_id = 0;
+			inst->value2.value_id = 0;
+			//}
+			/* 1 - Entry Used */
+			inst->value3.valid = 1;
+				debug_print(DEBUG_EXE, 1, "value=0x%"PRIx64"+0x%"PRIx64"=0x%"PRIx64"\n",
+					inst->value3.init_value,
+					inst->value3.offset_value,
+					inst->value3.init_value +
+						inst->value3.offset_value);
+			debug_print(DEBUG_EXE, 1, "pMOVvalue.relocated = 0x%lx\n", inst->value3.relocated);
+			debug_print(DEBUG_EXE, 1, "pMOVvalue.relocated_section_id = 0x%lx\n", inst->value3.relocated_section_id);
+			debug_print(DEBUG_EXE, 1, "pMOVvalue.relocated_section_index = 0x%lx\n", inst->value3.relocated_section_index);
+			debug_print(DEBUG_EXE, 1, "pMOVvalue.relocated_index = 0x%lx\n", inst->value3.relocated_index);
+			debug_print(DEBUG_EXE, 1, "pMOVvalue.section_id = 0x%lx\n", inst->value3.section_id);
+			debug_print(DEBUG_EXE, 1, "pMOVvalue.section_index = 0x%lx\n", inst->value3.section_index);
+		} else {
+			if (inst->value1.section_id) {
+				inst->value3.section_id = inst->value1.section_id;
+				inst->value3.section_index = inst->value1.section_index;
+			}
+			if (inst->value2.section_id) {
+				inst->value3.section_id = inst->value2.section_id;
+				inst->value3.section_index = inst->value2.section_index;
+			}
+			inst->value3.start_address = instruction->dstA.index;
+			inst->value3.length = instruction->dstA.value_size;
+			//inst->value3.length = inst->value1.length;
+			inst->value3.init_value_type = inst->value1.init_value_type;
+			inst->value3.init_value = inst->value1.init_value;
+			inst->value3.offset_value =
+					inst->value1.offset_value + inst->value2.init_value;
+			inst->value3.value_type = inst->value1.value_type;
+			if (inst->instruction.dstA.indirect) {
+				inst->value3.indirect_init_value =
+						inst->value1.indirect_init_value;
+				inst->value3.indirect_offset_value =
+						inst->value1.indirect_offset_value;
+				inst->value3.value_id =
+						inst->value1.value_id;
+			}
+			inst->value3.ref_memory =
+					inst->value1.ref_memory;
+			inst->value3.ref_log =
+					inst->value1.ref_log;
+			inst->value3.value_scope = inst->value1.value_scope;
+			if (inst->value3.value_scope == 0) {
+				debug_print(DEBUG_EXE, 1, "ERROR: value_scope == 0, BAD\n");
+				exit(1);
+			}
+			/* Counter */
+			inst->value3.value_id = inst->value1.value_id;
+			/* 1 - Entry Used */
+			inst->value3.valid = 1;
 			debug_print(DEBUG_EXE, 1, "value=0x%"PRIx64"+0x%"PRIx64"=0x%"PRIx64"\n",
-				inst->value3.init_value,
-				inst->value3.offset_value,
-				inst->value3.init_value +
+					inst->value3.init_value,
+					inst->value3.offset_value,
+					inst->value3.init_value +
 					inst->value3.offset_value);
+		}
 		put_value_RTL_instruction(self, process_state, inst);
 #if 0
 		if (instruction->srcA.relocated) {
