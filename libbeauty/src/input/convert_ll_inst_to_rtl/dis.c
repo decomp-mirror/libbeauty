@@ -274,6 +274,7 @@ int convert_operand(struct self_s *self, int section_id, int section_index, uint
 					inst_operand->relocated_section_index = reloc_table_entry->section_index;
 					switch(reloc_table_entry->type) {
 					case 0x1:
+					case 0xa:
 						inst_operand->relocated_index = reloc_table_entry->addend;
 						debug_print(DEBUG_INPUT_DIS, 1, "section_name:%s + 0x%x\n",
 								reloc_table_entry->name,
