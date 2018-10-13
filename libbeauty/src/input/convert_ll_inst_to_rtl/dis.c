@@ -135,7 +135,7 @@ int lookup_external_entry_point_function(struct self_s *self, uint64_t section_i
 	return found;
 }
 
-int search_relocation_table(struct self_s *self, uint64_t section_id, uint64_t section_index, uint8_t *base_address, uint64_t offset, uint64_t size, uint64_t *reloc_index)
+int search_relocation_table_ll_dis(struct self_s *self, uint64_t section_id, uint64_t section_index, uint8_t *base_address, uint64_t offset, uint64_t size, uint64_t *reloc_index)
 {
 	int n;
 	struct reloc_s *reloc = self->sections[section_index].reloc_entry;
@@ -206,7 +206,7 @@ int convert_operand(struct self_s *self, int section_id, int section_index, uint
 		if (self->sections_size && self->sections[section_index].reloc_size) {
 			debug_print(DEBUG_INPUT_DIS, 1, "sections = 0x%lx reloc_size = 0x%lx\n",
 				self->sections_size, self->sections[section_index].reloc_size);
-			tmp = search_relocation_table(self, section_id, section_index, 0,
+			tmp = search_relocation_table_ll_dis(self, section_id, section_index, 0,
 				base_address + ll_operand->operand[operand_number].offset,
 				ll_operand->operand[operand_number].size >> 3,
 				&reloc_index);

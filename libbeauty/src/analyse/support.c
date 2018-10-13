@@ -1512,10 +1512,11 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 					debug_print(DEBUG_MAIN, 1, "assign_id: data_address = 0x%"PRIx64"\n", data_address);
 					print_store(external_entry_point->process_state.memory_data);
 					memory = search_store(
-						external_entry_point->process_state.memory_data,
-						external_entry_point->process_state.memory_data_size,
-						data_address,
-						inst_log1->instruction.srcA.indirect_size);
+							self->sections[inst_log1->value2.section_index].memory,
+							self->sections[inst_log1->value2.section_index].memory_size,
+							data_address,
+							inst_log1->value3.length);
+
 					if (memory) {
 						debug_print(DEBUG_MAIN, 1, "MEM memory = %p\n", memory);
 						if (memory->value_id) {
@@ -1556,6 +1557,15 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 							variable_id++;
 						}
 					} else {
+						debug_print(DEBUG_MAIN, 1, "section_id 0x%lx, section_index 0x%lx\n",
+								inst_log1->value2.section_id,
+								inst_log1->value2.section_index);
+						debug_print(DEBUG_MAIN, 1, "memory %p, memory_size 0x%lx, offset 0x%lx, size 0x%lx\n",
+								self->sections[inst_log1->value2.section_index].memory,
+								self->sections[inst_log1->value2.section_index].memory_size,
+								data_address,
+								inst_log1->value3.length);
+
 						debug_print(DEBUG_MAIN, 1, "FIXME: assign_id: memory not found for mem address\n");
 						exit(1);
 					}
@@ -2649,7 +2659,11 @@ int tip_fixup_bit_width(struct self_s *self, int entry_point)
 			instruction =  &inst_log1->instruction;
 			if (!rule_this->pointer) {
 				if (rule_this->size_bits) {
-					debug_print(DEBUG_ANALYSE_TIP, 1, "0x%x:0x%x size = 0x%x\n", l, m, rule_this->size_bits);
+					debug_print(DEBUG_ANALYSE_TIP, 1, "0x%x:0x%x inst=0x%lx, size = 0x%x -> 0x%x\n",
+							l, m,
+							rule_this->inst_number,
+							size,
+							rule_this->size_bits);
 					if ((size) && (rule_this->size_bits != size)) {
 						printf("integer size varying. Need to add TRUNC or ZEXT or SEX in.\n");
 						tip_fixup1(self, entry_point, l, m, size, rule_this->size_bits);

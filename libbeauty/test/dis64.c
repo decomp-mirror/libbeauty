@@ -876,7 +876,7 @@ int main(int argc, char *argv[])
 	int paths_size = 300000;
 	struct loop_s *loops;
 	int loops_size = 2000;
-	struct ast_s *ast;
+	//struct ast_s *ast;
 	int *section_number_mapping;
 	struct reloc_table_s *reloc_table;
 	int reloc_table_size;
@@ -1366,6 +1366,7 @@ int main(int argc, char *argv[])
 		loops[n].list = calloc(1000, sizeof(int));
 	}
 
+#if 0
 	ast = calloc(1, sizeof(struct ast_s));
 	ast->ast_container = calloc(AST_SIZE, sizeof(struct ast_container_s));
 	ast->ast_if_then_else = calloc(AST_SIZE, sizeof(struct ast_if_then_else_s));
@@ -1380,7 +1381,7 @@ int main(int argc, char *argv[])
 	ast->loop_size = 0;
 	ast->loop_container_size = 0;
 	ast->loop_then_else_size = 0;
-
+#endif
 
 	for (l = 0; l < EXTERNAL_ENTRY_POINTS_MAX; l++) {
 //	for (l = 17; l < 19; l++) {

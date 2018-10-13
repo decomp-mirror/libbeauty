@@ -70,6 +70,31 @@ uint64_t read_data(struct self_s *self, uint64_t offset, int size_bits) {
 	return tmp;
 }
 
+uint64_t read_section_content(struct self_s *self, uint64_t section_index, uint64_t offset, int size_bits) {
+	uint64_t tmp, tmp2, tmp3, limit;
+	int n;
+	/* Convert bits to bytes. Round up. Make sure 1 bit turns into 1 byte */
+	int size = (size_bits + 7) >> 3;
+
+	tmp = 0;
+	debug_print(DEBUG_EXE, 1, "read_data:section_index = 0x%lx, offset = 0x%"PRIx64", size = %d\n",
+			section_index, offset, size);
+	limit = offset + size - 1;
+	if (limit <= self->sections[section_index].content_size) {
+		for (n = (size - 1); n >= 0; n--) {
+			tmp2 = (tmp << 8);
+			tmp3 = self->sections[section_index].content[n + offset];
+			debug_print(DEBUG_EXE, 1, "read_data:data = 0x%"PRIx64"\n", tmp3);
+			tmp = tmp2 | tmp3;
+		}
+	} else {
+		debug_print(DEBUG_EXE, 1, "read_data: offset out of range\n");
+		tmp = 0;
+	}
+	debug_print(DEBUG_EXE, 1, "read_data:return = 0x%"PRIx64"\n", tmp);
+
+	return tmp;
+}
 	
 	
 struct memory_s *search_store(
@@ -261,6 +286,23 @@ static int log_section_access(struct self_s *self, uint64_t section_index,
 	return 0;
 }
 
+int search_relocation_table(struct self_s *self, uint64_t section_index,
+		uint64_t offset, uint64_t size, uint64_t *reloc_index)
+{
+	int n;
+	struct reloc_s *reloc = self->sections[section_index].reloc_entry;
+	debug_print(DEBUG_INPUT_DIS, 1, "params: section_index=0x%lx, offset = 0x%lx, size=0x%lx\n",
+		section_index,
+		offset,
+		size);
+	for (n = 0; n < self->sections[section_index].reloc_size; n++) {
+		if (reloc[n].offset == offset) {
+			*reloc_index = n;
+			return 0;
+		}
+	}
+	return 1;
+}
 
 static int get_value_RTL_instruction(
 	struct self_s *self,
@@ -273,6 +315,7 @@ static int get_value_RTL_instruction(
 	struct memory_s *value_data = NULL;
 	struct memory_s *value_stack = NULL;
 	uint64_t data_index;
+	int tmp;
 	char *info = NULL;
 	//struct memory_s *memory_text;
 	struct memory_s *memory_stack;
@@ -524,16 +567,72 @@ static int get_value_RTL_instruction(
 				source->value_size);
 		debug_print(DEBUG_EXE, 1, "EXE2 value_data=%p, %p\n", value_data, &value_data);
 		if (!value_data) {
+			uint64_t reloc_index = 0;
 			value_data = add_new_store(self->sections[value->section_index].memory,
 				self->sections[value->section_index].memory_size,
 				data_index,
 				source->value_size);
-			debug_print(DEBUG_EXE, 1, "adding new data data. TODO. Exiting\n");
+			debug_print(DEBUG_EXE, 1, "section data_index=0x%lx, size(bits)=0x%x, reloc_size = 0x%lx\n",
+					data_index,
+					source->value_size,
+					self->sections[value->section_index].reloc_size);
+			tmp = search_relocation_table(self, value->section_index,
+					data_index, source->value_size / 8, &reloc_index);
+			debug_print(DEBUG_EXE, 1, "tmp = %d, reloc_index = 0x%lu\n", tmp, reloc_index);
+			if (tmp) {
+				value_data->init_value = read_section_content(
+						self, value->section_index, data_index, source->value_size);
+				//debug_print(DEBUG_EXE, 1, "adding new data from content table. TODO. Exiting\n");
+				//exit(1);
+			} else {
+				struct reloc_s *reloc_table_entry;
+				reloc_table_entry = &(self->sections[value->section_index].reloc_entry[reloc_index]);
+				debug_print(DEBUG_EXE, 1, "relocate found index=0x%lx, type=0x%x, offset=0x%lx, size=0x%lx, section_id=0x%lx, section_index=0x%lx,name=%s, value_int = 0x%lx, value_uint = 0x%lx, addend = 0x%lx\n",
+								reloc_index,
+								reloc_table_entry->type,
+								reloc_table_entry->offset,
+								reloc_table_entry->offset_size,
+								reloc_table_entry->section_id,
+								reloc_table_entry->section_index,
+								reloc_table_entry->name,
+								reloc_table_entry->value_int,
+								reloc_table_entry->value_uint,
+								reloc_table_entry->addend);
+
+				value_data->relocated_section_id = reloc_table_entry->section_id;
+				value_data->relocated_section_index = reloc_table_entry->section_index;
+				value_data->relocated_index = reloc_index;
+				value_data->section_id = reloc_table_entry->section_id;
+				value_data->section_index = reloc_table_entry->section_index;
+				switch(reloc_table_entry->type) {
+				case 0xffff:
+					value_data->init_value = reloc_table_entry->addend;
+
+					debug_print(DEBUG_EXE, 1, "section_name:%s at 0x%x\n",
+							reloc_table_entry->name,
+							reloc_table_entry->addend);
+					break;
+
+				case 0x1:
+					value_data->init_value = reloc_table_entry->value_uint;
+					debug_print(DEBUG_EXE, 1, "section_name:%s at 0x%x\n",
+							reloc_table_entry->name,
+							reloc_table_entry->value_uint);
+					break;
+
+				default:
+					debug_print(DEBUG_EXE, 1, "type 0x%lx not handled\n", reloc_table_entry->type);
+					exit(1);
+				}
+
+				//debug_print(DEBUG_EXE, 1, "adding new data from reloc table. TODO. Exiting\n");
+				//exit(1);
+			}
 			/* Handle data in different sections.
 			 * Handle relocations in data sections.
 			 */
-			exit(1);
-			value_data->init_value = read_data(self, data_index, 32); 
+			//exit(1);
+			//value_data->init_value = read_data(self, data_index, 32);
 			debug_print(DEBUG_EXE, 1, "EXE3 value_data=%p, %p\n", value_data, &value_data);
 			debug_print(DEBUG_EXE, 1, "EXE3 value_data->init_value=%"PRIx64"\n", value_data->init_value);
 			/* Data */
@@ -1341,10 +1440,18 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		break;
 	case LOAD:
 		/* Get value of srcA */
-		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcA), &(inst->value1), 0); 
+		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcA), &(inst->value1), 0);
+		/* srcB is only needed in assigning labels to src. */
+		ret = get_value_RTL_instruction(self, process_state, &(instruction->srcB), &(inst->value2), 0);
 		/* Create result */
 		debug_print(DEBUG_EXE, 1, "LOAD\n");
 		debug_print(DEBUG_EXE, 1, "LOAD dest length = %d %d\n", inst->value1.length, inst->value3.length);
+		inst->value3.relocated = inst->value1.relocated;
+		inst->value3.relocated_section_id = inst->value1.relocated_section_id;
+		inst->value3.relocated_section_index = inst->value1.relocated_section_index;
+		inst->value3.relocated_index = inst->value1.relocated_index;
+		inst->value3.section_id = inst->value1.section_id;
+		inst->value3.section_index = inst->value1.section_index;
 		inst->value3.start_address = instruction->dstA.index;
 		inst->value3.length = instruction->dstA.value_size;
 		//inst->value3.length = inst->value1.length;
@@ -1506,6 +1613,13 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 			inst->value3.value_id =
 				inst->value1.value_id;
 		}
+		inst->value3.relocated = inst->value1.relocated;
+		inst->value3.relocated_section_id = inst->value1.relocated_section_id;
+		inst->value3.relocated_section_index = inst->value1.relocated_section_index;
+		inst->value3.relocated_index = inst->value1.relocated_index;
+		inst->value3.section_id = inst->value1.section_id;
+		inst->value3.section_index = inst->value1.section_index;
+
 		inst->value3.ref_memory =
 			inst->value1.ref_memory;
 		inst->value3.ref_log =
@@ -1593,6 +1707,13 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 			inst->value3.value_id =
 				inst->value1.value_id;
 		}
+		inst->value3.relocated = inst->value1.relocated;
+		inst->value3.relocated_section_id = inst->value1.relocated_section_id;
+		inst->value3.relocated_section_index = inst->value1.relocated_section_index;
+		inst->value3.relocated_index = inst->value1.relocated_index;
+		inst->value3.section_id = inst->value1.section_id;
+		inst->value3.section_index = inst->value1.section_index;
+
 		inst->value3.ref_memory =
 			inst->value1.ref_memory;
 		inst->value3.ref_log =
