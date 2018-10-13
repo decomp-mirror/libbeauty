@@ -690,14 +690,19 @@ int external_entry_points_init(struct external_entry_point_s *external_entry_poi
 				n);
 			external_entry_points[n].process_state.memory_text =
 				calloc(MEMORY_TEXT_SIZE, sizeof(struct memory_s));
+			external_entry_points[n].process_state.memory_text_size = MEMORY_TEXT_SIZE;
 			external_entry_points[n].process_state.memory_stack =
 				calloc(MEMORY_STACK_SIZE, sizeof(struct memory_s));
+			external_entry_points[n].process_state.memory_stack_size = MEMORY_STACK_SIZE;
 			external_entry_points[n].process_state.memory_reg =
 				calloc(MEMORY_REG_SIZE, sizeof(struct memory_s));
+			external_entry_points[n].process_state.memory_reg_size = MEMORY_REG_SIZE;
 			external_entry_points[n].process_state.memory_data =
 				calloc(MEMORY_DATA_SIZE, sizeof(struct memory_s));
+			external_entry_points[n].process_state.memory_data_size = MEMORY_DATA_SIZE;
 			external_entry_points[n].process_state.memory_used =
 				calloc(MEMORY_USED_SIZE, sizeof(int));
+			external_entry_points[n].process_state.memory_used_size = MEMORY_USED_SIZE;
 			//memory_text = external_entry_points[n].process_state.memory_text;
 			memory_stack = external_entry_points[n].process_state.memory_stack;
 			memory_reg = external_entry_points[n].process_state.memory_reg;
@@ -733,6 +738,7 @@ int analyse_memory_log(struct self_s *self)
 
 			self->sections[l].memory_struct = calloc(self->sections[l].content_size, sizeof(struct memory_struct_s));
 			self->sections[l].memory_struct_size = self->sections[l].content_size;
+
 			for (m = 0; m < self->sections[l].memory_log_size; m++) {
 				debug_print(DEBUG_MAIN, 1, "memory_log_size = 0x%lx of 0x%lx\n", m, self->sections[l].memory_log_size);
 				if ((self->sections[l].memory_log[m].type == 1) ||
@@ -941,6 +947,9 @@ int main(int argc, char *argv[])
 				debug_print(DEBUG_MAIN, 1, "Error section content load failed\n");
 				exit(1);
 			}
+			self->sections[n + offset].memory =
+					calloc(self->sections[n + offset].content_size, sizeof(struct memory_s));
+			self->sections[n + offset].memory_size = self->sections[n + offset].content_size;
 		}
 		bf_get_section_alignment(handle_void, n, &(self->sections[n + offset].alignment));
 		self->sections[n + offset].alloc = bf_section_is_alloc(handle_void, n);

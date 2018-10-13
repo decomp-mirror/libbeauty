@@ -1385,6 +1385,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 						entry_point, node, inst, stack_address);
 					memory = search_store(
 						external_entry_point->process_state.memory_stack,
+						external_entry_point->process_state.memory_stack_size,
 						stack_address,
 						inst_log1->instruction.srcA.indirect_size);
 					if (memory) {
@@ -1512,6 +1513,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 					print_store(external_entry_point->process_state.memory_data);
 					memory = search_store(
 						external_entry_point->process_state.memory_data,
+						external_entry_point->process_state.memory_data_size,
 						data_address,
 						inst_log1->instruction.srcA.indirect_size);
 					if (memory) {
@@ -1618,6 +1620,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 					debug_print(DEBUG_MAIN, 1, "assign_id: stack_address = 0x%"PRIx64"\n", stack_address);
 					memory = search_store(
 						external_entry_point->process_state.memory_stack,
+						external_entry_point->process_state.memory_stack_size,
 						stack_address,
 						inst_log1->instruction.srcB.indirect_size);
 					if (memory) {
@@ -1704,6 +1707,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 					debug_print(DEBUG_MAIN, 1, "assign_id:STORE stack_address = 0x%"PRIx64"\n", stack_address);
 					memory = search_store(
 						external_entry_point->process_state.memory_stack,
+						external_entry_point->process_state.memory_stack_size,
 						stack_address,
 						inst_log1->instruction.srcA.indirect_size);
 					if (memory) {
@@ -1779,6 +1783,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 					debug_print(DEBUG_MAIN, 1, "assign_id: stack_address = 0x%"PRIx64"\n", stack_address);
 					memory = search_store(
 						external_entry_point->process_state.memory_stack,
+						external_entry_point->process_state.memory_stack_size,
 						stack_address,
 						inst_log1->instruction.srcB.indirect_size);
 					if (memory) {
@@ -1865,6 +1870,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 					debug_print(DEBUG_MAIN, 1, "assign_id: stack_address = 0x%"PRIx64"\n", stack_address);
 					memory = search_store(
 						external_entry_point->process_state.memory_stack,
+						external_entry_point->process_state.memory_stack_size,
 						stack_address,
 						inst_log1->instruction.srcA.indirect_size);
 					if (memory) {
@@ -1931,6 +1937,7 @@ int assign_labels_to_src(struct self_s *self, int entry_point, int node)
 					debug_print(DEBUG_MAIN, 1, "assign_id: stack_address = 0x%"PRIx64"\n", stack_address);
 					memory = search_store(
 						external_entry_point->process_state.memory_stack,
+						external_entry_point->process_state.memory_stack_size,
 						stack_address,
 						inst_log1->instruction.srcB.indirect_size);
 					if (memory) {
@@ -4476,6 +4483,7 @@ int assign_id_label_dst(struct self_s *self, int function, int inst, struct inst
 			debug_print(DEBUG_MAIN, 1, "assign_id: data_address = 0x%"PRIx64"\n", data_address);
 			memory = search_store(
 				self->external_entry_points[function].process_state.memory_data,
+				self->external_entry_points[function].process_state.memory_data_size,
 				data_address,
 				inst_log1->instruction.dstA.indirect_size);
 			if (memory) {
@@ -4512,6 +4520,7 @@ int assign_id_label_dst(struct self_s *self, int function, int inst, struct inst
 			debug_print(DEBUG_MAIN, 1, "assign_id: stack_address = 0x%"PRIx64"\n", stack_address);
 			memory = search_store(
 				self->external_entry_points[function].process_state.memory_stack,
+				self->external_entry_points[function].process_state.memory_stack_size,
 				stack_address,
 				inst_log1->instruction.dstA.indirect_size);
 			if (memory) {

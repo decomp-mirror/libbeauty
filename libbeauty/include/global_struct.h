@@ -85,10 +85,15 @@ struct reloc_table_s {
 };
 
 struct process_state_s {
+	uint64_t memory_text_size;
 	struct memory_s *memory_text;
+	uint64_t memory_stack_size;
 	struct memory_s *memory_stack;
+	uint64_t memory_reg_size;
 	struct memory_s *memory_reg;
+	uint64_t memory_data_size;
 	struct memory_s *memory_data;
+	uint64_t memory_used_size;
 	int *memory_used;
 };
 

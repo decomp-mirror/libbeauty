@@ -73,7 +73,7 @@ uint64_t read_data(struct self_s *self, uint64_t offset, int size_bits) {
 	
 	
 struct memory_s *search_store(
-	struct memory_s *memory, uint64_t index, int size_bits)
+	struct memory_s *memory, uint64_t memory_size, uint64_t index, int size_bits)
 {
 	int n = 0;
 	uint64_t start = index;
@@ -84,7 +84,12 @@ struct memory_s *search_store(
 	/* Convert bits to bytes. Round up. Make sure 1 bit turns into 1 byte */
 	int size = (size_bits + 7) >> 3;
 
-	debug_print(DEBUG_EXE, 1, "memory=%p, index=%"PRIx64", size=%d\n", memory, index, size);
+	debug_print(DEBUG_EXE, 1, "memory=%p, memory_size=0x%lx, index=%"PRIx64", size=%d\n",
+			memory, memory_size, index, size);
+	if (!memory || 0 == memory_size) {
+		debug_print(DEBUG_EXE, 1, "memory NULL. exiting\n");
+		exit(1);
+	}
 	while (memory[n].valid == 1) {
 		memory_start = memory[n].start_address;
 		debug_print(DEBUG_EXE, 1, "looping 0x%x:start_address = 0x%"PRIx64"\n", n, memory_start);
@@ -99,12 +104,15 @@ struct memory_s *search_store(
 			break;
 		}
 		n++;
+		if ( n >= memory_size) {
+			break;
+		}
 	}
 	return result;
 }
 
 struct memory_s *add_new_store(
-	struct memory_s *memory, uint64_t index, int size_bits)
+	struct memory_s *memory, uint64_t memory_size, uint64_t index, int size_bits)
 {
 	int n = 0;
 	uint64_t start = index;
@@ -130,6 +138,10 @@ struct memory_s *add_new_store(
 			goto exit_add_new_store;
 		}
 		n++;
+		if ( n >= memory_size) {
+			goto exit_add_new_store;
+		}
+
 	}
 	result = &memory[n];
 	debug_print(DEBUG_EXE, 1, "Found empty entry %d in table %p, %p\n", n, memory, result);
@@ -201,6 +213,10 @@ static int log_section_access(struct self_s *self, uint64_t section_index,
 		debug_print(DEBUG_EXE, 1, "section_index too big. exiting\n");
 		exit(1);
 	}
+	if (0 == section_index) {
+		debug_print(DEBUG_EXE, 1, "section_index is 0. Invalid. exiting\n");
+		exit(1);
+	}
 	section = &(self->sections[section_index]);
 	if (section->memory_log_capacity == 0) {
 		section->memory_log = calloc( 10, sizeof(struct memory_log_s));
@@ -230,6 +246,10 @@ static int log_section_access(struct self_s *self, uint64_t section_index,
 		debug_print(DEBUG_EXE, 1, "index too big. Exiting\n");
 		exit(1);
 	}
+	debug_print(DEBUG_EXE, 1, "log append: memory_log_size=0x%lx, content_size=0x%lx\n",
+				section->memory_log_size,
+				section->content_size);
+
 	memcpy(section->memory_log[section->memory_log_size].octets, &(section->content[index]), size);
 	if (data_type == 1) {
 		debug_print(DEBUG_EXE, 1, "log append1: octets = %s\n", section->memory_log[section->memory_log_size].octets);
@@ -372,6 +392,7 @@ static int get_value_RTL_instruction(
 					source->index,
 					source->value_size);
 			value = search_store(memory_reg,
+					process_state->memory_reg_size,
 					source->index,
 					source->value_size);
 			debug_print(DEBUG_EXE, 1, "GET:EXE value=%p\n", value);
@@ -384,6 +405,7 @@ static int get_value_RTL_instruction(
 			/* FIXME what to do in NULL */
 			if (!value) {
 				value = add_new_store(memory_reg,
+						process_state->memory_reg_size,
 						source->index,
 						source->value_size);
 				value->value_id = 0;
@@ -422,6 +444,13 @@ static int get_value_RTL_instruction(
 				destination->offset_value,
 				destination->init_value +
 					destination->offset_value);
+			debug_print(DEBUG_EXE, 1, "relocated_section_id:0x%x relocated_section_index:0x%x + 0x%x\n",
+					value->relocated_section_id,
+					value->relocated_section_index,
+					value->relocated_index);
+			debug_print(DEBUG_EXE, 1, "section_id:0x%x section_index:0x%x\n",
+					value->section_id,
+					value->section_index);
 			break;
 		default:
 			/* Should not get here */
@@ -453,12 +482,14 @@ static int get_value_RTL_instruction(
 			break;
 		case STORE_REG:
 			value = search_store(memory_reg,
+					process_state->memory_reg_size,
 					source->index,
 					source->indirect_size);
 			debug_print(DEBUG_EXE, 1, "EXE value=%p\n", value);
 			/* FIXME what to do in NULL */
 			if (!value) {
 				value = add_new_store(memory_reg,
+						process_state->memory_reg_size,
 						source->index,
 						source->indirect_size);
 				value->value_id = 0;
@@ -487,14 +518,21 @@ static int get_value_RTL_instruction(
 			return 1;
 			break;
 		}
-		value_data = search_store(memory_data,
+		value_data = search_store(self->sections[value->section_index].memory,
+				self->sections[value->section_index].memory_size,
 				data_index,
 				source->value_size);
 		debug_print(DEBUG_EXE, 1, "EXE2 value_data=%p, %p\n", value_data, &value_data);
 		if (!value_data) {
-			value_data = add_new_store(memory_data,
+			value_data = add_new_store(self->sections[value->section_index].memory,
+				self->sections[value->section_index].memory_size,
 				data_index,
 				source->value_size);
+			debug_print(DEBUG_EXE, 1, "adding new data data. TODO. Exiting\n");
+			/* Handle data in different sections.
+			 * Handle relocations in data sections.
+			 */
+			exit(1);
 			value_data->init_value = read_data(self, data_index, 32); 
 			debug_print(DEBUG_EXE, 1, "EXE3 value_data=%p, %p\n", value_data, &value_data);
 			debug_print(DEBUG_EXE, 1, "EXE3 value_data->init_value=%"PRIx64"\n", value_data->init_value);
@@ -551,12 +589,14 @@ static int get_value_RTL_instruction(
 				source->indirect_size,
 				source->value_size);
 		value = search_store(memory_reg,
+				process_state->memory_reg_size,
 				source->index,
 				source->indirect_size);
 		debug_print(DEBUG_EXE, 1, "EXE value=%p\n", value);
 		/* FIXME what to do in NULL */
 		if (!value) {
 			value = add_new_store(memory_reg,
+					process_state->memory_reg_size,
 					source->index,
 					source->indirect_size);
 			if (value) value->value_id = 0;
@@ -567,12 +607,14 @@ static int get_value_RTL_instruction(
 			break;
 		}
 		value_stack = search_store(memory_stack,
+				process_state->memory_stack_size,
 				value->init_value +
 					value->offset_value,
 					source->value_size);
 		debug_print(DEBUG_EXE, 1, "EXE2 value_stack=%p, %p\n", value_stack, &value_stack);
 		if (!value_stack) {
 			value_stack = add_new_store(memory_stack,
+				process_state->memory_stack_size,
 				value->init_value +
 					value->offset_value,
 					source->value_size);
@@ -686,6 +728,7 @@ static int put_value_RTL_instruction(
 			/* r - register */
 			debug_print(DEBUG_EXE, 1, "dstA-register saving result\n");
 			value = search_store(memory_reg,
+					process_state->memory_reg_size,
 					instruction->dstA.index,
 					instruction->dstA.value_size);
 			debug_print(DEBUG_EXE, 1, "EXE value=%p\n", value);
@@ -698,6 +741,7 @@ static int put_value_RTL_instruction(
 			if (!value) {
 				debug_print(DEBUG_EXE, 1, "Reg 0x%lx not found, Adding new store\n", instruction->dstA.index);
 				value = add_new_store(memory_reg,
+						process_state->memory_reg_size,
 						instruction->dstA.index,
 						instruction->dstA.value_size);
 			}
@@ -793,12 +837,14 @@ static int put_value_RTL_instruction(
 			break;
 		case STORE_REG:
 			value = search_store(memory_reg,
+					process_state->memory_reg_size,
 					instruction->dstA.index,
 					instruction->dstA.indirect_size);
 			debug_print(DEBUG_EXE, 1, "EXE value=%p\n", value);
 			/* FIXME what to do in NULL */
 			if (!value) {
 				value = add_new_store(memory_reg,
+						process_state->memory_reg_size,
 						instruction->dstA.index,
 						instruction->dstA.indirect_size);
 				value->value_id = 0;
@@ -826,11 +872,13 @@ static int put_value_RTL_instruction(
 			break;
 		}
 		value_data = search_store(memory_data,
+				process_state->memory_data_size,
 				data_index,
 				instruction->dstA.value_size);
 		debug_print(DEBUG_EXE, 1, "EXE2 value_data=%p\n", value_data);
 		if (!value_data) {
 			value_data = add_new_store(memory_data,
+				process_state->memory_data_size,
 				data_index,
 				instruction->dstA.value_size);
 		}
@@ -886,12 +934,14 @@ static int put_value_RTL_instruction(
 				instruction->dstA.index,
 				instruction->dstA.indirect_size);
 		value = search_store(memory_reg,
+				process_state->memory_reg_size,
 				instruction->dstA.index,
 				instruction->dstA.indirect_size);
 		debug_print(DEBUG_EXE, 1, "dstA reg 0x%"PRIx64" value = 0x%"PRIx64" + 0x%"PRIx64"\n", instruction->dstA.index, value->init_value, value->offset_value);
 		/* FIXME what to do in NULL */
 		if (!value) {
 			value = add_new_store(memory_reg,
+					process_state->memory_reg_size,
 					instruction->dstA.index,
 					instruction->dstA.indirect_size);
 		}
@@ -908,15 +958,17 @@ static int put_value_RTL_instruction(
 			break;
 		}
 		value_stack = search_store(memory_stack,
+				process_state->memory_stack_size,
 				value->init_value +
 					value->offset_value,
-					instruction->dstA.value_size);
+				instruction->dstA.value_size);
 		debug_print(DEBUG_EXE, 1, "EXE2 value_stack=%p\n", value_stack);
 		if (!value_stack) {
 			value_stack = add_new_store(memory_stack,
+				process_state->memory_stack_size,
 				value->init_value +
 					value->offset_value,
-					instruction->dstA.value_size);
+				instruction->dstA.value_size);
 		}
 		if (!value_stack) {
 			debug_print(DEBUG_EXE, 1, "PUT CASE2:STORE_REG2 ERROR!\n");
@@ -1003,6 +1055,7 @@ int process_hints(struct self_s *self,
 		reg = params_reg[n];
 		debug_print(DEBUG_EXE, 1, "Hint[%d] = 0x%x, Reg[%d] = 0x%x\n", n, hint_array[n], n, reg);
 		value = search_store(memory_reg,
+				process_state->memory_reg_size,
 				reg,
 				64);
 		if (!value) {
@@ -1409,6 +1462,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		/* Special case for SEX instruction. */
 		/* FIXME: Stored value in reg store should be size modified */
 		value = search_store(process_state->memory_reg,
+				process_state->memory_reg_size,
 				instruction->dstA.index,
 				instruction->dstA.value_size);
 		if (value) {
@@ -1497,6 +1551,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		/* Special case for ZEXT instruction. */
 		/* FIXME: Stored value in reg store should be size modified */
 		value = search_store(process_state->memory_reg,
+				process_state->memory_reg_size,
 				instruction->dstA.index,
 				instruction->dstA.value_size);
 		if (value) {
@@ -1680,7 +1735,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 			//}
 			/* 1 - Entry Used */
 			inst->value3.valid = 1;
-				debug_print(DEBUG_EXE, 1, "value=0x%"PRIx64"+0x%"PRIx64"=0x%"PRIx64"\n",
+			debug_print(DEBUG_EXE, 1, "value=0x%"PRIx64"+0x%"PRIx64"=0x%"PRIx64"\n",
 					inst->value3.init_value,
 					inst->value3.offset_value,
 					inst->value3.init_value +
@@ -2404,6 +2459,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		debug_print(DEBUG_EXE, 1, "IF\n");
 		/* Create absolute JMP value in value3 */
 		value = search_store(memory_reg,
+				process_state->memory_reg_size,
 				REG_IP,
 				4);
 		inst->value3.start_address = value->start_address;
@@ -2487,6 +2543,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		debug_print(DEBUG_EXE, 1, "JMP\n");
 		/* Create absolute JMP value in value3 */
 		value = search_store(memory_reg,
+				process_state->memory_reg_size,
 				REG_IP,
 				4);
 		debug_print(DEBUG_EXE, 1, "JMP 0x%"PRIx64"+%"PRId64"\n",
@@ -2696,6 +2753,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		/* Special case for SEX instruction. */
 		/* FIXME: Stored value in reg store should be size modified */
 		value = search_store(process_state->memory_reg,
+				process_state->memory_reg_size,
 				instruction->dstA.index,
 				instruction->dstA.value_size);
 		if (value) {
@@ -2778,6 +2836,7 @@ int execute_instruction(struct self_s *self, struct process_state_s *process_sta
 		//inst->value3.length = inst->value1.length;
 		/* FIXME: Stored value in reg store should be size modified */
 		value = search_store(process_state->memory_reg,
+				process_state->memory_reg_size,
 				instruction->dstA.index,
 				instruction->dstA.value_size);
 		if (value) {
