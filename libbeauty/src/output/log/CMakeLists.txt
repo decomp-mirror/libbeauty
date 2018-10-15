@@ -1,0 +1,7 @@
+set(the_description "Logging")
+add_library(beauty_output_log log.c)
+set_target_properties(beauty_output_log PROPERTIES SOVERSION 1)
+set_target_properties(beauty_output_log PROPERTIES VERSION "1.0.0")
+target_link_libraries(beauty_output_log)
+target_include_directories(beauty_output_log PRIVATE "${libbeauty_INCLUDE_DIRS}")
+install (TARGETS beauty_output_log DESTINATION lib/beauty)

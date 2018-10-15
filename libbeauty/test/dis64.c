@@ -60,6 +60,7 @@
 #include <dis.h>
 #include <convert_ll_inst_to_rtl.h>
 #include <execinfo.h>
+#include <log.h>
 
 #define EIP_START 0x40000000
 
@@ -921,7 +922,14 @@ int main(int argc, char *argv[])
 
 	bf_print_sectiontab(handle_void);
 	tmp = bf_get_sections_size(handle_void, &(self->load_sections_length));
-	debug_print(DEBUG_MAIN, 1, "self->load_sections_length = 0x%lx\n", self->load_sections_length);
+	debug_print(DEBUG_MAIN, 1, "self->load_sections_length = 0x%x\n", self->load_sections_length);
+	log_open(self, "logfile.json");
+	tmp = log_new_entry(self, "M00001", 1, __FILE__, __LINE__, __FUNCTION__,
+			"self->load_sections_length");
+	printf("tmp = %d\n", tmp);
+	tmp = log_add_uint32(self, 1, "load_section_length", self->load_sections_length);
+
+	log_send(self, tmp);
 	if (tmp) {
 		debug_print(DEBUG_MAIN, 1, "Error getting sections_size\n");
 		exit(1);
@@ -1075,6 +1083,9 @@ int main(int argc, char *argv[])
 	nodes_size = 0;
 	self->nodes = nodes;
 	self->nodes_size = nodes_size;
+	self->log.part = NULL;
+	self->log.size = 0;
+	self->log.size_allocated = 0;
 	
 	/* valgrind does not know about bf_copy_data_section */
 	memset(data, 0, data_size);

@@ -10,6 +10,7 @@ target_link_libraries(dis64 -L${LIBRARY_OUTPUT_PATH} -L/usr/lib/llvm-6.0/lib
 		-lbeauty_analyse -lbeauty_output_cfg -lbeauty_output_llvm
 		-lbeauty_decoder_llvm_amd64 -lbeauty_ll_inst_to_rtl
 		-lbeauty_input_header
+		-lbeauty_output_log
 		-lLLVM-6.0
 		-lstdc++ -lz -lm -ldl -lpthread -lncurses )
 target_include_directories(dis64 PRIVATE "${libbeauty_INCLUDE_DIRS}")

@@ -640,6 +640,19 @@ struct section_s {
 	void** llvm_global_value;
 };
 
+struct type_value_s {
+	char name[256];
+	char value[256];
+};
+
+struct log_s {
+	/* file handle for log file */
+	int logfile;
+	uint64_t size;
+	uint64_t size_allocated;
+    struct type_value_s *part;
+};
+
 struct self_s {
 	int *section_number_mapping;
 	void *handle_void;
@@ -676,6 +689,7 @@ struct self_s {
 	/* The number of sections loaded */
 	int load_sections_length;
 	void *input_header;
+	struct log_s log;
 };
 
 #endif /* GLOBAL_STRUCT_H */
