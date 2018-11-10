@@ -1238,12 +1238,17 @@ int bf_disassemble_init(void *handle_void, int inst_size, uint8_t *inst)
 	disasm_info->buffer = inst;
 
 	debug_print(DEBUG_MAIN, 1, "disassemble_fn inst=%p, inst_size = 0x%x\n", inst, inst_size);
-	disassemble_fn = disassembler(handle->bfd);
+	/* extern disassembler_ftype disassembler (enum bfd_architecture arc,
+                                        bfd_boolean big, unsigned long mach,
+                                        bfd *abfd);
+	 *
+	 */
+	disassemble_fn = disassembler(bfd_mach_x86_64, 0, 0, handle->bfd);
 	handle->disassemble_fn = disassemble_fn;
 	/* disassemble_string point needs to be a global for the bf_disassemble_print_callback */
 	disassemble_string = calloc(1, 1024);
 	handle->disassemble_string = disassemble_string;
-	debug_print(DEBUG_MAIN, 1, "disassemble_fn done %p, %p\n", disassemble_fn, print_insn_i386);
+	debug_print(DEBUG_MAIN, 1, "disassemble_fn done %p\n", disassemble_fn);
 	return 0;
 }
 
