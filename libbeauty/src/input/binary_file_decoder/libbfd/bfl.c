@@ -1243,7 +1243,12 @@ int bf_disassemble_init(void *handle_void, int inst_size, uint8_t *inst)
                                         bfd *abfd);
 	 *
 	 */
-	disassemble_fn = disassembler(bfd_mach_x86_64, 0, 0, handle->bfd);
+	disassemble_fn = disassembler(bfd_arch_i386, 0, bfd_mach_x86_64, handle->bfd);
+	debug_print(DEBUG_MAIN, 1, "disassemble_fn done %p\n", disassemble_fn);
+	if (!disassemble_fn) {
+		debug_print(DEBUG_MAIN, 1, "Should not be null\n");
+		exit(1);
+	}
 	handle->disassemble_fn = disassemble_fn;
 	/* disassemble_string point needs to be a global for the bf_disassemble_print_callback */
 	disassemble_string = calloc(1, 1024);
