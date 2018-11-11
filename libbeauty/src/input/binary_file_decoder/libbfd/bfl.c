@@ -1243,7 +1243,12 @@ int bf_disassemble_init(void *handle_void, int inst_size, uint8_t *inst)
                                         bfd *abfd);
 	 *
 	 */
+
+#if BFD == 226
+	disassemble_fn = disassembler(handle->bfd);
+#else
 	disassemble_fn = disassembler(bfd_arch_i386, 0, bfd_mach_x86_64, handle->bfd);
+#endif
 	debug_print(DEBUG_MAIN, 1, "disassemble_fn done %p\n", disassemble_fn);
 	if (!disassemble_fn) {
 		debug_print(DEBUG_MAIN, 1, "Should not be null\n");

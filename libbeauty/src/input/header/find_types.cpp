@@ -154,7 +154,7 @@ int LLVM_input_header::find_types(struct self_s *self, char *filename, struct in
 	//Module *Mod = parseIRFile(filename, error, Context);
 	//outs() << *Mod;
 	if (!Mod) {
-		debug_print(DEBUG_INPUT_HEADER, 0, "Exiting. Probably File not found\n");
+		debug_print(DEBUG_INPUT_HEADER, 0, "Exiting. Probably File not found:%s\n", filename);
 		exit(1);
 	}
 	//auto Mod = openInputFile(Context);
